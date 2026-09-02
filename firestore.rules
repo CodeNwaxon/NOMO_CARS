@@ -1,0 +1,42 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      // Replace with the CEO's actual User UID from Firebase Auth
+      return request.auth != null && request.auth.uid == 'xFAB29wQyBfGk4W2oLaD9qwxgfY2';
+    }
+
+    // Default deny for any collections not explicitly matched (unless admin)
+    match /{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // Users collection: users can only read and write their own profile document
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Vehicles collection
+    match /vehicles/{vehicleId} {
+      // Anyone can read vehicles (for the passenger view)
+      allow read: if true;
+      
+      // Only authenticated users can create a vehicle.
+      // Additionally, the driverId must match the authenticated user's uid.
+      allow create: if request.auth != null && request.resource.data.driverId == request.auth.uid;
+      
+      // Only the vehicle owner can update or delete it
+      allow update, delete: if request.auth != null && resource.data.driverId == request.auth.uid;
+    }
+
+    // Contact messages collection
+    match /contact_messages/{messageId} {
+      // Anyone can submit a contact message
+      allow create: if true;
+      
+      // No one can read, update, or delete from the client side
+      allow read, update, delete: if false;
+    }
+  }
+}
