@@ -2,8 +2,8 @@ import Link from "next/link";
 
 export function Footer() {
   return (
-    <footer className="w-full mt-auto z-10 relative bg-background/50 backdrop-blur-sm">
-      <div className="w-full px-8 md:px-16 grid grid-cols-1 md:grid-cols-3 gap-8 items-center border-t dark:border-white/10 border-black/10 pt-8 pb-6">
+    <footer className="pb-8 w-full mt-auto z-10 relative bg-background/50 backdrop-blur-sm">
+      <div className="w-full px-8 md:px-16 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 items-center border-t dark:border-white/10 border-black/10 pt-8 pb-6">
 
         {/* Left: Write up */}
         <div className="text-center md:text-left order-1 md:order-1">
@@ -14,11 +14,14 @@ export function Footer() {
         </div>
 
         {/* Center: Buttons */}
-        <div className="flex justify-center gap-4 order-2 md:order-2">
-          <Link href="/policy" className="px-4 md:px-6 py-1.5 md:py-2 dark:bg-white/10 bg-black/5 rounded-full font-medium dark:text-white text-gray-800 hover:bg-brand-primary hover:text-white transition-all border dark:border-white/10 border-black/10 shadow-sm text-xs md:text-sm">
+        <div className="flex flex-row flex-nowrap justify-center items-center gap-1 md:gap-4 order-2 md:order-2 overflow-x-auto w-full no-scrollbar pb-1 md:pb-0">
+          <Link href="/about" className="whitespace-nowrap px-2 md:px-6 py-1.5 md:py-2 dark:bg-white/10 bg-black/5 rounded-full font-medium dark:text-white text-gray-800 hover:bg-brand-primary hover:text-white transition-all border dark:border-white/10 border-black/10 shadow-sm text-[10px] md:text-sm">
+            About Us
+          </Link>
+          <Link href="/policy" className="whitespace-nowrap px-2 md:px-6 py-1.5 md:py-2 dark:bg-white/10 bg-black/5 rounded-full font-medium dark:text-white text-gray-800 hover:bg-brand-primary hover:text-white transition-all border dark:border-white/10 border-black/10 shadow-sm text-[10px] md:text-sm">
             Privacy Policy
           </Link>
-          <Link href="/faq" className="px-4 md:px-6 py-1.5 md:py-2 dark:bg-white/10 bg-black/5 rounded-full font-medium dark:text-white text-gray-800 hover:bg-brand-primary hover:text-white transition-all border dark:border-white/10 border-black/10 shadow-sm text-xs md:text-sm">
+          <Link href="/faq" className="whitespace-nowrap px-2 md:px-6 py-1.5 md:py-2 dark:bg-white/10 bg-black/5 rounded-full font-medium dark:text-white text-gray-800 hover:bg-brand-primary hover:text-white transition-all border dark:border-white/10 border-black/10 shadow-sm text-[10px] md:text-sm">
             FAQ & Support
           </Link>
         </div>

@@ -79,7 +79,7 @@ export default function CategoryVehicles() {
       <div className="absolute top-[-10%] right-[-10%] w-[30rem] h-[30rem] bg-brand-secondary/10 rounded-full blur-3xl -z-10 pointer-events-none"></div>
 
       <div className="max-w-6xl mx-auto z-10 relative">
-        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6 mb-10 px-4 md:px-0">
+        <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6 mb-10 px-3 md:px-0">
           {/* Header Title and Back Button */}
           <div className="flex items-center gap-4">
             <button
@@ -157,7 +157,7 @@ export default function CategoryVehicles() {
 
           if (filteredVehicles.length === 0) {
             return (
-              <div className="px-4 md:px-0">
+              <div className="px-3 md:px-0">
                 <div className="glass-panel rounded-2xl md:p-12 p-6 text-center flex flex-col items-center max-w-2xl mx-auto">
                   <div className="w-24 h-24 bg-card-border/50 rounded-full flex items-center justify-center mb-4">
                     <Car className="w-12 h-12 text-foreground/50" />
