@@ -119,12 +119,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const deleteAccount = async () => {
     if (!user) return;
     try {
-      // 1. Delete user document from Firestore
+      const { deleteUser, reauthenticateWithPopup } = await import("firebase/auth");
+      
+      // 1. Re-authenticate to ensure recent login (required for deletion)
+      try {
+        await reauthenticateWithPopup(user, googleProvider);
+      } catch (reauthError: any) {
+        console.error("Reauthentication failed:", reauthError);
+        throw new Error("reauth-failed");
+      }
+
+      // 2. Delete all Cloudinary images associated with the user
+      const urlsToDelete: string[] = [];
+      if (profile?.displayImage) urlsToDelete.push(profile.displayImage);
+      if (profile?.identityImage) urlsToDelete.push(profile.identityImage);
+      
+      if (urlsToDelete.length > 0) {
+        try {
+          const { deleteImagesFromCloudinary } = await import("@/lib/cloudinary");
+          await deleteImagesFromCloudinary(urlsToDelete);
+        } catch (cloudinaryError) {
+          console.error("Failed to delete Cloudinary images during account deletion:", cloudinaryError);
+          // We continue with account deletion even if image deletion fails
+        }
+      }
+
+      // 3. Delete user document from Firestore
       const docRef = doc(db, "users", user.uid);
       await deleteDoc(docRef);
 
-      // 2. Delete the user from Firebase Auth
-      const { deleteUser } = await import("firebase/auth");
+      // 4. Delete the user from Firebase Auth
       await deleteUser(user);
 
       setUser(null);

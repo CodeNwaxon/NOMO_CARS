@@ -7,7 +7,7 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 export function Navbar() {
-  const { user, profile, signInWithGoogle, signOut } = useAuth();
+  const { user, profile, loading, signInWithGoogle, signOut } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -56,7 +56,12 @@ export function Navbar() {
           <span>Help</span>
         </Link>
 
-        {!user ? (
+        {loading ? (
+          <div className="flex items-center gap-2 md:gap-3 p-1.5 pr-3 md:p-2 md:pr-4 dark:bg-slate-900/80 bg-white/80 backdrop-blur-md border dark:border-white/20 border-black/10 rounded-full shadow-lg">
+            <div className="w-7 h-7 md:w-10 md:h-10 rounded-full bg-black/10 dark:bg-white/10 animate-pulse flex-shrink-0" />
+            <div className="h-3 md:h-4 w-16 bg-black/10 dark:bg-white/10 animate-pulse rounded" />
+          </div>
+        ) : !user ? (
           <button
             onClick={signInWithGoogle}
             className="text-xs md:text-sm flex items-center gap-2 px-3 py-1.5 md:px-4 md:py-2  bg-brand-primary text-white rounded-xl md:rounded-full font-medium hover:bg-brand-primary/90 transition-all shadow-lg hover:shadow-brand-primary/30 hover:-translate-y-0.5 border border-brand-primary/50"
