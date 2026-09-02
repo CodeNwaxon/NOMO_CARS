@@ -30,7 +30,7 @@ export default function CategoryVehicles() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    
+
     const fetchCategoryVehicles = async () => {
       try {
         const q = query(
@@ -47,7 +47,7 @@ export default function CategoryVehicles() {
         // Fetch driver profiles to get operating city and state
         const driverIds = [...new Set(fetchedVehicles.map(v => v.driverId).filter(Boolean))];
         const driversMap: Record<string, any> = {};
-        
+
         await Promise.all(driverIds.map(async (id) => {
           const driverDoc = await getDoc(doc(db, "users", id as string));
           if (driverDoc.exists()) {
@@ -78,7 +78,7 @@ export default function CategoryVehicles() {
     <div className="min-h-screen px-1 py-6 md:p-12 relative overflow-hidden">
       <div className="absolute top-[-10%] right-[-10%] w-[30rem] h-[30rem] bg-brand-secondary/10 rounded-full blur-3xl -z-10 pointer-events-none"></div>
 
-      <div className="max-w-6xl mx-auto z-10 relative">
+      <div className="max-w-7xl mx-auto z-10 relative">
         <div className="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-6 mb-10 px-3 md:px-0">
           {/* Header Title and Back Button */}
           <div className="flex items-center gap-4">
@@ -89,7 +89,7 @@ export default function CategoryVehicles() {
               <ArrowLeft className="w-4 h-4 md:w-6 md:h-6" />
             </button>
             <div>
-              <h1 className="text-xl md:text-4xl font-bold capitalize text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary to-brand-primary">
+              <h1 className="text-xl md:text-3xl font-bold capitalize text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary to-brand-primary">
                 {getPluralCategory(category)} Available
               </h1>
               <p className="text-xs md:text-md text-foreground/70">Find and book approved your <span className="font-bold">{category}</span> transport.</p>
@@ -97,8 +97,8 @@ export default function CategoryVehicles() {
           </div>
 
           {/* Search and Action Buttons */}
-          <div className="flex flex-col gap-4 w-full xl:w-auto">
-            <div className="flex flex-row gap-2 md:gap-4">
+          <div className="flex flex-col xl:flex-row gap-3 md:gap-4 w-full xl:w-auto xl:items-center">
+            <div className="flex flex-row gap-2 md:gap-4 w-full xl:w-auto">
               {/* Search Input */}
               <div className="relative flex-grow xl:w-80">
                 <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
@@ -109,10 +109,10 @@ export default function CategoryVehicles() {
                   placeholder="Search city/state..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 md:pl-11 pr-4 py-1.5 md:py-2 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl"
+                  className="w-full pl-9 md:pl-11 pr-4 py-2 md:py-2 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl"
                 />
               </div>
-              
+
               {/* Buttons beside search for Non-Driver */}
               {!isDriver && (
                 <button className="flex items-center justify-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-6 md:py-2 bg-brand-primary text-white rounded-xl font-medium text-sm md:text-base hover:bg-brand-primary/90 transition-all shadow-lg hover:shadow-brand-primary/30 hover:-translate-y-0.5 border border-brand-primary/50 flex-shrink-0">
@@ -124,12 +124,14 @@ export default function CategoryVehicles() {
 
             {/* Additional buttons for Drivers */}
             {isDriver && (
-              <div className="flex flex-col md:flex-row gap-2 md:gap-4 w-full">
-                <button className="flex items-center justify-center gap-1.5 md:gap-2 px-4 py-1.5 md:px-6 md:py-2 bg-brand-secondary text-white rounded-xl font-medium text-sm md:text-base hover:bg-brand-secondary/90 transition-all shadow-lg hover:shadow-brand-secondary/30 hover:-translate-y-0.5 flex-1">
-                  <Briefcase className="w-4 h-4 md:w-5 md:h-5" />
-                  <span>Bid for jobs</span>
-                </button>
-                <button className="flex items-center justify-center gap-1.5 md:gap-2 px-4 py-1.5 md:px-6 md:py-2 bg-brand-primary text-white rounded-xl font-medium text-sm md:text-base hover:bg-brand-primary/90 transition-all shadow-lg hover:shadow-brand-primary/30 hover:-translate-y-0.5 border border-brand-primary/50 flex-1">
+              <div className="flex flex-row gap-2 md:gap-4 w-full xl:w-auto">
+                {profile?.isApproved && (
+                  <button className="flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-6 md:py-2 bg-brand-secondary text-white rounded-xl font-medium text-sm md:text-base hover:bg-brand-secondary/90 transition-all shadow-lg hover:shadow-brand-secondary/30 hover:-translate-y-0.5 flex-1 xl:flex-none">
+                    <Briefcase className="w-4 h-4 md:w-5 md:h-5" />
+                    <span>Bid for jobs</span>
+                  </button>
+                )}
+                <button className="flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-6 md:py-2 bg-brand-primary text-white rounded-xl font-medium text-sm md:text-base hover:bg-brand-primary/90 transition-all shadow-lg hover:shadow-brand-primary/30 hover:-translate-y-0.5 border border-brand-primary/50 flex-1 xl:flex-none">
                   <PlusCircle className="w-4 h-4 md:w-5 md:h-5" />
                   <span>Create Bid</span>
                 </button>
@@ -192,41 +194,41 @@ export default function CategoryVehicles() {
             <div className="px-1 md:px-0">
               <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-8">
                 {displayedVehicles.map((v) => (
-                <div key={v.id} className="glass-panel rounded-xl md:rounded-3xl overflow-hidden group hover:shadow-xl hover:shadow-brand-secondary/10 transition-all duration-300">
-                  <div className="h-32 md:h-48 w-full bg-card-border relative overflow-hidden">
-                    {v.images?.front ? (
-                      <img
-                        src={v.images.front}
-                        alt={`${v.details.make} ${v.details.model}`}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-foreground/30">
-                        <Car className="w-8 h-8 md:w-12 md:h-12" />
+                  <div key={v.id} className="glass-panel rounded-xl md:rounded-3xl overflow-hidden group hover:shadow-xl hover:shadow-brand-secondary/10 transition-all duration-300">
+                    <div className="h-32 md:h-48 w-full bg-card-border relative overflow-hidden">
+                      {v.images?.front ? (
+                        <img
+                          src={v.images.front}
+                          alt={`${v.details.make} ${v.details.model}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-foreground/30">
+                          <Car className="w-8 h-8 md:w-12 md:h-12" />
+                        </div>
+                      )}
+                      <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-background/80 backdrop-blur-md px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold shadow-sm">
+                        {v.details.seats} Seats
                       </div>
-                    )}
-                    <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-background/80 backdrop-blur-md px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold shadow-sm">
-                      {v.details.seats} Seats
+                    </div>
+
+                    <div className="p-3 md:p-6">
+                      <h3 className="text-sm md:text-xl font-bold mb-1 truncate">{v.details.make} {v.details.model}</h3>
+                      <p className="text-[10px] md:text-sm text-foreground/60 mb-2 md:mb-4 border-b border-card-border pb-2 md:pb-4 truncate">
+                        Yr: {v.details.year} • AC: {v.details.ac ? "Yes" : "No"}
+                      </p>
+
+                      <button className="w-full py-2 md:py-3 text-xs md:text-base bg-brand-secondary/10 hover:bg-brand-secondary text-brand-secondary hover:text-white font-medium rounded-lg md:rounded-xl transition-colors">
+                        View
+                      </button>
                     </div>
                   </div>
-
-                  <div className="p-3 md:p-6">
-                    <h3 className="text-sm md:text-xl font-bold mb-1 truncate">{v.details.make} {v.details.model}</h3>
-                    <p className="text-[10px] md:text-sm text-foreground/60 mb-2 md:mb-4 border-b border-card-border pb-2 md:pb-4 truncate">
-                      Yr: {v.details.year} • AC: {v.details.ac ? "Yes" : "No"}
-                    </p>
-
-                    <button className="w-full py-2 md:py-3 text-xs md:text-base bg-brand-secondary/10 hover:bg-brand-secondary text-brand-secondary hover:text-white font-medium rounded-lg md:rounded-xl transition-colors">
-                      View
-                    </button>
-                  </div>
-                </div>
-              ))}
+                ))}
               </div>
-              
+
               {visibleCount < filteredVehicles.length && (
                 <div className="flex justify-center mt-8 md:mt-12">
-                  <button 
+                  <button
                     onClick={() => setVisibleCount(prev => prev + 30)}
                     className="px-6 py-3 bg-card-bg border border-card-border hover:bg-card-border rounded-xl font-medium transition-colors shadow-sm"
                   >

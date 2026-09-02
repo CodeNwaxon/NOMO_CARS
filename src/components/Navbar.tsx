@@ -1,14 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { LogIn, ChevronDown, LayoutDashboard, LogOut, Headphones, Home, ShieldCheck } from "lucide-react";
+import { LogIn, ChevronDown, LayoutDashboard, LogOut, Headphones, Home, ShieldCheck, Bell } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useNotifications } from "@/context/NotificationContext";
+import { NotificationPanel } from "./NotificationPanel";
 import { useState, useRef, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 export function Navbar() {
   const { user, profile, loading, signInWithGoogle, signOut } = useAuth();
+  const { unreadCount } = useNotifications();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
@@ -31,10 +35,24 @@ export function Navbar() {
     }
   };
 
+  const getNavDisplayName = () => {
+    if (!user) return "";
+    const googleName = user.displayName;
+    const currentName = profile?.username;
+    
+    if (currentName && currentName !== googleName) {
+      return currentName;
+    }
+    
+    if (googleName) return googleName.split(" ")[0];
+    if (currentName) return currentName.split(" ")[0];
+    return "User";
+  };
+
   const isLandingPage = pathname === "/";
 
   return (
-    <nav className={`w-full flex items-center justify-between py-3 px-4 md:p-4 z-50 ${isLandingPage ? 'absolute top-0 left-0 right-0' : 'sticky top-0 bg-background/80 backdrop-blur-md border-b dark:border-white/10 border-black/10'}`}>
+    <nav className={`w-full flex items-center justify-between py-3 px-2.5 md:p-4 z-[100] ${isLandingPage ? 'absolute top-0 left-0 right-0' : 'sticky top-0 bg-background/80 backdrop-blur-md border-b dark:border-white/10 border-black/10'}`}>
       {/* Left: Home */}
       <div>
         {!isLandingPage ? (
@@ -70,23 +88,24 @@ export function Navbar() {
             <span>Sign In</span>
           </button>
         ) : (
-          <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2 md:gap-3 p-1.5 pr-3 md:p-2 md:pr-4 dark:bg-slate-900/80 bg-white/80 backdrop-blur-md border dark:border-white/20 border-black/10 rounded-full hover:border-brand-primary/50 transition-all shadow-lg dark:text-white text-gray-900"
-            >
-              <div className="w-7 h-7 md:w-10 md:h-10 rounded-full overflow-hidden bg-card-border border-2 border-brand-primary flex-shrink-0">
-                {profile?.displayImage || user.photoURL ? (
-                  <img src={profile?.displayImage || user.photoURL || ""} alt="Profile" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-brand-primary font-bold bg-slate-800 uppercase">
-                    {profile?.username?.charAt(0) || user.email?.charAt(0)}
-                  </div>
-                )}
-              </div>
-              <div className="flex flex-col items-start justify-center text-left max-w-[100px] overflow-hidden">
-                <span className="text-[10px] md:text-sm font-bold leading-tight truncate w-full dark:text-white text-gray-900 capitalize">
-                  {profile?.username || user.displayName || "User"}
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="relative" ref={dropdownRef}>
+              <button
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+                className="flex items-center gap-2 md:gap-3 p-1.5 pr-3 md:p-2 md:pr-4 dark:bg-slate-900/80 bg-white/80 backdrop-blur-md border dark:border-white/20 border-black/10 rounded-full hover:border-brand-primary/50 transition-all shadow-lg dark:text-white text-gray-900"
+              >
+                <div className="w-7 h-7 md:w-10 md:h-10 rounded-full overflow-hidden bg-card-border border-2 border-brand-primary flex-shrink-0">
+                  {profile?.displayImage || user.photoURL ? (
+                    <img src={profile?.displayImage || user.photoURL || ""} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-brand-primary font-bold bg-slate-800 uppercase">
+                      {profile?.username?.charAt(0) || user.email?.charAt(0)}
+                    </div>
+                  )}
+                </div>
+              <div className="flex flex-col items-start justify-center text-left max-w-[70px] sm:max-w-[100px] md:max-w-[150px] overflow-hidden">
+                <span className="text-[10px] md:text-sm font-bold leading-tight truncate w-full dark:text-white text-gray-900 capitalize block">
+                  {getNavDisplayName()}
                 </span>
               </div>
               <ChevronDown className={`w-4 h-4 dark:text-gray-400 text-gray-600 transition-transform ${dropdownOpen ? "rotate-180" : ""}`} />
@@ -142,8 +161,24 @@ export function Navbar() {
               </div>
             )}
           </div>
+
+            {/* Notification Bell */}
+            <button
+              onClick={() => setIsPanelOpen(true)}
+              className="relative p-2 md:p-2.5 rounded-full bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border border-black/10 dark:border-white/20 shadow-lg hover:border-brand-primary/50 transition-all dark:text-white text-gray-900"
+            >
+              <Bell className="w-5 h-5 md:w-5 md:h-5" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 md:h-5 md:w-5 items-center justify-center rounded-full bg-red-500 text-[9px] md:text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-slate-900">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
+            </button>
+          </div>
         )}
       </div>
+
+      <NotificationPanel isOpen={isPanelOpen} onClose={() => setIsPanelOpen(false)} />
     </nav>
   );
 }

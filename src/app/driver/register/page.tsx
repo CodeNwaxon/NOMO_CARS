@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useForm } from "react-hook-form";
@@ -14,7 +14,7 @@ import { Loader2, UploadCloud, Camera } from "lucide-react";
 const driverSchema = z.object({
   firstName: z.string().min(2, "First name is required"),
   lastName: z.string().min(2, "Last name is required"),
-  middleName: z.string().min(2, "Middle name is required"),
+  middleName: z.string().optional(),
   phone: z.string().min(10, "Valid phone number required"),
   age: z.string().refine((val) => parseInt(val) >= 19, {
     message: "You must be at least 19 years old",
@@ -22,9 +22,18 @@ const driverSchema = z.object({
   identityNumber: z.string().min(5, "Identity number required"),
   operatingCity: z.string().min(2, "City is required"),
   operatingState: z.string().min(2, "State is required"),
+  whatsappEnabled: z.boolean().optional(),
 });
 
 type DriverFormData = z.infer<typeof driverSchema>;
+
+const NIGERIAN_STATES = [
+  "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno",
+  "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "Gombe", "Imo",
+  "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos",
+  "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto",
+  "Taraba", "Yobe", "Zamfara", "FCT - Abuja",
+];
 
 export default function DriverRegistration() {
   const { user, profile, loading, refreshProfile } = useAuth();
@@ -34,6 +43,8 @@ export default function DriverRegistration() {
   const [uploadError, setUploadError] = useState("");
   const [profilePicFile, setProfilePicFile] = useState<File | null>(null);
   const [profilePicPreview, setProfilePicPreview] = useState<string | null>(null);
+  const [idImagePreview, setIdImagePreview] = useState<string | null>(null);
+  const nameSetRef = useRef(false);
 
   // Initialize preview with Google image if available
   useEffect(() => {
@@ -52,10 +63,59 @@ export default function DriverRegistration() {
     resolver: zodResolver(driverSchema),
     defaultValues: {
       phone: "+234",
+      whatsappEnabled: false,
     },
   });
 
   const phoneValue = watch("phone");
+
+  // Pre-fill names from display name
+  useEffect(() => {
+    if (!loading && !nameSetRef.current && (user || profile)) {
+      if (profile?.phone) setValue("phone", profile.phone);
+      if (profile?.age) setValue("age", profile.age);
+      if (profile?.identityNumber) setValue("identityNumber", profile.identityNumber);
+      if (profile?.operatingCity) setValue("operatingCity", profile.operatingCity);
+      if (profile?.operatingState) setValue("operatingState", profile.operatingState);
+      if (profile?.whatsappEnabled !== undefined) setValue("whatsappEnabled", profile.whatsappEnabled);
+
+      // If the profile already has a distinct last name, trust the existing fields
+      if (profile?.lastName) {
+        if (profile?.firstName) setValue("firstName", profile.firstName);
+        if (profile?.middleName) setValue("middleName", profile.middleName);
+        if (profile?.lastName) setValue("lastName", profile.lastName);
+        nameSetRef.current = true;
+        return;
+      }
+
+      // Otherwise, take whatever name we have and split it
+      const rawName = profile?.firstName || user?.displayName || profile?.username || "";
+      const parts = rawName.trim().split(/\s+/).filter(Boolean);
+
+      let first = "";
+      let middle = "";
+      let last = "";
+
+      if (parts.length === 1) {
+        first = parts[0];
+      } else if (parts.length === 2) {
+        first = parts[0];
+        middle = parts[1];
+      } else if (parts.length >= 3) {
+        first = parts[0];
+        middle = parts.slice(1, -1).join(" ");
+        last = parts[parts.length - 1];
+      }
+
+      if (first) setValue("firstName", first);
+      if (middle) setValue("middleName", middle);
+      if (last) setValue("lastName", last);
+
+      if (first || middle || last || rawName) {
+        nameSetRef.current = true;
+      }
+    }
+  }, [user, profile, loading, setValue]);
 
   // Handle +234 logic
   useEffect(() => {
@@ -192,24 +252,24 @@ export default function DriverRegistration() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Last Name</label>
+              <label className="block text-sm font-medium mb-1">Middle Name (Optional)</label>
               <input
-                {...register("lastName")}
+                {...register("middleName")}
                 className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl"
-                placeholder="Adeyemi"
+                placeholder="Hassan"
               />
-              {errors.lastName && <p className="text-brand-accent text-xs mt-1">{errors.lastName.message}</p>}
+              {errors.middleName && <p className="text-brand-accent text-xs mt-1">{errors.middleName.message}</p>}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Middle Name</label>
+            <label className="block text-sm font-medium mb-1">Last Name</label>
             <input
-              {...register("middleName")}
+              {...register("lastName")}
               className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl"
-              placeholder="Hassan"
+              placeholder="Adeyemi"
             />
-            {errors.middleName && <p className="text-brand-accent text-xs mt-1">{errors.middleName.message}</p>}
+            {errors.lastName && <p className="text-brand-accent text-xs mt-1">{errors.lastName.message}</p>}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -220,6 +280,22 @@ export default function DriverRegistration() {
                 className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl"
               />
               {errors.phone && <p className="text-brand-accent text-xs mt-1">{errors.phone.message}</p>}
+
+              <div className="flex items-center gap-2 mt-3 ml-1">
+                <input
+                  type="checkbox"
+                  id="whatsappEnabled"
+                  {...register("whatsappEnabled")}
+                  className="w-4 h-4 rounded text-[#25D366] focus:ring-[#25D366] bg-transparent border-gray-300"
+                />
+                <label htmlFor="whatsappEnabled" className="text-xs md:text-sm text-foreground/80 flex items-center gap-1 cursor-pointer select-none">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#25D366]">
+                    <path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 2.9L3 21" />
+                    <path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1" />
+                  </svg>
+                  Available on WhatsApp
+                </label>
+              </div>
             </div>
 
             <div>
@@ -235,7 +311,7 @@ export default function DriverRegistration() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Identity Number (NIN/Driver's License)</label>
+            <label className="block text-sm font-medium mb-1">ID Number <span className="dark:text-yellow-500  text-yellow-700 text-[10px] md:text-sm font-medium text-foreground/80"> (NIN/Driver's License/Int. Passport/Voters Card)</span></label>
             <input
               {...register("identityNumber")}
               className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl"
@@ -246,40 +322,66 @@ export default function DriverRegistration() {
 
           <div>
             <label className="block text-sm font-medium mb-1">Upload Identity Image</label>
-            <div className="border-2 border-dashed border-card-border rounded-xl p-8 text-center hover:bg-card-bg/50 transition-colors cursor-pointer relative">
+            <div className="border-2 border-dashed border-card-border rounded-xl h-40 md:h-48 text-center hover:bg-card-bg/50 transition-colors cursor-pointer relative overflow-hidden flex flex-col items-center justify-center">
               <input
                 type="file"
                 accept="image/*"
-                onChange={(e) => setIdFile(e.target.files?.[0] || null)}
-                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setIdFile(file);
+                    setIdImagePreview(URL.createObjectURL(file));
+                  } else {
+                    setIdFile(null);
+                    setIdImagePreview(null);
+                  }
+                }}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
               />
-              <UploadCloud className="w-8 h-8 mx-auto mb-2 text-foreground/50" />
-              <p className="text-sm font-medium">
-                {idFile ? idFile.name : "Click or drag image to upload"}
-              </p>
+              {idImagePreview ? (
+                <div className="absolute inset-0 w-full h-full">
+                  <img src={idImagePreview} alt="ID Preview" className="w-full h-full object-cover" />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 hover:opacity-100 transition-opacity z-0">
+                    <p className="text-white font-medium text-sm">Click to change image</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <UploadCloud className="w-8 h-8 mx-auto mb-2 text-foreground/50" />
+                  <p className="text-sm font-medium">
+                    Click or drag image to upload
+                  </p>
+                </>
+              )}
             </div>
             {uploadError && <p className="text-brand-accent text-xs mt-1">{uploadError}</p>}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-4 md:gap-6">
             <div>
-              <label className="block text-sm font-medium mb-1">Operating City</label>
+              <label className="block text-xs md:text-sm font-medium mb-1">Operating City</label>
               <input
                 {...register("operatingCity")}
-                className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl"
-                placeholder="Lagos"
+                className="w-full px-2 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl"
+                placeholder="Ikeja"
               />
-              {errors.operatingCity && <p className="text-brand-accent text-xs mt-1">{errors.operatingCity.message}</p>}
+              {errors.operatingCity && <p className="text-brand-accent text-[10px] md:text-xs mt-1">{errors.operatingCity.message}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Operating State</label>
-              <input
+              <label className="block text-xs md:text-sm font-medium mb-1">Operating State</label>
+              <select
                 {...register("operatingState")}
-                className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl"
-                placeholder="Lagos State"
-              />
-              {errors.operatingState && <p className="text-brand-accent text-xs mt-1">{errors.operatingState.message}</p>}
+                className="w-full px-2 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm text-sm md:text-base rounded-xl"
+              >
+                <option value="">Select State</option>
+                {NIGERIAN_STATES.map((state) => (
+                  <option key={state} value={state}>
+                    {state}
+                  </option>
+                ))}
+              </select>
+              {errors.operatingState && <p className="text-brand-accent text-[10px] md:text-xs mt-1">{errors.operatingState.message}</p>}
             </div>
           </div>
 
@@ -290,6 +392,14 @@ export default function DriverRegistration() {
           >
             {isSubmitting && <Loader2 className="w-5 h-5 animate-spin" />}
             {isSubmitting ? "Submitting..." : "Complete Registration"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="w-full py-3 bg-transparent text-foreground/70 hover:text-foreground font-medium text-sm md:text-base transition-colors flex justify-center items-center"
+          >
+            Cancel
           </button>
         </form>
       </div>

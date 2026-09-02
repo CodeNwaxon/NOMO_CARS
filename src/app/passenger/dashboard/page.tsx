@@ -13,12 +13,12 @@ import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { toast } from "react-hot-toast";
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
-  <svg 
-    xmlns="http://www.w3.org/2000/svg" 
-    viewBox="0 0 24 24" 
-    width="24" 
-    height="24" 
-    fill="currentColor" 
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    width="24"
+    height="24"
+    fill="currentColor"
     className={className}
   >
     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
@@ -35,7 +35,7 @@ export default function PassengerDashboard() {
 
   const [formData, setFormData] = useState({
     firstName: profile?.firstName || "",
-    username: profile?.username || "",
+    username: profile?.username && profile.username !== user?.displayName ? profile.username : (user?.displayName?.split(" ")[0] || profile?.username?.split(" ")[0] || ""),
     phone: profile?.phone || "",
     displayImage: profile?.displayImage || "",
     whatsappEnabled: profile?.whatsappEnabled ?? true,
@@ -61,7 +61,7 @@ export default function PassengerDashboard() {
     if (profile) {
       setFormData({
         firstName: profile.firstName || "",
-        username: profile.username || "",
+        username: profile.username && profile.username !== user?.displayName ? profile.username : (user?.displayName?.split(" ")[0] || profile?.username?.split(" ")[0] || ""),
         phone: profile.phone || "",
         displayImage: profile.displayImage || "",
         whatsappEnabled: profile.whatsappEnabled ?? true,
@@ -111,16 +111,30 @@ export default function PassengerDashboard() {
     }
   };
 
+  const getDisplayName = () => {
+    if (!user) return "";
+    const googleName = user.displayName;
+    const currentName = profile?.username;
+
+    if (currentName && currentName !== googleName) {
+      return currentName;
+    }
+
+    if (googleName) return googleName.split(" ")[0];
+    if (currentName) return currentName.split(" ")[0];
+    return "User";
+  };
+
   const handleSave = async () => {
     try {
       let formattedPhone = formData.phone.trim();
-      
+
       if (formattedPhone) {
         if (!/^\+?[0-9]+$/.test(formattedPhone)) {
           toast.error("Phone number should only contain numbers.");
           return;
         }
-        
+
         const digits = formattedPhone.replace(/\D/g, "");
         if (digits.length !== 11 && digits.length !== 13) {
           toast.error("Please enter a valid 11-digit phone number (e.g., 07012345678).");
@@ -149,7 +163,7 @@ export default function PassengerDashboard() {
         displayImage: finalImageUrl,
         whatsappEnabled: formData.whatsappEnabled,
       });
-      
+
       setFormData(prev => ({ ...prev, phone: formattedPhone, displayImage: finalImageUrl }));
       setImageFile(null);
       setImagePreview(null);
@@ -190,12 +204,12 @@ export default function PassengerDashboard() {
       letters[Math.floor(Math.random() * letters.length)],
       numbers[Math.floor(Math.random() * numbers.length)]
     ];
-    
+
     const all = letters + numbers;
     for (let i = 0; i < 6; i++) {
       codeArr.push(all[Math.floor(Math.random() * all.length)]);
     }
-    
+
     // Shuffle the characters
     const code = codeArr.sort(() => Math.random() - 0.5).join('');
 
@@ -241,7 +255,7 @@ export default function PassengerDashboard() {
       <div className="absolute top-[-10%] right-[-10%] w-[40rem] h-[40rem] bg-brand-primary/5 rounded-full blur-3xl pointer-events-none"></div>
 
       <div className="max-w-4xl mx-auto z-10 relative">
-        <div className="flex justify-between items-start md:items-center mb-10 gap-2 md:gap-4">
+        <div className="px-3 md:px-0 flex justify-between items-start md:items-center mb-10 gap-2 md:gap-4">
           <div>
             <h1 className="md:text-4xl text-xl font-bold md:mb-2 mb-0">My Dashboard</h1>
             <p className="text-[10px] md:text-sm text-foreground/70">Manage your passenger profile and preferences.</p>
@@ -258,7 +272,7 @@ export default function PassengerDashboard() {
           </button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="px-4 md:px-0 grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Profile Card */}
           <div className="glass-panel rounded-xl md:rounded-3xl p-8 lg:col-span-1 flex flex-col items-center text-center">
             <div className="relative mb-6">
@@ -266,8 +280,8 @@ export default function PassengerDashboard() {
                 {imagePreview || (isEditing ? formData.displayImage : profile?.displayImage) || user.photoURL ? (
                   <img src={imagePreview || (isEditing ? formData.displayImage : profile?.displayImage) || user.photoURL || ""} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-brand-primary/10 text-brand-primary font-bold text-4xl">
-                    {((isEditing ? formData.username : profile?.username) || user.email)?.charAt(0).toUpperCase()}
+                  <div className="w-full h-full flex items-center justify-center bg-brand-primary/10 text-brand-primary font-bold text-4xl uppercase">
+                    {(isEditing ? formData.username : getDisplayName())?.charAt(0) || user.email?.charAt(0)}
                   </div>
                 )}
               </div>
@@ -290,8 +304,8 @@ export default function PassengerDashboard() {
               />
             </div>
 
-            <h2 className="text-xl md:text-2xl font-bold mb-1 capitalize">{(isEditing ? formData.username : profile?.username) || user.displayName || "User"}</h2>
-            <p className="text-sm text-foreground/60 mb-4">{user.email}</p>
+            <h2 className="text-xl md:text-2xl font-bold mb-1 capitalize w-full truncate px-2">{isEditing ? formData.username : getDisplayName()}</h2>
+            <p className="text-sm text-foreground/60 mb-4 w-full truncate px-2">{user.email}</p>
 
             <div className="flex items-center gap-1 bg-card-border/50 px-4 py-2 rounded-full mb-6 shadow-inner">
               {renderStars(profile?.rating || 5.0)}
@@ -315,7 +329,7 @@ export default function PassengerDashboard() {
                     // Revert changes
                     setFormData({
                       firstName: profile?.firstName || "",
-                      username: profile?.username || "",
+                      username: profile?.username && profile.username !== user?.displayName ? profile.username : (user?.displayName?.split(" ")[0] || profile?.username?.split(" ")[0] || ""),
                       phone: profile?.phone || "",
                       displayImage: profile?.displayImage || "",
                       whatsappEnabled: profile?.whatsappEnabled ?? true,
@@ -348,13 +362,13 @@ export default function PassengerDashboard() {
                     type="text"
                     value={formData.username}
                     onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl bg-background border border-card-border focus:outline-none focus:border-brand-primary transition-colors"
+                    className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     placeholder="E.g. FastRider99"
                   />
                 ) : (
                   <div className="flex items-center gap-3 px-4 py-3 bg-card-border/30 rounded-xl">
                     <User className="w-5 h-5 text-brand-primary" />
-                    <span className="font-medium">{profile?.username || "Not set"}</span>
+                    <span className="font-medium">{getDisplayName()}</span>
                   </div>
                 )}
               </div>
@@ -366,7 +380,7 @@ export default function PassengerDashboard() {
                     type="text"
                     value={formData.firstName}
                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl bg-background border border-card-border focus:outline-none focus:border-brand-primary transition-colors"
+                    className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     placeholder="Enter your full name"
                   />
                 ) : (
@@ -385,17 +399,16 @@ export default function PassengerDashboard() {
                       type="tel"
                       value={formData.phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full px-4 py-3 rounded-xl bg-background border border-card-border focus:outline-none focus:border-brand-primary transition-colors"
+                      className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       placeholder="E.g. +1234567890"
                     />
                     <button
                       onClick={() => setFormData({ ...formData, whatsappEnabled: !formData.whatsappEnabled })}
                       type="button"
-                      className={`p-3 rounded-xl shadow-lg transition-colors flex items-center justify-center min-w-[50px] hover:scale-105 ${
-                        formData.whatsappEnabled 
-                          ? "bg-green-500 text-white hover:bg-green-600" 
-                          : "bg-gray-200 text-gray-500 dark:bg-slate-800 dark:text-slate-400 hover:bg-gray-300 dark:hover:bg-slate-700"
-                      }`}
+                      className={`p-3 rounded-xl shadow-lg transition-colors flex items-center justify-center min-w-[50px] hover:scale-105 ${formData.whatsappEnabled
+                        ? "bg-green-500 text-white hover:bg-green-600"
+                        : "bg-gray-200 text-gray-500 dark:bg-slate-800 dark:text-slate-400 hover:bg-gray-300 dark:hover:bg-slate-700"
+                        }`}
                       title={formData.whatsappEnabled ? "WhatsApp Enabled" : "WhatsApp Disabled"}
                     >
                       <WhatsAppIcon className="w-5 h-5" />
@@ -410,11 +423,10 @@ export default function PassengerDashboard() {
                     {profile?.phone && (
                       <button
                         onClick={toggleWhatsAppPreference}
-                        className={`p-3 rounded-xl shadow-lg transition-colors flex items-center justify-center min-w-[50px] hover:scale-105 ${
-                          (profile?.whatsappEnabled ?? true) 
-                            ? "bg-green-500 text-white hover:bg-green-600" 
-                            : "bg-gray-200 text-gray-500 dark:bg-slate-800 dark:text-slate-400 hover:bg-gray-300 dark:hover:bg-slate-700"
-                        }`}
+                        className={`p-3 rounded-xl shadow-lg transition-colors flex items-center justify-center min-w-[50px] hover:scale-105 ${(profile?.whatsappEnabled ?? true)
+                          ? "bg-green-500 text-white hover:bg-green-600"
+                          : "bg-gray-200 text-gray-500 dark:bg-slate-800 dark:text-slate-400 hover:bg-gray-300 dark:hover:bg-slate-700"
+                          }`}
                         title={(profile?.whatsappEnabled ?? true) ? "WhatsApp Enabled - Click to Disable" : "WhatsApp Disabled - Click to Enable"}
                       >
                         <WhatsAppIcon className="w-5 h-5" />
