@@ -13,6 +13,7 @@ export function Navbar() {
   const { unreadCount } = useNotifications();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
@@ -52,7 +53,8 @@ export function Navbar() {
   const isLandingPage = pathname === "/";
 
   return (
-    <nav className={`w-full flex items-center justify-between py-3 px-2.5 md:p-4 z-[100] ${isLandingPage ? 'absolute top-0 left-0 right-0' : 'sticky top-0 bg-background/80 backdrop-blur-md border-b dark:border-white/10 border-black/10'}`}>
+    <>
+      <nav className={`w-full flex items-center justify-between py-3 px-2.5 md:p-4 z-[100] ${isLandingPage ? 'absolute top-0 left-0 right-0' : 'sticky top-0 bg-background/80 backdrop-blur-md border-b dark:border-white/10 border-black/10'}`}>
       {/* Left: Home */}
       <div>
         {!isLandingPage ? (
@@ -149,7 +151,7 @@ export function Navbar() {
                   <div className="h-[1px] dark:bg-white/10 bg-black/5 mx-2 my-1"></div>
                   <button
                     onClick={() => {
-                      signOut();
+                      setShowSignOutModal(true);
                       setDropdownOpen(false);
                     }}
                     className="flex items-center gap-3 w-full px-2 py-1.5 md:px-4 md:py-2 text-xs md:text-sm text-left dark:text-gray-200 text-gray-700 hover:bg-red-500/20 rounded-lg transition-colors group"
@@ -180,5 +182,39 @@ export function Navbar() {
 
       <NotificationPanel isOpen={isPanelOpen} onClose={() => setIsPanelOpen(false)} />
     </nav>
+
+    {/* Sign Out Confirmation Modal */}
+    {showSignOutModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-6 md:p-8 max-w-sm w-full shadow-2xl text-center">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <LogOut className="w-8 h-8 text-red-500" />
+            </div>
+            <h3 className="text-xl font-bold mb-2 text-slate-900 dark:text-slate-100">Sign Out</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+              Are you sure you want to sign out of your account?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowSignOutModal(false)}
+                className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  await signOut();
+                  router.push("/");
+                  setShowSignOutModal(false);
+                }}
+                className="flex-1 py-3 bg-red-500 text-white font-semibold rounded-xl hover:bg-red-600 transition-colors shadow-lg shadow-red-500/30"
+              >
+                Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

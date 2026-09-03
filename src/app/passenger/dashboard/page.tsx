@@ -5,12 +5,13 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import {
-  User, Phone, Star, Camera, Check, X, LogOut, MessageCircle, MapPin, Car, CarFront
+  User, Phone, Star, Camera, Check, X, LogOut, MessageCircle, MapPin, Car, CarFront, Share2, Crown
 } from "lucide-react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { toast } from "react-hot-toast";
+import { checkUsernameUnique } from "@/lib/userUtils";
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg
@@ -40,6 +41,8 @@ export default function PassengerDashboard() {
     displayImage: profile?.displayImage || "",
     whatsappEnabled: profile?.whatsappEnabled ?? true,
   });
+
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteCode, setDeleteCode] = useState("");
@@ -143,6 +146,18 @@ export default function PassengerDashboard() {
       }
 
       setLoading(true);
+
+      // Check username uniqueness
+      const currentUsername = profile?.username && profile.username !== user?.displayName ? profile.username : (user?.displayName?.split(" ")[0] || "");
+      if (formData.username && formData.username !== currentUsername) {
+        const isUnique = await checkUsernameUnique(formData.username, user.uid);
+        if (!isUnique) {
+          toast.error("Username is already taken. Please choose another one.");
+          setLoading(false);
+          return;
+        }
+      }
+
       const docRef = doc(db, "users", user.uid);
 
       if (formattedPhone.startsWith("0")) {
@@ -261,10 +276,7 @@ export default function PassengerDashboard() {
             <p className="text-[10px] md:text-sm text-foreground/70">Manage your passenger profile and preferences.</p>
           </div>
           <button
-            onClick={() => {
-              signOut();
-              router.push("/");
-            }}
+            onClick={() => setShowSignOutModal(true)}
             className="text-xs flex items-center gap-2 px-2 py-1.5 md:px-4 md:py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors font-medium"
           >
             <LogOut className="w-4 h-4" />
@@ -313,12 +325,32 @@ export default function PassengerDashboard() {
             </div>
 
             {!isEditing ? (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="w-full py-3 bg-brand-primary/10 text-brand-primary font-semibold rounded-xl hover:bg-brand-primary hover:text-white transition-colors"
-              >
-                Edit Profile
-              </button>
+              <div className="w-full flex flex-col gap-3">
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="w-full py-3 bg-brand-primary/10 text-brand-primary font-semibold rounded-xl hover:bg-brand-primary hover:text-white transition-colors"
+                >
+                  Edit Profile
+                </button>
+                <div className="flex gap-2 w-full">
+                  <button
+                    onClick={() => {
+                      const link = `${window.location.origin}/register?ref=${formData.username || getDisplayName()}`;
+                      navigator.clipboard.writeText(link);
+                      toast.success("Referral link copied!");
+                    }}
+                    className="flex-1 py-3 bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white font-semibold rounded-xl transition-colors flex justify-center items-center gap-1 text-sm"
+                  >
+                    <Share2 className="w-4 h-4" /> Share Link
+                  </button>
+                  <Link
+                    href="/vip"
+                    className="flex-1 py-3 bg-gradient-to-r from-amber-400 to-amber-600 text-white hover:opacity-90 font-semibold rounded-xl transition-opacity flex justify-center items-center gap-1 text-sm shadow-md"
+                  >
+                    <Crown className="w-4 h-4" /> Upgrade VIP
+                  </Link>
+                </div>
+              </div>
             ) : (
               <div className="flex gap-3 w-full">
                 <button
@@ -503,6 +535,38 @@ export default function PassengerDashboard() {
                 className="flex-1 py-3 bg-red-500 text-white font-semibold rounded-xl hover:bg-red-600 transition-colors disabled:opacity-50 disabled:hover:bg-red-500 shadow-sm"
               >
                 {isDeleting ? "Deleting..." : "Confirm Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sign Out Confirmation Modal */}
+      {showSignOutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-6 md:p-8 max-w-sm w-full shadow-2xl text-center">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <LogOut className="w-8 h-8 text-brand-accent" />
+            </div>
+            <h3 className="text-xl font-bold mb-2 text-slate-900 dark:text-slate-100">Sign Out</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+              Are you sure you want to sign out of your account?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowSignOutModal(false)}
+                className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={async () => {
+                  await signOut();
+                  router.push("/");
+                }}
+                className="flex-1 py-3 bg-brand-accent text-white font-semibold rounded-xl hover:bg-red-600 transition-colors shadow-lg shadow-brand-accent/30"
+              >
+                Sign Out
               </button>
             </div>
           </div>

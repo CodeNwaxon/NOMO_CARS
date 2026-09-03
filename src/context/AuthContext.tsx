@@ -21,6 +21,12 @@ interface UserProfile {
   displayImage?: string;
   rating?: number;
   whatsappEnabled?: boolean;
+  points?: number;
+  vipStars?: number;
+  vipExpiry?: string;
+  ticketExpiry?: string;
+  lastTicketPrice?: number;
+  lastTicketDays?: number;
 }
 
 interface AuthContextType {
