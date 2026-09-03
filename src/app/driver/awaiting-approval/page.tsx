@@ -12,7 +12,7 @@ export default function AwaitingApproval() {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push("/driver");
+      router.push("/");
     } else if (!loading && profile?.isApproved) {
       router.push("/driver/dashboard");
     }

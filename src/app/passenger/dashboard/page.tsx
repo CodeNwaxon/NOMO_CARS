@@ -265,11 +265,11 @@ export default function PassengerDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background pt-6 pb-18 px-4 md:p-12 relative overflow-hidden">
+    <div className="min-h-screen bg-background pt-6 pb-18 px-2 md:p-12 relative overflow-hidden">
       {/* Background decorations */}
       <div className="absolute top-[-10%] right-[-10%] w-[40rem] h-[40rem] bg-brand-primary/5 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div className="max-w-4xl mx-auto z-10 relative">
+      <div className="max-w-5xl mx-auto z-10 relative">
         <div className="px-3 md:px-0 flex justify-between items-start md:items-center mb-10 gap-2 md:gap-4">
           <div>
             <h1 className="md:text-4xl text-xl font-bold md:mb-2 mb-0">My Dashboard</h1>
@@ -277,7 +277,7 @@ export default function PassengerDashboard() {
           </div>
           <button
             onClick={() => setShowSignOutModal(true)}
-            className="text-xs flex items-center gap-2 px-2 py-1.5 md:px-4 md:py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors font-medium"
+            className="text-xs flex items-center gap-2 px-2 py-1.5 md:2 md:py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors font-medium"
           >
             <LogOut className="w-4 h-4" />
             <span>Sign Out</span>
@@ -286,7 +286,7 @@ export default function PassengerDashboard() {
 
         <div className="px-4 md:px-0 grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Profile Card */}
-          <div className="glass-panel rounded-xl md:rounded-3xl p-8 lg:col-span-1 flex flex-col items-center text-center">
+          <div className="glass-panel rounded-xl md:rounded-3xl p-4 lg:col-span-1 flex flex-col items-center text-center">
             <div className="relative mb-6">
               <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-brand-primary/20 bg-card-border shadow-xl">
                 {imagePreview || (isEditing ? formData.displayImage : profile?.displayImage) || user.photoURL ? (
@@ -383,7 +383,7 @@ export default function PassengerDashboard() {
           </div>
 
           {/* Details Section */}
-          <div className="lg:col-span-2 glass-panel rounded-xl md:rounded-3xl p-8 flex flex-col justify-center">
+          <div className="lg:col-span-2 glass-panel rounded-xl md:rounded-3xl p-4 flex flex-col justify-center">
             <h3 className="text-xl font-bold mb-6 border-b border-card-border pb-4">Personal Information</h3>
 
             <div className="space-y-6">
@@ -472,7 +472,7 @@ export default function PassengerDashboard() {
         </div>
 
         {/* Action Buttons */}
-        <div className="mt-10 flex flex-row items-center gap-2 md:gap-4 justify-center w-full">
+        <div className="px-2 mt-10 flex flex-row items-center gap-2 md:gap-4 justify-center w-full">
           {profile?.role !== "driver" && (
             <Link
               href="/driver/register?from=dashboard"

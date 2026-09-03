@@ -16,7 +16,7 @@ export default function DriverDashboard() {
   useEffect(() => {
     if (!loading) {
       if (!user) {
-        router.push("/driver");
+        router.push("/");
       } else if (profile?.role !== "driver") {
         router.push("/driver/register");
       } else if (!profile?.isApproved) {
