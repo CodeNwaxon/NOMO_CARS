@@ -475,7 +475,7 @@ export default function PassengerDashboard() {
         <div className="mt-10 flex flex-row items-center gap-2 md:gap-4 justify-center w-full">
           {profile?.role !== "driver" && (
             <Link
-              href="/driver/register"
+              href="/driver/register?from=dashboard"
               className="flex-1 sm:flex-none sm:w-auto px-2 py-3 md:px-8 md:py-4 bg-brand-primary text-white text-xs md:text-base font-bold rounded-md md:rounded-xl shadow-lg hover:bg-brand-primary/90 transition-all flex items-center justify-center gap-1 md:gap-2 hover:scale-105 whitespace-nowrap"
             >
               <CarFront className="w-3.5 h-3.5 md:w-5 md:h-5" />

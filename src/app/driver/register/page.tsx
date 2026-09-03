@@ -396,7 +396,13 @@ export default function DriverRegistration() {
 
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={() => {
+              if (typeof window !== 'undefined' && window.location.search.includes('from=dashboard')) {
+                router.push('/passenger/dashboard');
+              } else {
+                router.push('/');
+              }
+            }}
             className="w-full py-3 bg-transparent text-foreground/70 hover:text-foreground font-medium text-sm md:text-base transition-colors flex justify-center items-center"
           >
             Cancel

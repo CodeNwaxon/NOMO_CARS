@@ -33,7 +33,7 @@ export default function DriverPage() {
   }
 
   return (
-    <div className="-mt-8 md:mt-0 min-h-screen flex items-center justify-center p-4 md:p-6 relative overflow-hidden bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1494976388531-d1058494cdd8?q=80&w=2070&auto=format&fit=crop')" }}>
+    <div className="min-h-[100dvh] flex items-center justify-center p-4 md:p-6 relative overflow-hidden bg-cover bg-[80%_center] md:bg-center bg-no-repeat bg-fixed" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1494976388531-d1058494cdd8?q=80&w=2070&auto=format&fit=crop')" }}>
       {/* Dynamic overlay for dark/light mode */}
       <div className="absolute inset-0 dark:bg-black/80 bg-white/90 z-0 transition-colors duration-300"></div>
 
