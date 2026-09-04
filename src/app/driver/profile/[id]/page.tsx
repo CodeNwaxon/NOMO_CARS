@@ -2,18 +2,25 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc, collection, query, where, getDocs, setDoc, deleteDoc, updateDoc, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Loader2, ArrowLeft, Star, MapPin, Car, Phone } from "lucide-react";
+import { Loader2, ArrowLeft, Star, MapPin, Car, Phone, ShieldOff, Heart } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "react-hot-toast";
+import ChatButton from "@/components/ChatButton";
+import { getVIPBadge } from "@/lib/constants";
 
 export default function DriverProfilePage() {
   const params = useParams();
   const driverId = params.id as string;
   const router = useRouter();
+  const { user } = useAuth();
 
   const [driver, setDriver] = useState<any>(null);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
 
   useEffect(() => {
     const fetchDriverAndVehicles = async () => {
@@ -29,6 +36,13 @@ export default function DriverProfilePage() {
           const vData: any[] = [];
           vSnap.forEach(d => vData.push({ id: d.id, ...d.data() }));
           setVehicles(vData);
+
+          // Check if favorited by current user
+          if (user) {
+            const favRef = doc(db, "users", user.uid, "favorites", driverId);
+            const favSnap = await getDoc(favRef);
+            setIsFavorited(favSnap.exists());
+          }
         }
       } catch (err) {
         console.error("Error fetching driver profile:", err);
@@ -70,6 +84,41 @@ export default function DriverProfilePage() {
     ));
   };
 
+  const hasActiveTicket = driver.ticketExpiry ? new Date(driver.ticketExpiry) > new Date() : false;
+  const isOwnProfile = user?.uid === driverId;
+
+  const toggleFavorite = async () => {
+    if (!user) {
+      toast.error("Please log in to add favorites");
+      return;
+    }
+    
+    try {
+      setIsTogglingFavorite(true);
+      const favRef = doc(db, "users", user.uid, "favorites", driverId);
+      const driverRef = doc(db, "users", driverId);
+
+      if (isFavorited) {
+        await deleteDoc(favRef);
+        await updateDoc(driverRef, { favoriteCount: increment(-1) });
+        setDriver({ ...driver, favoriteCount: Math.max(0, (driver.favoriteCount || 0) - 1) });
+        setIsFavorited(false);
+        toast.success("Removed from favorites");
+      } else {
+        await setDoc(favRef, { favoritedAt: new Date().toISOString() });
+        await updateDoc(driverRef, { favoriteCount: increment(1) });
+        setDriver({ ...driver, favoriteCount: (driver.favoriteCount || 0) + 1 });
+        setIsFavorited(true);
+        toast.success("Added to favorites");
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      toast.error("Failed to update favorites");
+    } finally {
+      setIsTogglingFavorite(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background pt-6 pb-24 px-4 md:p-12 relative overflow-hidden">
       <div className="absolute top-[-10%] right-[-10%] w-[40rem] h-[40rem] bg-brand-primary/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -86,14 +135,21 @@ export default function DriverProfilePage() {
         </div>
 
         <div className="glass-panel rounded-3xl p-8 mb-8 flex flex-col md:flex-row gap-8 items-center md:items-start text-center md:text-left">
-          <div className="w-32 h-32 md:w-48 md:h-48 rounded-full overflow-hidden border-4 border-brand-primary/20 bg-card-border shadow-xl flex-shrink-0">
-            {driver.displayImage ? (
-              <img src={driver.displayImage} alt={driver.username} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-brand-primary/10 text-brand-primary font-bold text-5xl uppercase">
-                {driver.username?.charAt(0) || driver.firstName?.charAt(0) || "D"}
+          <div className="relative w-32 h-32 md:w-48 md:h-48 flex-shrink-0">
+            {getVIPBadge(driver.vipStars) && (
+              <div className={`absolute -top-2 -right-2 z-10 px-2 py-1 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-wider shadow-lg ${getVIPBadge(driver.vipStars)?.colorClass}`}>
+                {getVIPBadge(driver.vipStars)?.tag}
               </div>
             )}
+            <div className="w-full h-full rounded-full overflow-hidden border-4 border-brand-primary/20 bg-card-border shadow-xl">
+              {driver.displayImage ? (
+                <img src={driver.displayImage} alt={driver.username} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-brand-primary/10 text-brand-primary font-bold text-5xl uppercase">
+                  {driver.username?.charAt(0) || driver.firstName?.charAt(0) || "D"}
+                </div>
+              )}
+            </div>
           </div>
           
           <div className="flex-1">
@@ -114,22 +170,46 @@ export default function DriverProfilePage() {
               </div>
             </div>
             
-            <a 
-              href={`tel:${driver.phone}`}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-brand-primary text-white font-bold rounded-xl shadow-lg hover:bg-brand-primary/90 transition-all hover:scale-105"
-            >
-              <Phone className="w-5 h-5" /> Contact Driver
-            </a>
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mt-4">
+              {hasActiveTicket ? (
+                <a 
+                  href={`tel:${driver.phone}`}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-brand-primary text-white font-bold rounded-xl shadow-lg hover:bg-brand-primary/90 transition-all hover:scale-105"
+                >
+                  <Phone className="w-5 h-5" /> Contact Driver
+                </a>
+              ) : (
+                <div className="inline-flex items-center gap-2 px-5 py-3 bg-gray-100 dark:bg-gray-800/50 text-foreground/50 font-medium rounded-xl border border-gray-200 dark:border-gray-700">
+                  <ShieldOff className="w-4 h-4" />
+                  <span className="text-sm">Contact info unavailable</span>
+                </div>
+              )}
+
+              {user && !isOwnProfile && (
+                <button
+                  onClick={toggleFavorite}
+                  disabled={isTogglingFavorite}
+                  className={`inline-flex items-center gap-2 px-4 py-3 rounded-xl border transition-all ${
+                    isFavorited 
+                      ? "bg-rose-50 border-rose-200 text-rose-500 dark:bg-rose-500/10 dark:border-rose-500/20" 
+                      : "bg-card-bg border-card-border hover:bg-card-border"
+                  }`}
+                >
+                  <Heart className={`w-5 h-5 ${isFavorited ? "fill-current" : ""}`} />
+                  <span className="font-bold">{driver.favoriteCount || 0}</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
         <h3 className="text-xl md:text-2xl font-bold mb-6 flex items-center gap-2">
-          <Car className="text-brand-secondary" /> Driver's Vehicles
+          <Car className="text-brand-secondary" /> Driver&apos;s Vehicles
         </h3>
         
         {vehicles.length === 0 ? (
           <div className="glass-panel p-8 text-center rounded-2xl">
-            <p className="text-foreground/60">This driver doesn't have any approved vehicles yet.</p>
+            <p className="text-foreground/60">This driver doesn&apos;t have any approved vehicles yet.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -167,6 +247,17 @@ export default function DriverProfilePage() {
           </div>
         )}
       </div>
+
+      {/* Chat Button - only show for logged-in users who are not the driver */}
+      {user && !isOwnProfile && (
+        <ChatButton 
+          driverId={driver.id} 
+          driverName={driver.firstName || driver.username || "Driver"} 
+          driverImage={driver.displayImage || ""} 
+          driverTicketExpiry={driver.ticketExpiry}
+          driverVipStars={driver.vipStars}
+        />
+      )}
     </div>
   );
 }

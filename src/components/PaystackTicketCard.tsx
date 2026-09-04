@@ -50,7 +50,7 @@ export default function PaystackTicketCard({ plan, user, profile, onSuccess, onC
         <div className="space-y-3 mb-4">
           <div className="flex items-start gap-2">
             <Check className={`w-4 h-4 mt-1 flex-shrink-0 ${plan.isPremium ? 'text-amber-500' : 'text-brand-primary'}`} />
-            <span className="text-sm text-foreground/80">Full app access for {plan.days} {plan.days === 1 ? 'day' : 'days'}</span>
+            <span className="text-sm text-foreground/80">Full work access for {plan.days} {plan.days === 1 ? 'day' : 'days'}</span>
           </div>
           <div className="flex items-start gap-2">
             <Check className={`w-4 h-4 mt-1 flex-shrink-0 ${plan.isPremium ? 'text-amber-500' : 'text-brand-primary'}`} />
@@ -66,7 +66,9 @@ export default function PaystackTicketCard({ plan, user, profile, onSuccess, onC
           className={`w-full py-3 rounded-xl font-bold text-sm flex justify-center items-center gap-2 transition-all shadow-lg ${
             plan.isPremium
               ? "bg-gradient-to-r from-amber-400 to-amber-600 text-black hover:opacity-90 shadow-amber-500/20"
-              : "bg-brand-primary text-white hover:bg-brand-primary/90 shadow-brand-primary/20"
+              : plan.days === 14
+                ? "bg-gradient-to-r from-purple-400 to-purple-600 text-white hover:opacity-90 shadow-purple-500/20"
+                : "bg-brand-primary text-white hover:bg-brand-primary/90 shadow-brand-primary/20"
           } disabled:opacity-50 disabled:cursor-not-allowed`}
         >
           {isProcessing === plan.days ? (

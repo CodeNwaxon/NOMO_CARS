@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Loader2, ArrowLeft, Car, Search, PlusCircle, Briefcase, User, Star } from "lucide-react";
+import { getVIPBadge } from "@/lib/constants";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 
@@ -48,7 +49,10 @@ export default function CategoryVehicles() {
         snapshot.forEach(doc => {
           const data = doc.data();
           if (data.username && data.username.toLowerCase().includes(queryLower)) {
-            drivers.push({ id: doc.id, ...data });
+            // Only include drivers with an active ticket
+            if (data.ticketExpiry && new Date(data.ticketExpiry) > new Date()) {
+              drivers.push({ id: doc.id, ...data });
+            }
           }
         });
         
@@ -91,11 +95,19 @@ export default function CategoryVehicles() {
           }
         }));
 
-        const vehiclesWithDrivers = fetchedVehicles.map(v => ({
-          ...v,
-          driverCity: driversMap[v.driverId]?.operatingCity || "",
-          driverState: driversMap[v.driverId]?.operatingState || "",
-        }));
+        const vehiclesWithDrivers = fetchedVehicles
+          .filter(v => {
+            // Only show vehicles from drivers with an active ticket
+            const driverData = driversMap[v.driverId];
+            if (!driverData?.ticketExpiry) return false;
+            return new Date(driverData.ticketExpiry) > new Date();
+          })
+          .map(v => ({
+            ...v,
+            driverCity: driversMap[v.driverId]?.operatingCity || "",
+            driverState: driversMap[v.driverId]?.operatingState || "",
+            driverVipStars: driversMap[v.driverId]?.vipStars || 0,
+          }));
 
         setVehicles(vehiclesWithDrivers);
       } catch (error) {
@@ -207,14 +219,21 @@ export default function CategoryVehicles() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                     {driverSearchResults.map(driver => (
                       <div key={driver.id} className="glass-panel p-6 rounded-2xl flex items-center gap-4 hover:shadow-lg transition-all border border-brand-primary/20">
-                        <div className="w-16 h-16 rounded-full overflow-hidden bg-card-border flex-shrink-0">
-                          {driver.displayImage ? (
-                            <img src={driver.displayImage} alt={driver.username} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-brand-primary/10 text-brand-primary font-bold text-xl uppercase">
-                              {driver.username?.charAt(0) || "D"}
+                        <div className="relative w-16 h-16 flex-shrink-0">
+                          {getVIPBadge(driver.vipStars) && (
+                            <div className={`absolute -top-1 -right-1 z-10 px-1 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider shadow-lg ${getVIPBadge(driver.vipStars)?.colorClass}`}>
+                              {getVIPBadge(driver.vipStars)?.tag}
                             </div>
                           )}
+                          <div className="w-full h-full rounded-full overflow-hidden bg-card-border">
+                            {driver.displayImage ? (
+                              <img src={driver.displayImage} alt={driver.username} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-brand-primary/10 text-brand-primary font-bold text-xl uppercase">
+                                {driver.username?.charAt(0) || "D"}
+                              </div>
+                            )}
+                          </div>
                         </div>
                         <div className="flex-1 min-w-0">
                           <h3 className="font-bold text-lg truncate flex items-center gap-2">
@@ -282,6 +301,11 @@ export default function CategoryVehicles() {
                             <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-background/80 backdrop-blur-md px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold shadow-sm">
                               {v.details.seats} Seats
                             </div>
+                            {getVIPBadge(v.driverVipStars) && (
+                              <div className={`absolute top-2 left-2 md:top-4 md:left-4 z-10 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-md ${getVIPBadge(v.driverVipStars)?.colorClass}`}>
+                                {getVIPBadge(v.driverVipStars)?.tag} Driver
+                              </div>
+                            )}
                           </div>
 
                           <div className="p-3 md:p-6">

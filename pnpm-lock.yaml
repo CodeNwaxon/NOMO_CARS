@@ -23,6 +23,9 @@ importers:
       firebase:
         specifier: ^12.18.0
         version: 12.18.0
+      google-translate-api-x:
+        specifier: ^10.7.3
+        version: 10.7.3
       lucide-react:
         specifier: ^1.38.0
         version: 1.38.0(react@19.2.8)
@@ -1670,6 +1673,10 @@ packages:
     resolution: {integrity: sha512-U7veizMqxyKlM58+Z5j2ngJBH/r9siDmxpvNxSw0PylF6WQvrASJEZrxh1hidRBJc2jqoBVSyOban5u8m+6Rxg==}
     peerDependencies:
       csstype: ^3.0.10
+
+  google-translate-api-x@10.7.3:
+    resolution: {integrity: sha512-UCLhGMyzUiQQJuUjw6KM4scl4WJjMq5kYbq3eqLHB0KB96XBQ+VV7L/NUpJ9eMfVxXswXxA6xWhAX1h1OdDLZg==}
+    engines: {node: '>=21.0.0'}
 
   gopd@1.2.0:
     resolution: {integrity: sha512-ZUKRh6/kUFoAiTAtTYPZJ3hw9wNxx+BIBOijnlG9PnrJsCcSjs1wyyD6vJpaYtgnzDrKYRSqf3OO6Rfa93xsRg==}
@@ -4358,6 +4365,8 @@ snapshots:
   goober@2.1.19(csstype@3.2.3):
     dependencies:
       csstype: 3.2.3
+
+  google-translate-api-x@10.7.3: {}
 
   gopd@1.2.0: {}
 

@@ -12,6 +12,8 @@ import { db } from "@/lib/firebase";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { toast } from "react-hot-toast";
 import { checkUsernameUnique } from "@/lib/userUtils";
+import ShareOverlay from "@/components/ShareOverlay";
+import { websiteLink, getVIPBadge } from "@/lib/constants";
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg
@@ -31,6 +33,7 @@ export default function PassengerDashboard() {
   const router = useRouter();
 
   const [isEditing, setIsEditing] = useState(false);
+  const [showShareOverlay, setShowShareOverlay] = useState(false);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -264,6 +267,8 @@ export default function PassengerDashboard() {
     ));
   };
 
+  const vipBadge = getVIPBadge(profile?.vipStars || 0);
+
   return (
     <div className="min-h-screen bg-background pt-6 pb-18 px-2 md:p-12 relative overflow-hidden">
       {/* Background decorations */}
@@ -288,6 +293,11 @@ export default function PassengerDashboard() {
           {/* Profile Card */}
           <div className="glass-panel rounded-xl md:rounded-3xl p-4 lg:col-span-1 flex flex-col items-center text-center">
             <div className="relative mb-6">
+              {vipBadge && (
+                <div className={`absolute -top-2 -right-2 z-10 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg ${vipBadge.colorClass}`}>
+                  {vipBadge.tag}
+                </div>
+              )}
               <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-brand-primary/20 bg-card-border shadow-xl">
                 {imagePreview || (isEditing ? formData.displayImage : profile?.displayImage) || user.photoURL ? (
                   <img src={imagePreview || (isEditing ? formData.displayImage : profile?.displayImage) || user.photoURL || ""} alt="Profile" className="w-full h-full object-cover" />
@@ -334,11 +344,7 @@ export default function PassengerDashboard() {
                 </button>
                 <div className="flex gap-2 w-full">
                   <button
-                    onClick={() => {
-                      const link = `${window.location.origin}/register?ref=${formData.username || getDisplayName()}`;
-                      navigator.clipboard.writeText(link);
-                      toast.success("Referral link copied!");
-                    }}
+                    onClick={() => setShowShareOverlay(true)}
                     className="flex-1 py-2 bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white font-semibold rounded-xl transition-colors flex justify-center items-center gap-1 text-sm"
                   >
                     <Share2 className="w-4 h-4" /> Share Link
@@ -571,6 +577,14 @@ export default function PassengerDashboard() {
             </div>
           </div>
         </div>
+      )}
+      {/* Share Overlay */}
+      {showShareOverlay && user && profile && (
+        <ShareOverlay
+          onClose={() => setShowShareOverlay(false)}
+          referralLink={`${websiteLink}/?ref=${user.uid}`}
+          points={profile.points || 0}
+        />
       )}
     </div>
   );

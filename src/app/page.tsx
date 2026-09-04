@@ -3,10 +3,18 @@
 import Link from "next/link";
 import { CarFront, Users } from "lucide-react";
 import { Footer } from "@/components/Footer";
+import { useSearchParams } from "next/navigation";
+import { useEffect, Suspense } from "react";
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams();
+  const refCode = searchParams.get("ref");
 
-
+  useEffect(() => {
+    if (refCode) {
+      localStorage.setItem("referralCode", refCode);
+    }
+  }, [refCode]);
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-start relative overflow-hidden bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1494976388531-d1058494cdd8?q=80&w=2070&auto=format&fit=crop')" }}>
@@ -66,5 +74,13 @@ export default function Home() {
 
       <Footer />
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center">Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

@@ -132,7 +132,7 @@ export default function TicketPage() {
           </div>
         )}
 
-        <div className="px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="px-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {TICKET_PLANS.map((plan) => (
             <PaystackTicketCard
               key={plan.days}

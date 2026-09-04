@@ -1,7 +1,7 @@
 "use server";
 
 import { sendEmail } from "@/lib/email";
-
+import { websiteLink } from "@/lib/constants";
 export async function verifyAndNotifyPayment(
   reference: string, 
   userEmail: string, 
@@ -31,7 +31,6 @@ export async function verifyAndNotifyPayment(
     }
     
     // Construct email content
-    const websiteLink = "https://nomocars.vercel.app";
     
     const htmlContent = `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eee; border-radius: 10px; overflow: hidden;">

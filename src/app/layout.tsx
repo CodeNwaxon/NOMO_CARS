@@ -3,10 +3,12 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 import { NotificationProvider } from "@/context/NotificationContext";
+import { ChatProvider } from "@/context/ChatContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Navbar } from "@/components/Navbar";
 import { Toaster } from "react-hot-toast";
+import ReferralHandler from "@/components/ReferralHandler";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,12 +33,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <body className="min-h-screen flex flex-col">
+        <ReferralHandler />
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <AuthProvider>
             <NotificationProvider>
-              <Toaster position="top-center" />
-              <Navbar />
-              {children}
+              <ChatProvider>
+                <Toaster position="top-center" />
+                <Navbar />
+                {children}
+              </ChatProvider>
             </NotificationProvider>
           </AuthProvider>
           <ThemeToggle />

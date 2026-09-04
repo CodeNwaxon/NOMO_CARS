@@ -3,14 +3,17 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { LogOut, User as UserIcon, Car, Plus, Loader2 } from "lucide-react";
+import { LogOut, User as UserIcon, Car, MessageCircle, Loader2 } from "lucide-react";
+import { useChat } from "@/context/ChatContext";
 import ProfileTab from "./ProfileTab";
 import VehiclesTab from "./VehiclesTab";
+import MessagesTab from "./MessagesTab";
 
 export default function DriverDashboard() {
   const { user, profile, loading, signOut } = useAuth();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"profile" | "vehicles">("profile");
+  const { totalUnread } = useChat();
+  const [activeTab, setActiveTab] = useState<"profile" | "vehicles" | "messages">("profile");
   const [showSignOutModal, setShowSignOutModal] = useState(false);
 
   useEffect(() => {
@@ -50,10 +53,18 @@ export default function DriverDashboard() {
             <p className="text-xs md:text-sm text-foreground/60 mt-1">Welcome, {profile.firstName}</p>
           </div>
           <button
-            onClick={() => setShowSignOutModal(true)}
-            className="md:hidden flex items-center gap-1.5 p-2 rounded-lg text-brand-accent hover:bg-brand-accent/10 transition-colors text-sm font-medium"
+            onClick={() => setActiveTab("messages")}
+            className="md:hidden relative flex items-center gap-1.5 p-2 rounded-lg text-brand-primary hover:bg-brand-primary/10 transition-colors"
           >
-            <LogOut className="w-4 h-4" /> Sign Out
+            <span className="font-bold text-sm">Chat</span>
+            <div className="relative">
+              <MessageCircle className="w-5 h-5" />
+              {totalUnread > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center ring-2 ring-white dark:ring-slate-900">
+                  {totalUnread > 9 ? "9+" : totalUnread}
+                </span>
+              )}
+            </div>
           </button>
         </div>
 
@@ -80,6 +91,22 @@ export default function DriverDashboard() {
             <Car className="w-4 h-4" />
             <span className="font-medium">My Vehicles</span>
           </button>
+          <button
+            onClick={() => setActiveTab("messages")}
+            className={`hidden md:flex flex-1 md:flex-initial md:w-full items-center justify-center md:justify-start gap-2 px-3 py-2 rounded-lg transition-all whitespace-nowrap text-sm relative ${
+              activeTab === "messages"
+                ? "bg-indigo-500 text-white shadow-md shadow-indigo-500/20"
+                : "bg-card-bg md:bg-transparent hover:bg-card-bg/80 text-foreground/80 hover:text-foreground border border-card-border md:border-none"
+            }`}
+          >
+            <MessageCircle className="w-4 h-4" />
+            <span className="font-medium">Messages</span>
+            {totalUnread > 0 && (
+              <span className="ml-auto md:ml-1 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                {totalUnread > 9 ? "9+" : totalUnread}
+              </span>
+            )}
+          </button>
         </nav>
 
         <div className="hidden md:block mt-auto pt-6 border-t border-card-border">
@@ -99,6 +126,7 @@ export default function DriverDashboard() {
         
         {activeTab === "profile" && <ProfileTab profile={profile} userId={user.uid} />}
         {activeTab === "vehicles" && <VehiclesTab userId={user.uid} />}
+        {activeTab === "messages" && <MessagesTab userId={user.uid} />}
       </main>
 
       {/* Sign Out Confirmation Modal */}

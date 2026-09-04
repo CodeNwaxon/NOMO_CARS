@@ -59,7 +59,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const docRef = doc(db, "users", uid);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        setProfile(docSnap.data() as UserProfile);
+        const data = docSnap.data() as UserProfile;
+        
+        // Handle VIP expiry logic
+        if (data.vipExpiry && new Date(data.vipExpiry) < new Date() && (data.vipStars || 0) > 0) {
+          // Reset stars and points in DB if expired
+          await setDoc(docRef, { vipStars: 0, points: 0 }, { merge: true });
+          data.vipStars = 0;
+          data.points = 0;
+        }
+
+        setProfile(data);
       } else {
         setProfile(null);
       }
@@ -93,12 +103,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const docSnap = await getDoc(docRef);
       
       if (!docSnap.exists()) {
+        // Check for referral code
+        const referralCode = localStorage.getItem("referralCode");
+
         const newProfile: UserProfile = {
           role: "passenger", // Default role, they can upgrade to driver later
           username: result.user.displayName || "User",
           displayImage: result.user.photoURL || "",
           firstName: result.user.displayName || "",
           rating: 5.0,
+          ...(referralCode && referralCode !== result.user.uid ? { referredBy: referralCode } : {})
         };
         await setDoc(docRef, newProfile);
         setProfile(newProfile);
