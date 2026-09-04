@@ -13,7 +13,7 @@ import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { toast } from "react-hot-toast";
 import { checkUsernameUnique } from "@/lib/userUtils";
 import ShareOverlay from "@/components/ShareOverlay";
-import { websiteLink, getVIPBadge } from "@/lib/constants";
+import { websiteLink, getVIPBadge, startTicketCollection, freeTicketPlanDays, ticketCollectionStartDate } from "@/lib/constants";
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg
@@ -232,49 +232,63 @@ export default function ProfileTab({ profile, userId }: { profile: any; userId: 
   };
 
   const getTicketButtonInfo = () => {
-    if (!profile?.ticketExpiry) {
-      return {
-        text: "Purchase Ticket",
-        className: "bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500 hover:text-white"
-      };
-    }
-
-    const expiryDate = new Date(profile.ticketExpiry);
     const now = new Date();
-    const msLeft = expiryDate.getTime() - now.getTime();
+    let hasOwnTicket = false;
+    let ownTicketMsLeft = 0;
 
-    if (msLeft <= 0) {
+    if (profile?.ticketExpiry) {
+      const expiryDate = new Date(profile.ticketExpiry);
+      ownTicketMsLeft = expiryDate.getTime() - now.getTime();
+      if (ownTicketMsLeft > 0) hasOwnTicket = true;
+    }
+
+    if (!startTicketCollection) {
       return {
-        text: "Purchase Ticket",
-        className: "bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500 hover:text-white"
+        text: "Collection Paused",
+        className: "bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500 hover:text-white"
       };
     }
 
-    const hoursLeft = Math.floor(msLeft / (1000 * 60 * 60));
-    const daysLeft = Math.floor(hoursLeft / 24);
+    // Check global free plan
+    const startDate = new Date(ticketCollectionStartDate);
+    const freePeriodEnd = new Date(startDate.getTime() + freeTicketPlanDays * 24 * 60 * 60 * 1000);
+    const globalFreeMsLeft = freePeriodEnd.getTime() - now.getTime();
+    const hasGlobalFree = globalFreeMsLeft > 0;
 
-    let timeLeftStr = "";
-    if (daysLeft > 0) {
-      timeLeftStr = `${daysLeft} days`;
-    } else {
-      timeLeftStr = `${hoursLeft} hrs`;
-    }
+    // Use whichever gives them more time (their own ticket or global free plan)
+    if (hasOwnTicket && (!hasGlobalFree || ownTicketMsLeft >= globalFreeMsLeft)) {
+      const hoursLeft = Math.floor(ownTicketMsLeft / (1000 * 60 * 60));
+      const daysLeft = Math.floor(hoursLeft / 24);
+      const timeLeftStr = daysLeft > 0 ? `${daysLeft} days` : `${hoursLeft} hrs`;
+      const pricePrefix = profile?.lastTicketPrice ? `₦${profile.lastTicketPrice} ` : "";
+      
+      const totalMs = (profile?.lastTicketDays || 1) * 24 * 60 * 60 * 1000;
+      const percentageLeft = ownTicketMsLeft / totalMs;
 
-    const pricePrefix = profile.lastTicketPrice ? `₦${profile.lastTicketPrice} ` : "";
-    const totalMs = (profile.lastTicketDays || 1) * 24 * 60 * 60 * 1000;
-    const percentageLeft = msLeft / totalMs;
-
-    if (percentageLeft <= 0.20) {
       return {
         text: `${pricePrefix}{${timeLeftStr}}`,
-        className: "bg-white text-red-700 hover:bg-red-50 border border-red-200"
-      };
-    } else {
-      return {
-        text: `${pricePrefix}{${timeLeftStr}}`,
-        className: "bg-white text-green-700 hover:bg-green-50 border border-green-200"
+        className: percentageLeft <= 0.20 
+          ? "bg-white text-red-700 hover:bg-red-50 border border-red-200" 
+          : "bg-white text-green-700 hover:bg-green-50 border border-green-200"
       };
     }
+
+    if (hasGlobalFree) {
+      const hoursLeft = Math.floor(globalFreeMsLeft / (1000 * 60 * 60));
+      const daysLeft = Math.floor(hoursLeft / 24);
+      const timeLeftStr = daysLeft > 0 ? `${daysLeft} days` : `${hoursLeft} hrs`;
+      
+      return {
+        text: `Free Plan {${timeLeftStr}}`,
+        className: "bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500 hover:text-white"
+      };
+    }
+
+    // No valid ticket and no free plan
+    return {
+      text: "Purchase Ticket",
+      className: "bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500 hover:text-white"
+    };
   };
 
   const ticketInfo = getTicketButtonInfo();

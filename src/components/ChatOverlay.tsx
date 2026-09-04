@@ -9,7 +9,7 @@ import {
   serverTimestamp, Timestamp, where,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { websiteLink, getVIPBadge } from "@/lib/constants";
+import { websiteLink, getVIPBadge, hasValidTicket } from "@/lib/constants";
 
 interface Message {
   id: string;
@@ -87,7 +87,7 @@ export default function ChatOverlay(props: ChatOverlayProps) {
   // Determine if the driver (the one whose profile we're on) has an active ticket
   // If we are the driver, use our own profile ticket expiry, otherwise use the chat partner's
   const driverTicketExpiryValue = isDriver ? profile?.ticketExpiry : chatPartnerTicketExpiry;
-  const driverHasTicket = driverTicketExpiryValue ? new Date(driverTicketExpiryValue) > new Date() : false;
+  const driverHasTicket = hasValidTicket(driverTicketExpiryValue);
 
   // Auto-scroll to bottom
   useEffect(() => {

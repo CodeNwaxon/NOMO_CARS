@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Loader2, ArrowLeft, Car, Search, PlusCircle, Briefcase, User, Star } from "lucide-react";
-import { getVIPBadge } from "@/lib/constants";
+import { VIP_PLANS, getVIPBadge, hasValidTicket } from "@/lib/constants";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 
@@ -50,7 +50,7 @@ export default function CategoryVehicles() {
           const data = doc.data();
           if (data.username && data.username.toLowerCase().includes(queryLower)) {
             // Only include drivers with an active ticket
-            if (data.ticketExpiry && new Date(data.ticketExpiry) > new Date()) {
+            if (hasValidTicket(data.ticketExpiry)) {
               drivers.push({ id: doc.id, ...data });
             }
           }
@@ -99,8 +99,7 @@ export default function CategoryVehicles() {
           .filter(v => {
             // Only show vehicles from drivers with an active ticket
             const driverData = driversMap[v.driverId];
-            if (!driverData?.ticketExpiry) return false;
-            return new Date(driverData.ticketExpiry) > new Date();
+            return hasValidTicket(driverData?.ticketExpiry);
           })
           .map(v => ({
             ...v,

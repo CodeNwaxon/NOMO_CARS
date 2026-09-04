@@ -10,7 +10,7 @@ import { db } from "@/lib/firebase";
 import { toast } from "react-hot-toast";
 import { usePaystackPayment } from "react-paystack";
 import { verifyAndNotifyPayment } from "@/actions/payment";
-
+import { startTicketCollection, freeTicketPlanDays, ticketCollectionStartDate } from "@/lib/constants";
 const TICKET_PLANS = [
   { days: 1, price: 300, name: "1 Day Ticket", color: "from-green-400 to-green-600", bg: "bg-green-50/50 dark:bg-green-900/10", border: "border-green-200 dark:border-green-800" },
   { days: 7, price: 1200, name: "7 Days Ticket", color: "from-blue-400 to-blue-600", bg: "bg-blue-50/50 dark:bg-blue-900/10", border: "border-blue-200 dark:border-blue-800" },
@@ -118,19 +118,67 @@ export default function TicketPage() {
           </div>
         </div>
 
-        {profile?.ticketExpiry && new Date(profile.ticketExpiry) > new Date() && (
-          <div className="mb-8 p-4 md:p-6 bg-green-500/10 border border-green-500/20 rounded-2xl flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-              <Check className="w-6 h-6 text-green-600 dark:text-green-400" />
-            </div>
-            <div>
-              <h3 className="font-bold text-green-800 dark:text-green-300">Active Ticket</h3>
-              <p className="text-sm text-green-700/80 dark:text-green-400/80">
-                Your current ticket expires on {new Date(profile.ticketExpiry).toLocaleDateString()}. Purchasing a new one will overwrite it.
-              </p>
-            </div>
-          </div>
-        )}
+        {(() => {
+          const hasOwnTicket = profile?.ticketExpiry && new Date(profile.ticketExpiry) > new Date();
+          
+          let hasGlobalFree = false;
+          let globalFreeDaysLeft = 0;
+          if (startTicketCollection) {
+            const startDate = new Date(ticketCollectionStartDate);
+            const freePeriodEnd = new Date(startDate.getTime() + freeTicketPlanDays * 24 * 60 * 60 * 1000);
+            const globalFreeMsLeft = freePeriodEnd.getTime() - new Date().getTime();
+            if (globalFreeMsLeft > 0) {
+              hasGlobalFree = true;
+              globalFreeDaysLeft = Math.ceil(globalFreeMsLeft / (1000 * 60 * 60 * 24));
+            }
+          }
+
+          return (
+            <>
+              {!startTicketCollection && (
+                <div className="mb-8 p-4 md:p-6 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                    <Check className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-blue-800 dark:text-blue-300">Ticket Collection Paused</h3>
+                    <p className="text-sm text-blue-700/80 dark:text-blue-400/80">
+                      You do not currently need a ticket to operate on Nomo Cars.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {startTicketCollection && hasGlobalFree && !hasOwnTicket && (
+                <div className="mb-8 p-4 md:p-6 bg-purple-500/10 border border-purple-500/20 rounded-2xl flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                    <Ticket className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-purple-800 dark:text-purple-300">Global Free Plan Active</h3>
+                    <p className="text-sm text-purple-700/80 dark:text-purple-400/80">
+                      You currently have {globalFreeDaysLeft} days left of free access. You can purchase a ticket now to extend your time after the free period ends.
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {hasOwnTicket && (
+                <div className="mb-8 p-4 md:p-6 bg-green-500/10 border border-green-500/20 rounded-2xl flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                    <Check className="w-6 h-6 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-green-800 dark:text-green-300">Active Purchased Ticket</h3>
+                    <p className="text-sm text-green-700/80 dark:text-green-400/80">
+                      Your current ticket expires on {new Date(profile.ticketExpiry!).toLocaleDateString()}. Purchasing a new one will overwrite it.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </>
+          );
+        })()}
 
         <div className="px-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {TICKET_PLANS.map((plan) => (

@@ -6,6 +6,34 @@
  */
 export const websiteLink = "https://nomocars.vercel.app";
 
+// Ticket Collection Policy Variables
+export const startTicketCollection = true;
+export const freeTicketPlanDays = 90;
+export const ticketCollectionStartDate = "2026-09-04T00:00:00Z";
+
+/**
+ * Checks if a driver has a valid ticket or is within the free plan period.
+ * @param driverTicketExpiry The driver's ticket expiry date from their profile.
+ * @returns true if the driver has a valid ticket, or if ticket collection is paused, or if within the free plan days.
+ */
+export function hasValidTicket(driverTicketExpiry?: string | null): boolean {
+  if (!startTicketCollection) return true;
+
+  // Check if they have an active ticket manually purchased
+  if (driverTicketExpiry) {
+    const expiryDate = new Date(driverTicketExpiry);
+    if (expiryDate > new Date()) return true;
+  }
+
+  // Check if we are still within the global free plan days
+  const startDate = new Date(ticketCollectionStartDate);
+  const freePeriodEnd = new Date(startDate.getTime() + freeTicketPlanDays * 24 * 60 * 60 * 1000);
+  
+  if (new Date() < freePeriodEnd) return true;
+
+  return false;
+}
+
 export const VIP_PLANS = [
   {
     stars: 1,
