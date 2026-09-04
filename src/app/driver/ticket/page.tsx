@@ -20,7 +20,7 @@ const TICKET_PLANS = [
 
 import dynamic from 'next/dynamic';
 
-const PaystackTicketCard = dynamic(() => import('@/components/PaystackTicketCard'), { 
+const PaystackTicketCard = dynamic(() => import('@/components/PaystackTicketCard'), {
   ssr: false,
   loading: () => <div className="h-64 rounded-3xl glass-panel animate-pulse bg-brand-primary/5"></div>
 });
@@ -29,7 +29,7 @@ export default function TicketPage() {
   const { user, profile, refreshProfile, loading } = useAuth();
   const { addNotification } = useNotifications();
   const router = useRouter();
-  
+
   const [processingPlan, setProcessingPlan] = useState<number | null>(null);
 
   useEffect(() => {
@@ -52,14 +52,14 @@ export default function TicketPage() {
       const docRef = doc(db, "users", user.uid);
       const expiryDate = new Date();
       expiryDate.setDate(expiryDate.getDate() + plan.days);
-      
+
       await updateDoc(docRef, {
         ticketExpiry: expiryDate.toISOString(),
         lastTicketPrice: plan.price,
         lastTicketDays: plan.days,
       });
       await refreshProfile();
-      
+
       // 2. Add In-App Notification
       addNotification(
         "Ticket Purchased",
@@ -75,7 +75,7 @@ export default function TicketPage() {
         plan.name,
         plan.price
       );
-      
+
       if (!res.success) {
         console.error("Verification warning:", res.error);
       }
@@ -132,12 +132,12 @@ export default function TicketPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="px-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {TICKET_PLANS.map((plan) => (
-            <PaystackTicketCard 
-              key={plan.days} 
-              plan={plan} 
-              user={user} 
+            <PaystackTicketCard
+              key={plan.days}
+              plan={plan}
+              user={user}
               profile={profile}
               isProcessing={processingPlan}
               setProcessing={setProcessingPlan}

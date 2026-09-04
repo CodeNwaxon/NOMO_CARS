@@ -328,7 +328,7 @@ export default function PassengerDashboard() {
               <div className="w-full flex flex-col gap-3">
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="w-full py-3 bg-brand-primary/10 text-brand-primary font-semibold rounded-xl hover:bg-brand-primary hover:text-white transition-colors"
+                  className="w-full py-2 bg-brand-primary/10 text-brand-primary font-semibold rounded-xl hover:bg-brand-primary hover:text-white transition-colors"
                 >
                   Edit Profile
                 </button>
@@ -339,13 +339,13 @@ export default function PassengerDashboard() {
                       navigator.clipboard.writeText(link);
                       toast.success("Referral link copied!");
                     }}
-                    className="flex-1 py-3 bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white font-semibold rounded-xl transition-colors flex justify-center items-center gap-1 text-sm"
+                    className="flex-1 py-2 bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white font-semibold rounded-xl transition-colors flex justify-center items-center gap-1 text-sm"
                   >
                     <Share2 className="w-4 h-4" /> Share Link
                   </button>
                   <Link
                     href="/vip"
-                    className="flex-1 py-3 bg-gradient-to-r from-amber-400 to-amber-600 text-white hover:opacity-90 font-semibold rounded-xl transition-opacity flex justify-center items-center gap-1 text-sm shadow-md"
+                    className="flex-1 py-2 bg-gradient-to-r from-amber-400 to-amber-600 text-white hover:opacity-90 font-semibold rounded-xl transition-opacity flex justify-center items-center gap-1 text-sm shadow-md"
                   >
                     <Crown className="w-4 h-4" /> Upgrade VIP
                   </Link>

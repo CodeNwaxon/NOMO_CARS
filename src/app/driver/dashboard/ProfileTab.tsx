@@ -275,10 +275,10 @@ export default function ProfileTab({ profile, userId }: { profile: any; userId: 
   const ticketInfo = getTicketButtonInfo();
 
   return (
-    <div className="max-w-4xl mx-auto pb-10">
+    <div className="max-w-5xl mx-auto pb-10">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Profile Card */}
-        <div className="glass-panel rounded-xl md:rounded-3xl p-6 md:p-8 lg:col-span-1 flex flex-col items-center text-center">
+        <div className="glass-panel rounded-xl md:rounded-3xl p-4 lg:col-span-1 flex flex-col items-center text-center">
           <div className="relative mb-4 md:mb-6">
             <div className="w-24 h-24 md:w-32 md:h-32 rounded-full overflow-hidden border-4 border-brand-primary/20 bg-card-border shadow-xl">
               {imagePreview || (isEditing ? formData.displayImage : profile?.displayImage) || user.photoURL ? (
@@ -320,18 +320,18 @@ export default function ProfileTab({ profile, userId }: { profile: any; userId: 
             <div className="w-full flex flex-col gap-3">
               <button
                 onClick={() => setIsEditing(true)}
-                className="w-full py-2.5 md:py-3 bg-brand-primary/10 text-brand-primary font-semibold rounded-xl hover:bg-brand-primary hover:text-white transition-colors text-sm md:text-base"
+                className="w-full py-2 bg-brand-primary/10 text-brand-primary font-semibold rounded-xl hover:bg-brand-primary hover:text-white transition-colors text-sm md:text-base"
               >
                 Edit Profile
               </button>
-              
+
               <Link
                 href="/driver/ticket"
-                className={`w-full py-2.5 md:py-3 font-bold rounded-xl transition-colors flex justify-center items-center gap-2 text-sm md:text-base ${ticketInfo.className}`}
+                className={`w-full py-2 font-bold rounded-xl transition-colors flex justify-center items-center gap-2 text-sm md:text-base ${ticketInfo.className}`}
               >
                 <Ticket className="w-4 h-4 md:w-5 md:h-5" /> {ticketInfo.text}
               </Link>
-              
+
               <div className="flex gap-2 w-full">
                 <button
                   onClick={() => {
@@ -339,13 +339,13 @@ export default function ProfileTab({ profile, userId }: { profile: any; userId: 
                     navigator.clipboard.writeText(link);
                     toast.success("Referral link copied!");
                   }}
-                  className="flex-1 py-2.5 md:py-3 bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white font-semibold rounded-xl transition-colors flex justify-center items-center gap-1 text-xs md:text-sm"
+                  className="flex-1 py-2 bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white font-semibold rounded-xl transition-colors flex justify-center items-center gap-1 text-xs md:text-sm"
                 >
                   <Share2 className="w-3.5 h-3.5 md:w-4 md:h-4" /> Share
                 </button>
                 <Link
                   href="/vip"
-                  className="flex-1 py-2.5 md:py-3 bg-gradient-to-r from-amber-400 to-amber-600 text-white hover:opacity-90 font-semibold rounded-xl transition-opacity flex justify-center items-center gap-1 text-xs md:text-sm shadow-md"
+                  className="flex-1 py-2 bg-gradient-to-r from-amber-400 to-amber-600 text-white hover:opacity-90 font-semibold rounded-xl transition-opacity flex justify-center items-center gap-1 text-xs md:text-sm shadow-md"
                 >
                   <Crown className="w-3.5 h-3.5 md:w-4 md:h-4" /> VIP
                 </Link>
@@ -549,7 +549,7 @@ export default function ProfileTab({ profile, userId }: { profile: any; userId: 
       <div className="mt-8 md:mt-10 flex flex-row items-center justify-center w-full">
         <Link
           href="/passenger"
-          className="w-full sm:w-auto px-4 py-3 md:px-8 md:py-4 bg-brand-secondary text-white text-sm md:text-base font-bold rounded-xl shadow-lg hover:bg-brand-secondary/90 transition-all flex items-center justify-center gap-2 hover:scale-105 whitespace-nowrap"
+          className="w-full sm:w-auto px-4 py-2 md:px-8 bg-brand-secondary text-white text-sm md:text-base font-bold rounded-xl shadow-lg hover:bg-brand-secondary/90 transition-all flex items-center justify-center gap-2 hover:scale-105 whitespace-nowrap"
         >
           <CarFront className="w-4 h-4 md:w-5 md:h-5" />
           Book a Ride

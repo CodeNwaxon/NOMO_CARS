@@ -57,27 +57,27 @@ export default function DriverDashboard() {
           </button>
         </div>
 
-        <nav className="flex flex-row md:flex-col gap-2 flex-1 md:space-y-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
+        <nav className="flex flex-row md:flex-col gap-2 flex-1 md:flex-initial md:space-y-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
           <button
             onClick={() => setActiveTab("profile")}
-            className={`flex-1 md:w-full flex items-center justify-center md:justify-start gap-2 px-3 py-2 md:px-3 md:py-2.5 rounded-lg transition-all whitespace-nowrap text-sm ${
+            className={`flex-1 md:flex-initial md:w-full flex items-center justify-center md:justify-start gap-2 px-3 py-2 rounded-lg transition-all whitespace-nowrap text-sm ${
               activeTab === "profile"
                 ? "bg-brand-primary text-white shadow-md shadow-brand-primary/20"
                 : "bg-card-bg md:bg-transparent hover:bg-card-bg/80 text-foreground/80 hover:text-foreground border border-card-border md:border-none"
             }`}
           >
-            <UserIcon className="w-4 h-4 md:w-5 md:h-5" />
+            <UserIcon className="w-4 h-4" />
             <span className="font-medium">My Profile</span>
           </button>
           <button
             onClick={() => setActiveTab("vehicles")}
-            className={`flex-1 md:w-full flex items-center justify-center md:justify-start gap-2 px-3 py-2 md:px-3 md:py-2.5 rounded-lg transition-all whitespace-nowrap text-sm ${
+            className={`flex-1 md:flex-initial md:w-full flex items-center justify-center md:justify-start gap-2 px-3 py-2 rounded-lg transition-all whitespace-nowrap text-sm ${
               activeTab === "vehicles"
                 ? "bg-brand-secondary text-white shadow-md shadow-brand-secondary/20"
                 : "bg-card-bg md:bg-transparent hover:bg-card-bg/80 text-foreground/80 hover:text-foreground border border-card-border md:border-none"
             }`}
           >
-            <Car className="w-4 h-4 md:w-5 md:h-5" />
+            <Car className="w-4 h-4" />
             <span className="font-medium">My Vehicles</span>
           </button>
         </nav>
@@ -85,9 +85,9 @@ export default function DriverDashboard() {
         <div className="hidden md:block mt-auto pt-6 border-t border-card-border">
           <button
             onClick={() => setShowSignOutModal(true)}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-brand-accent hover:bg-brand-accent/10 transition-colors"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-brand-accent hover:bg-brand-accent/10 transition-colors text-sm"
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut className="w-4 h-4" />
             <span className="font-medium">Sign Out</span>
           </button>
         </div>
