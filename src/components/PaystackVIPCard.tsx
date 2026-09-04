@@ -75,25 +75,27 @@ export default function PaystackVIPCard({ plan, profile, user, onSuccess, onClos
       </div>
 
       <div className="p-5 pt-0 mt-auto">
-        <button
-          onClick={handlePurchase}
-          disabled={isProcessing !== null || (profile?.vipStars || 0) >= plan.stars}
-          className={`w-full py-2.5 md:py-3 rounded-xl font-bold text-sm flex justify-center items-center gap-2 transition-all shadow-lg ${
-            (profile?.vipStars || 0) >= plan.stars
-              ? "bg-foreground/10 text-foreground/50 cursor-not-allowed"
-              : plan.isPremium
-              ? "bg-gradient-to-r from-amber-400 to-amber-600 text-black hover:opacity-90 shadow-amber-500/20"
-              : `bg-gradient-to-r ${plan.color} text-white hover:opacity-90`
-          }`}
-        >
-          {isProcessing === plan.stars ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (profile?.vipStars || 0) >= plan.stars ? (
-            "Current Plan"
-          ) : (
-            "Purchase VIP"
-          )}
-        </button>
+        {(profile?.vipStars || 0) <= plan.stars && (
+          <button
+            onClick={handlePurchase}
+            disabled={isProcessing !== null || (profile?.vipStars || 0) === plan.stars}
+            className={`w-full py-2.5 md:py-3 rounded-xl font-bold text-sm flex justify-center items-center gap-2 transition-all shadow-lg ${
+              (profile?.vipStars || 0) === plan.stars
+                ? "bg-foreground/10 text-foreground/50 cursor-not-allowed"
+                : plan.isPremium
+                ? "bg-gradient-to-r from-amber-400 to-amber-600 text-black hover:opacity-90 shadow-amber-500/20"
+                : `bg-gradient-to-r ${plan.color} text-white hover:opacity-90`
+            }`}
+          >
+            {isProcessing === plan.stars ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (profile?.vipStars || 0) === plan.stars ? (
+              "Current Plan"
+            ) : (
+              "Purchase VIP"
+            )}
+          </button>
+        )}
       </div>
     </div>
   );

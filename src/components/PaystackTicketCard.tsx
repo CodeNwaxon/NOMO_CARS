@@ -3,7 +3,7 @@
 import { Check, Loader2 } from "lucide-react";
 import { usePaystackPayment } from "react-paystack";
 
-export default function PaystackTicketCard({ plan, user, profile, onSuccess, onClose, isProcessing, setProcessing }: any) {
+export default function PaystackTicketCard({ plan, user, profile, onSuccess, onClose, isProcessing, setProcessing, hasOwnTicket }: any) {
   const config = {
     reference: "ticket_" + new Date().getTime().toString(),
     email: user?.email || "driver@nomocars.com",
@@ -14,7 +14,7 @@ export default function PaystackTicketCard({ plan, user, profile, onSuccess, onC
   const initializePayment = usePaystackPayment(config);
 
   const handlePurchase = () => {
-    if (isProcessing !== null) return;
+    if (isProcessing !== null || hasOwnTicket) return;
     setProcessing(plan.days);
     
     setTimeout(() => {
@@ -29,7 +29,7 @@ export default function PaystackTicketCard({ plan, user, profile, onSuccess, onC
     <div 
       className={`relative flex flex-col rounded-3xl overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-xl ${
         plan.isPremium ? plan.bg : `glass-panel ${plan.bg}`
-      } border ${plan.border}`}
+      } border ${plan.border} ${hasOwnTicket ? 'opacity-75 grayscale-[0.5]' : ''}`}
     >
       {plan.isPremium && (
         <div className="absolute top-0 right-0 bg-amber-500 text-black text-[10px] font-bold px-3 py-1 rounded-bl-xl uppercase tracking-wider">
@@ -62,17 +62,21 @@ export default function PaystackTicketCard({ plan, user, profile, onSuccess, onC
       <div className="p-6 pt-0 mt-auto">
         <button
           onClick={handlePurchase}
-          disabled={isProcessing !== null}
+          disabled={isProcessing !== null || hasOwnTicket}
           className={`w-full py-3 rounded-xl font-bold text-sm flex justify-center items-center gap-2 transition-all shadow-lg ${
-            plan.isPremium
-              ? "bg-gradient-to-r from-amber-400 to-amber-600 text-black hover:opacity-90 shadow-amber-500/20"
-              : plan.days === 14
-                ? "bg-gradient-to-r from-purple-400 to-purple-600 text-white hover:opacity-90 shadow-purple-500/20"
-                : "bg-brand-primary text-white hover:bg-brand-primary/90 shadow-brand-primary/20"
+            hasOwnTicket
+              ? "bg-gray-300 dark:bg-slate-700 text-gray-500 dark:text-slate-400 shadow-none"
+              : plan.isPremium
+                ? "bg-gradient-to-r from-amber-400 to-amber-600 text-black hover:opacity-90 shadow-amber-500/20"
+                : plan.days === 14
+                  ? "bg-gradient-to-r from-purple-400 to-purple-600 text-white hover:opacity-90 shadow-purple-500/20"
+                  : "bg-brand-primary text-white hover:bg-brand-primary/90 shadow-brand-primary/20"
           } disabled:opacity-50 disabled:cursor-not-allowed`}
         >
           {isProcessing === plan.days ? (
             <Loader2 className="w-5 h-5 animate-spin" />
+          ) : hasOwnTicket ? (
+            "Active Ticket"
           ) : (
             "Purchase Ticket"
           )}

@@ -13,7 +13,7 @@ import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { toast } from "react-hot-toast";
 import { checkUsernameUnique } from "@/lib/userUtils";
 import ShareOverlay from "@/components/ShareOverlay";
-import { websiteLink, getVIPBadge } from "@/lib/constants";
+import { websiteLink, getVIPBadge, VIP_PLANS } from "@/lib/constants";
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg
@@ -268,6 +268,7 @@ export default function PassengerDashboard() {
   };
 
   const vipBadge = getVIPBadge(profile?.vipStars || 0);
+  const activeVipPlan = profile?.vipStars ? VIP_PLANS.find(p => p.stars === profile?.vipStars) : null;
 
   return (
     <div className="min-h-screen bg-background pt-6 pb-18 px-2 md:p-12 relative overflow-hidden">
@@ -351,9 +352,16 @@ export default function PassengerDashboard() {
                   </button>
                   <Link
                     href="/vip"
-                    className="flex-1 py-2 bg-gradient-to-r from-amber-400 to-amber-600 text-white hover:opacity-90 font-semibold rounded-xl transition-opacity flex justify-center items-center gap-1 text-sm shadow-md"
+                    className={`flex-1 py-2 font-semibold rounded-xl transition-opacity flex justify-center items-center gap-1 text-sm shadow-md ${
+                      activeVipPlan
+                        ? (activeVipPlan.isPremium 
+                            ? 'bg-gradient-to-br from-slate-900 to-black text-white hover:opacity-90 shadow-lg shadow-black/40 border border-slate-800' 
+                            : `bg-gradient-to-r ${activeVipPlan.color} text-white hover:opacity-90`)
+                        : 'bg-gradient-to-r from-amber-400 to-amber-600 text-white hover:opacity-90'
+                    }`}
                   >
-                    <Crown className="w-4 h-4" /> Upgrade VIP
+                    <Crown className="w-4 h-4" /> 
+                    {activeVipPlan ? `${activeVipPlan.tag} VIP` : 'Upgrade VIP'}
                   </Link>
                 </div>
               </div>

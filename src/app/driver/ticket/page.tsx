@@ -46,6 +46,8 @@ export default function TicketPage() {
     );
   }
 
+  const hasOwnTicket = profile?.ticketExpiry ? new Date(profile.ticketExpiry) > new Date() : false;
+
   const handlePurchaseSuccess = async (reference: any, plan: typeof TICKET_PLANS[0]) => {
     try {
       // 1. Update Firestore
@@ -119,8 +121,6 @@ export default function TicketPage() {
         </div>
 
         {(() => {
-          const hasOwnTicket = profile?.ticketExpiry && new Date(profile.ticketExpiry) > new Date();
-
           let hasGlobalFree = false;
           let globalFreeDaysLeft = 0;
           if (startTicketCollection) {
@@ -130,6 +130,23 @@ export default function TicketPage() {
             if (globalFreeMsLeft > 0) {
               hasGlobalFree = true;
               globalFreeDaysLeft = Math.ceil(globalFreeMsLeft / (1000 * 60 * 60 * 24));
+            }
+          }
+
+          let ownTicketMsLeft = 0;
+          let timeLeftStr = "";
+          if (profile?.ticketExpiry) {
+            ownTicketMsLeft = new Date(profile.ticketExpiry).getTime() - new Date().getTime();
+            if (ownTicketMsLeft > 0) {
+              const hoursLeft = Math.floor(ownTicketMsLeft / (1000 * 60 * 60));
+              const daysLeft = Math.floor(hoursLeft / 24);
+              const minutesLeft = Math.floor(ownTicketMsLeft / (1000 * 60));
+              const secondsLeft = Math.floor(ownTicketMsLeft / 1000);
+
+              if (daysLeft > 0) timeLeftStr = `${daysLeft} days`;
+              else if (hoursLeft > 0) timeLeftStr = `${hoursLeft} hrs`;
+              else if (minutesLeft > 0) timeLeftStr = `${minutesLeft} mins`;
+              else timeLeftStr = `${secondsLeft} secs`;
             }
           }
 
@@ -164,15 +181,28 @@ export default function TicketPage() {
               )}
 
               {hasOwnTicket && (
-                <div className="mb-8 p-4 md:p-6 bg-green-500/10 border border-green-500/20 rounded-2xl flex items-center gap-4">
+                <div className="mb-8 p-2 md:p-6 bg-green-500/10 border border-green-500/20 rounded md:rounded-xl flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
-                    <Check className="w-6 h-6 text-green-600 dark:text-green-400" />
+                    <Check className="w-4 h-4 md:w-6 md:h-6 text-green-600 dark:text-green-400" />
                   </div>
-                  <div>
-                    <h3 className="font-bold text-green-800 dark:text-green-300">Active Purchased Ticket</h3>
-                    <p className="text-sm text-green-700/80 dark:text-green-400/80">
-                      Your current ticket expires on {new Date(profile.ticketExpiry!).toLocaleDateString()}. Purchasing a new one will overwrite it.
+                  <div className="flex-1">
+                    <h3 className="font-bold text-green-800 dark:text-green-300 flex items-center gap-2 flex-wrap">
+                      Active Purchased Ticket
+                      {profile?.lastTicketDays && (
+                        <span className="text-white bg-green-600 px-2 py-0.5 rounded-md text-xs">
+                          ({profile.lastTicketDays} day{profile.lastTicketDays > 1 ? 's' : ''})
+                        </span>
+                      )}
+                    </h3>
+                    <p className="text-sm text-green-700/80 dark:text-green-400/80 mt-1">
+                      You have an active ticket that expires on {profile?.ticketExpiry ? new Date(profile.ticketExpiry).toLocaleString() : ''}.
                     </p>
+                    <div className="flex justify-start items-center gap-10 mt-2 text-sm font-medium text-green-800/90 dark:text-green-300/90">
+                      {profile?.lastTicketPrice && (
+                        <span>Amount: <br />₦{profile.lastTicketPrice}</span>
+                      )}
+                      <span>Time remaining: <br />{timeLeftStr}</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -191,6 +221,7 @@ export default function TicketPage() {
               setProcessing={setProcessingPlan}
               onSuccess={handlePurchaseSuccess}
               onClose={handlePurchaseClose}
+              hasOwnTicket={hasOwnTicket}
             />
           ))}
         </div>

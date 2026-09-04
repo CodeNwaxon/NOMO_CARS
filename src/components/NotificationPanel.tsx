@@ -116,7 +116,7 @@ export function NotificationPanel({ isOpen, onClose }: { isOpen: boolean; onClos
                     
                     <button
                       onClick={(e) => { e.stopPropagation(); deleteNotification(notif.id); }}
-                      className="p-1.5 text-foreground/40 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                      className="p-1.5 text-foreground/40 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors opacity-100 md:opacity-0 group-hover:opacity-100"
                       title="Delete"
                     >
                       <Trash2 className="w-4 h-4" />

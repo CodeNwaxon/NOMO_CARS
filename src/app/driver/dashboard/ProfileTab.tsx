@@ -13,7 +13,7 @@ import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { toast } from "react-hot-toast";
 import { checkUsernameUnique } from "@/lib/userUtils";
 import ShareOverlay from "@/components/ShareOverlay";
-import { websiteLink, getVIPBadge, startTicketCollection, freeTicketPlanDays, ticketCollectionStartDate } from "@/lib/constants";
+import { websiteLink, getVIPBadge, VIP_PLANS, startTicketCollection, freeTicketPlanDays, ticketCollectionStartDate } from "@/lib/constants";
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg
@@ -61,6 +61,7 @@ export default function ProfileTab({ profile, userId }: { profile: any; userId: 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const vipBadge = getVIPBadge(profile?.vipStars || 0);
+  const activeVipPlan = profile?.vipStars ? VIP_PLANS.find(p => p.stars === profile?.vipStars) : null;
 
   useEffect(() => {
     if (profile) {
@@ -255,21 +256,36 @@ export default function ProfileTab({ profile, userId }: { profile: any; userId: 
     const globalFreeMsLeft = freePeriodEnd.getTime() - now.getTime();
     const hasGlobalFree = globalFreeMsLeft > 0;
 
-    // Use whichever gives them more time (their own ticket or global free plan)
-    if (hasOwnTicket && (!hasGlobalFree || ownTicketMsLeft >= globalFreeMsLeft)) {
+    // If the user has their own ticket, it always overwrites the free plan
+    if (hasOwnTicket) {
       const hoursLeft = Math.floor(ownTicketMsLeft / (1000 * 60 * 60));
       const daysLeft = Math.floor(hoursLeft / 24);
-      const timeLeftStr = daysLeft > 0 ? `${daysLeft} days` : `${hoursLeft} hrs`;
-      const pricePrefix = profile?.lastTicketPrice ? `₦${profile.lastTicketPrice} ` : "";
+      const minutesLeft = Math.floor(ownTicketMsLeft / (1000 * 60));
+      const secondsLeft = Math.floor(ownTicketMsLeft / 1000);
+      
+      let timeLeftStr = "";
+      if (daysLeft > 0) {
+        timeLeftStr = `${daysLeft}d`;
+      } else if (hoursLeft > 0) {
+        timeLeftStr = `${hoursLeft}hr`;
+      } else if (minutesLeft > 0) {
+        timeLeftStr = `${minutesLeft}min`;
+      } else {
+        timeLeftStr = `${secondsLeft}sec`;
+      }
+      
+      const priceStr = profile?.lastTicketPrice ? `(₦${profile.lastTicketPrice})` : "";
       
       const totalMs = (profile?.lastTicketDays || 1) * 24 * 60 * 60 * 1000;
       const percentageLeft = ownTicketMsLeft / totalMs;
 
       return {
-        text: `${pricePrefix}{${timeLeftStr}}`,
+        text: `Active Ticket ${priceStr} Time: ${timeLeftStr}`,
         className: percentageLeft <= 0.20 
           ? "bg-white text-red-700 hover:bg-red-50 border border-red-200" 
-          : "bg-white text-green-700 hover:bg-green-50 border border-green-200"
+          : "bg-white text-green-700 hover:bg-green-50 border border-green-200",
+        hideIcon: true,
+        textSizeClass: "text-[10px] sm:text-xs md:text-sm"
       };
     }
 
@@ -351,9 +367,9 @@ export default function ProfileTab({ profile, userId }: { profile: any; userId: 
 
               <Link
                 href="/driver/ticket"
-                className={`w-full py-2 font-bold rounded-xl transition-colors flex justify-center items-center gap-2 text-sm md:text-base ${ticketInfo.className}`}
+                className={`w-full py-2 font-bold rounded-xl transition-colors flex justify-center items-center gap-2 ${ticketInfo.textSizeClass || "text-sm md:text-base"} ${ticketInfo.className}`}
               >
-                <Ticket className="w-4 h-4 md:w-5 md:h-5" /> {ticketInfo.text}
+                {!ticketInfo.hideIcon && <Ticket className="w-4 h-4 md:w-5 md:h-5" />} {ticketInfo.text}
               </Link>
 
               <div className="flex gap-2 w-full">
@@ -365,9 +381,16 @@ export default function ProfileTab({ profile, userId }: { profile: any; userId: 
                 </button>
                 <Link
                   href="/vip"
-                  className="flex-1 py-2 bg-gradient-to-r from-amber-400 to-amber-600 text-white hover:opacity-90 font-semibold rounded-xl transition-opacity flex justify-center items-center gap-1 text-xs md:text-sm shadow-md"
+                  className={`flex-1 py-2 font-semibold rounded-xl transition-opacity flex justify-center items-center gap-1 text-xs md:text-sm shadow-md ${
+                    activeVipPlan
+                      ? (activeVipPlan.isPremium 
+                          ? 'bg-gradient-to-br from-slate-900 to-black text-white hover:opacity-90 shadow-lg shadow-black/40 border border-slate-800' 
+                          : `bg-gradient-to-r ${activeVipPlan.color} text-white hover:opacity-90`)
+                      : 'bg-gradient-to-r from-amber-400 to-amber-600 text-white hover:opacity-90'
+                  }`}
                 >
-                  <Crown className="w-3.5 h-3.5 md:w-4 md:h-4" /> Upgrade VIP
+                  <Crown className="w-3.5 h-3.5 md:w-4 md:h-4" /> 
+                  {activeVipPlan ? `${activeVipPlan.tag} VIP` : 'Upgrade VIP'}
                 </Link>
               </div>
             </div>

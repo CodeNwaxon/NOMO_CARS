@@ -28,7 +28,7 @@ export function hasValidTicket(driverTicketExpiry?: string | null): boolean {
   // Check if we are still within the global free plan days
   const startDate = new Date(ticketCollectionStartDate);
   const freePeriodEnd = new Date(startDate.getTime() + freeTicketPlanDays * 24 * 60 * 60 * 1000);
-  
+
   if (new Date() < freePeriodEnd) return true;
 
   return false;
@@ -91,7 +91,7 @@ export const VIP_PLANS = [
 export function getVIPBadge(stars: number) {
   if (!stars || stars < 1) return null;
   const plan = VIP_PLANS.find(p => p.stars === stars) || VIP_PLANS[0];
-  
+
   return {
     tag: plan.tag,
     colorClass: plan.isPremium ? 'bg-amber-500 text-black' : `bg-gradient-to-r ${plan.color} text-white`
