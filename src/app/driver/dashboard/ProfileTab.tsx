@@ -367,7 +367,7 @@ export default function ProfileTab({ profile, userId }: { profile: any; userId: 
                   href="/vip"
                   className="flex-1 py-2 bg-gradient-to-r from-amber-400 to-amber-600 text-white hover:opacity-90 font-semibold rounded-xl transition-opacity flex justify-center items-center gap-1 text-xs md:text-sm shadow-md"
                 >
-                  <Crown className="w-3.5 h-3.5 md:w-4 md:h-4" /> VIP
+                  <Crown className="w-3.5 h-3.5 md:w-4 md:h-4" /> Upgrade VIP
                 </Link>
               </div>
             </div>

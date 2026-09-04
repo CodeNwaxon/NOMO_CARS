@@ -120,7 +120,7 @@ export default function TicketPage() {
 
         {(() => {
           const hasOwnTicket = profile?.ticketExpiry && new Date(profile.ticketExpiry) > new Date();
-          
+
           let hasGlobalFree = false;
           let globalFreeDaysLeft = 0;
           if (startTicketCollection) {
@@ -180,7 +180,7 @@ export default function TicketPage() {
           );
         })()}
 
-        <div className="px-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="px-10 md:px-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
           {TICKET_PLANS.map((plan) => (
             <PaystackTicketCard
               key={plan.days}

@@ -115,7 +115,7 @@ export default function VIPPage() {
         </div>
 
 
-        <div className="px-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+        <div className="px-10 md:px-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           {VIP_PLANS.map((plan) => (
             <PaystackVIPCard
               key={plan.stars}
