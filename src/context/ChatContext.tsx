@@ -32,13 +32,19 @@ const ChatContext = createContext<ChatContextType>({
 });
 
 export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { addNotification } = useNotifications();
   const [chats, setChats] = useState<ChatInfo[]>([]);
   const [totalUnread, setTotalUnread] = useState(0);
   const [chatsLoading, setChatsLoading] = useState(true);
   const prevUnreadRef = useRef<Record<string, number>>({});
   const initialLoadRef = useRef(true);
+  const profileRef = useRef(profile);
+
+  // Keep profileRef in sync
+  useEffect(() => {
+    profileRef.current = profile;
+  }, [profile]);
 
   useEffect(() => {
     if (!user) {
@@ -107,9 +113,12 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
             const chat = chatList.find((c) => c.chatId === chatId);
             if (chat) {
               const senderName = user.uid === chat.driverId ? chat.passengerName : chat.driverName;
+              const baseUrl = profileRef.current?.role === "driver" ? "/driver/dashboard" : "/passenger/dashboard";
+              const link = `${baseUrl}?tab=messages`;
               addNotification(
                 "New Message",
-                `${senderName}: ${chat.lastMessage?.substring(0, 50) || "Sent you a message"}${chat.lastMessage && chat.lastMessage.length > 50 ? "..." : ""}`
+                `You have a message from ${senderName}`,
+                link
               );
             }
           }

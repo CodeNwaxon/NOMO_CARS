@@ -6,11 +6,9 @@ import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/context/NotificationContext";
 import { NotificationPanel } from "./NotificationPanel";
 import { useState, useRef, useEffect } from "react";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 export function Navbar() {
-  const searchParams = useSearchParams();
-  const refCode = searchParams?.get("ref");
   const { user, profile, loading, signInWithGoogle, signOut } = useAuth();
   const { unreadCount } = useNotifications();
   const [dropdownOpen, setDropdownOpen] = useState(false);

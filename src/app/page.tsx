@@ -39,7 +39,7 @@ function HomeContent() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full relative">
           {/* Driver Card */}
-          <Link href="/driver" className="group block h-[250px] md:h-[300px]">
+          <Link href="/driver" className="group block h-[250px] md:h-[300px] order-2 md:order-1">
             <div className="rounded-xl h-full flex flex-col justify-end text-center transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_40px_-10px_rgba(34,197,94,0.6)] border-2 border-brand-primary hover:border-green-500 relative overflow-hidden bg-cover bg-center" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=2070&auto=format&fit=crop')" }}>
 
               <div className="relative w-full dark:bg-black/80 bg-white/90 backdrop-blur-md pb-3 md:p-4 flex flex-col items-center">
@@ -55,7 +55,7 @@ function HomeContent() {
           </Link>
 
           {/* Passenger Card */}
-          <Link href="/passenger" className="group block h-[250px] md:h-[300px]">
+          <Link href="/passenger" className="group block h-[250px] md:h-[300px] order-1 md:order-2">
             <div className="rounded-xl h-full flex flex-col justify-end text-center transition-all duration-300 hover:scale-[1.03] hover:shadow-[0_0_40px_-10px_rgba(34,197,94,0.6)] border-2 border-brand-secondary hover:border-green-500 relative overflow-hidden bg-cover bg-center" style={{ backgroundImage: "url('https://res.cloudinary.com/lab9viho/image/upload/v1783341679/vcuxhi9nkvnju9wjddmq.jpg')" }}>
 
               <div className="relative w-full dark:bg-black/80 bg-white/90 backdrop-blur-md pb-3 md:p-4 flex flex-col items-center">

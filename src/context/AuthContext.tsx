@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { User, onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut } from "firebase/auth";
 import { auth, googleProvider, db } from "@/lib/firebase";
 import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
@@ -50,6 +51,7 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -84,6 +86,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(currentUser);
       if (currentUser) {
         await fetchProfile(currentUser.uid);
+        
+        const lastVisited = localStorage.getItem("lastVisitedPage");
+        const hasRedirected = sessionStorage.getItem("hasRedirected");
+        
+        if (!hasRedirected && lastVisited && lastVisited !== window.location.pathname && window.location.pathname === "/") {
+          sessionStorage.setItem("hasRedirected", "true");
+          router.push(lastVisited);
+        }
       } else {
         setProfile(null);
       }
@@ -119,6 +129,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       } else {
         setProfile(docSnap.data() as UserProfile);
       }
+
+      // Redirect to last visited page after successful login
+      const lastVisited = localStorage.getItem("lastVisitedPage");
+      if (lastVisited && lastVisited !== window.location.pathname) {
+        router.push(lastVisited);
+      }
+
     } catch (error) {
       console.error("Error signing in with Google:", error);
     } finally {

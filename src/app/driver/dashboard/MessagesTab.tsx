@@ -78,7 +78,9 @@ export default function MessagesTab({ userId }: { userId: string }) {
                 key={chat.chatId}
                 onClick={() =>
                   setSelectedChat({
+                    chatId: chat.chatId,
                     driverId: chat.driverId,
+                    passengerId: chat.passengerId,
                     chatPartnerName: otherName,
                     chatPartnerImage: otherImage,
                     driverTicketExpiry: profile?.ticketExpiry,
@@ -105,6 +107,7 @@ export default function MessagesTab({ userId }: { userId: string }) {
                 </div>
 
                 {/* Content */}
+                {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <h4 className={`text-sm font-bold truncate ${chat.unreadCount > 0 ? "text-foreground" : "text-foreground/80"}`}>
@@ -128,7 +131,9 @@ export default function MessagesTab({ userId }: { userId: string }) {
       {/* Chat Overlay when a conversation is selected */}
       {selectedChat && (
         <ChatOverlay
+          chatId={selectedChat.chatId}
           driverId={selectedChat.driverId}
+          passengerId={selectedChat.passengerId}
           chatPartnerName={selectedChat.chatPartnerName}
           chatPartnerImage={selectedChat.chatPartnerImage}
           driverTicketExpiry={selectedChat.driverTicketExpiry}

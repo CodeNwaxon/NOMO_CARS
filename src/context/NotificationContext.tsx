@@ -9,12 +9,13 @@ export interface AppNotification {
   message: string;
   date: number;
   isRead: boolean;
+  link?: string;
 }
 
 interface NotificationContextType {
   notifications: AppNotification[];
   unreadCount: number;
-  addNotification: (title: string, message: string) => void;
+  addNotification: (title: string, message: string, link?: string) => void;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   deleteNotification: (id: string) => void;
@@ -60,13 +61,14 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     }
   }, [notifications, user]);
 
-  const addNotification = (title: string, message: string) => {
+  const addNotification = (title: string, message: string, link?: string) => {
     const newNotif: AppNotification = {
       id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
       title,
       message,
       date: Date.now(),
       isRead: false,
+      link,
     };
     setNotifications((prev) => [newNotif, ...prev]);
   };

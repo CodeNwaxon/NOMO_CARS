@@ -9,6 +9,14 @@ export default function PaystackTicketCard({ plan, user, profile, onSuccess, onC
     email: user?.email || "driver@nomocars.com",
     amount: plan.price * 100, // Paystack expects kobo
     publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "pk_test_9b16ad62bf9ea9b6eef84d379f866e3fa52e31e2",
+    metadata: {
+      userId: user?.uid,
+      planType: "ticket",
+      planDays: plan.days,
+      planName: plan.name,
+      planPrice: plan.price,
+      custom_fields: []
+    }
   };
 
   const initializePayment = usePaystackPayment(config);

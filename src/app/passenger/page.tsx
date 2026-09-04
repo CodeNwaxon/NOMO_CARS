@@ -39,6 +39,10 @@ export default function PassengerCategories() {
   const [loadingContacts, setLoadingContacts] = useState(false);
 
   useEffect(() => {
+    localStorage.setItem("lastVisitedPage", "/passenger");
+  }, []);
+
+  useEffect(() => {
     const fetchFavorites = async () => {
       if (!user) return;
       try {

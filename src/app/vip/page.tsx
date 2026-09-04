@@ -41,44 +41,28 @@ export default function VIPPage() {
 
   const handlePurchaseSuccess = async (reference: any, plan: typeof VIP_PLANS[0]) => {
     try {
-      const docRef = doc(db, "users", user.uid);
-
-      const expiryDate = new Date();
-      expiryDate.setDate(expiryDate.getDate() + 180);
-
-      await updateDoc(docRef, {
-        vipStars: plan.stars,
-        vipExpiry: expiryDate.toISOString(),
-      });
-
-      await refreshProfile();
-      toast.success(`Successfully upgraded to ${plan.name}!`);
-
+      toast.success(`Payment successful! Your VIP status is being activated...`);
+      
+      // Notify the user locally so they see a response immediately.
+      // The backend webhook will handle the actual Firestore update securely.
       addNotification(
-        "VIP Upgraded",
-        `You have successfully upgraded to ${plan.name}. Valid for 180 days.`
+        "VIP Upgrading",
+        `Your payment for ${plan.name} was successful. Your account will be upgraded momentarily.`
       );
 
-      const res = await verifyAndNotifyPayment(
-        reference.reference,
-        user.email || "",
-        profile?.username || profile?.firstName || "User",
-        plan.name,
-        plan.price
-      );
-
-      if (!res.success) {
-        console.error("Verification warning:", res.error);
-      }
-
-      if (profile?.role === "driver") {
-        router.push("/driver/dashboard");
-      } else {
-        router.push("/passenger/dashboard");
-      }
+      // Wait a moment for the webhook to process before refreshing
+      setTimeout(async () => {
+        await refreshProfile();
+        
+        if (profile?.role === "driver") {
+          router.push("/driver/dashboard");
+        } else {
+          router.push("/passenger/dashboard");
+        }
+      }, 2000);
+      
     } catch (error) {
-      console.error("Error purchasing VIP:", error);
-      toast.error("Failed to process VIP purchase.");
+      console.error("Error processing VIP success callback:", error);
     } finally {
       setPurchasing(null);
     }

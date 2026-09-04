@@ -112,6 +112,20 @@ export function NotificationPanel({ isOpen, onClose }: { isOpen: boolean; onClos
                           {isExpanded ? "View Less" : "View More"}
                         </button>
                       )}
+                      
+                      {notif.link && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            markAsRead(notif.id);
+                            onClose();
+                            window.location.href = notif.link!;
+                          }}
+                          className="mt-3 block w-full py-2 bg-brand-primary/10 hover:bg-brand-primary/20 text-brand-primary text-xs font-bold rounded-lg transition-colors text-center"
+                        >
+                          View Details
+                        </button>
+                      )}
                     </div>
                     
                     <button

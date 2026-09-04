@@ -21,7 +21,9 @@ interface Message {
 }
 
 interface ChatOverlayProps {
+  chatId?: string;
   driverId: string;
+  passengerId?: string;
   chatPartnerName?: string;
   chatPartnerImage?: string;
   chatPartnerTicketExpiry?: string;
@@ -62,9 +64,9 @@ function getChatId(uid1: string, uid2: string) {
 }
 
 export default function ChatOverlay(props: ChatOverlayProps) {
-  const { driverId, onClose } = props;
+  const { driverId, passengerId: propsPassengerId, chatId: propsChatId, onClose } = props;
   const { user, profile } = useAuth();
-  
+
   // Fallbacks for backward compatibility
   const chatPartnerName = props.chatPartnerName || props.driverName;
   const chatPartnerImage = props.chatPartnerImage || props.driverImage;
@@ -76,13 +78,14 @@ export default function ChatOverlay(props: ChatOverlayProps) {
   const [targetLang, setTargetLang] = useState("en");
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [translatingMsgId, setTranslatingMsgId] = useState<string | null>(null);
-  
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const vipBadge = getVIPBadge(chatPartnerVipStars || 0);
 
-  const chatId = user ? getChatId(user.uid, driverId) : "";
   const isDriver = user?.uid === driverId;
+  const passengerId = propsPassengerId || (isDriver ? "" : user?.uid || "");
+  const chatId = propsChatId || (user && passengerId ? getChatId(passengerId, driverId) : "");
 
   // Determine if the driver (the one whose profile we're on) has an active ticket
   // If we are the driver, use our own profile ticket expiry, otherwise use the chat partner's
@@ -129,10 +132,24 @@ export default function ChatOverlay(props: ChatOverlayProps) {
       setMessages(msgs);
 
       // Mark unread messages from others as read
+      let markedAny = false;
       for (const msg of msgs) {
         if (msg.senderId !== user.uid && !msg.readBy.includes(user.uid) && !msg.blocked) {
           const msgRef = doc(db, "chats", chatId, "messages", msg.id);
           await updateDoc(msgRef, { readBy: arrayUnion(user.uid) });
+          markedAny = true;
+        }
+      }
+
+      // If we marked any messages as read, update the parent chat document 
+      // so the ChatContext's onSnapshot listener triggers and updates the unread counts in real-time
+      if (markedAny) {
+        try {
+          await updateDoc(doc(db, "chats", chatId), { 
+            [`lastReadAt_${user.uid}`]: serverTimestamp() 
+          });
+        } catch (e) {
+          console.error("Failed to update parent chat read status", e);
         }
       }
     });
@@ -156,7 +173,7 @@ export default function ChatOverlay(props: ChatOverlayProps) {
       // Determine if the current sender's message should be blocked
       const senderIsDriver = profile.role === "driver" && user.uid === driverId;
       const senderRole = senderIsDriver ? "driver" : "passenger";
-      
+
       // For the sender who is the driver of this chat: use the passed driverTicketExpiry
       // For a driver visiting another driver's profile (acting as passenger): treat as passenger
       const senderHasTicket = senderIsDriver ? driverHasTicket : false;
@@ -164,18 +181,24 @@ export default function ChatOverlay(props: ChatOverlayProps) {
 
       // Ensure chat document exists
       const chatRef = doc(db, "chats", chatId);
-      await setDoc(chatRef, {
-        participants: [user.uid, driverId].sort(),
-        driverId: driverId,
-        passengerId: user.uid === driverId ? "" : user.uid,
-        driverName: isDriver ? (profile.username || profile.firstName || "Driver") : chatPartnerName,
-        passengerName: isDriver ? chatPartnerName : (profile.username || profile.firstName || "Passenger"),
-        driverImage: isDriver ? (profile.displayImage || "") : chatPartnerImage,
-        passengerImage: isDriver ? chatPartnerImage : (profile.displayImage || ""),
+      const updateData: any = {
         lastMessage: blocked ? "[Filtered]" : text,
         lastMessageAt: serverTimestamp(),
-        createdAt: serverTimestamp(),
-      }, { merge: true });
+      };
+      
+      // Only set these if we have them (i.e., not a driver replying with unknown passengerId)
+      if (passengerId) {
+        updateData.participants = [passengerId, driverId].sort();
+        updateData.driverId = driverId;
+        updateData.passengerId = passengerId;
+        updateData.driverName = isDriver ? (profile.username || profile.firstName || "Driver") : (chatPartnerName || "Driver");
+        updateData.passengerName = isDriver ? (chatPartnerName || "Passenger") : (profile.username || profile.firstName || "Passenger");
+        updateData.driverImage = isDriver ? (profile.displayImage || "") : (chatPartnerImage || "");
+        updateData.passengerImage = isDriver ? (chatPartnerImage || "") : (profile.displayImage || "");
+        updateData.createdAt = serverTimestamp();
+      }
+
+      await setDoc(chatRef, updateData, { merge: true });
 
       // If the passengerId was empty (driver started the chat), update it
       if (isDriver && driverId === user.uid) {
@@ -253,16 +276,11 @@ export default function ChatOverlay(props: ChatOverlayProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-[150] flex items-end md:items-center justify-center md:justify-end bg-black/50 backdrop-blur-sm">
-      <div className="w-full md:w-[420px] h-[85vh] md:h-[70vh] md:mr-8 bg-white dark:bg-slate-950 rounded-t-2xl md:rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-200 dark:border-slate-800">
+    <div className="py-4 fixed inset-0 z-[150] flex items-center justify-center md:justify-end bg-black/50 backdrop-blur-sm">
+      <div className="w-full h-[100dvh] md:w-[420px] md:h-[70vh] md:mr-8 bg-white dark:bg-slate-950 md:rounded-2xl shadow-2xl flex flex-col overflow-hidden border-0 md:border md:border-gray-200 md:dark:border-slate-800">
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 bg-brand-primary text-white flex-shrink-0">
           <div className="relative">
-            {vipBadge && (
-              <div className={`absolute -top-1 -right-1 z-10 px-1 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider shadow-lg ${vipBadge.colorClass}`}>
-                {vipBadge.tag}
-              </div>
-            )}
             <div className="w-10 h-10 rounded-full overflow-hidden bg-white/20 flex-shrink-0">
               {chatPartnerImage ? (
                 <img src={chatPartnerImage} alt={chatPartnerName} className="w-full h-full object-cover" />
@@ -281,7 +299,7 @@ export default function ChatOverlay(props: ChatOverlayProps) {
               </p>
             )}
           </div>
-          
+
           {/* Language Selector */}
           <div className="flex items-center bg-white/10 rounded-lg px-2 py-1 flex-shrink-0 border border-white/20">
             <Languages className="w-3.5 h-3.5 mr-1" />
@@ -338,18 +356,17 @@ export default function ChatOverlay(props: ChatOverlayProps) {
               >
                 <div className={`group relative max-w-[80%] ${isMine ? "order-2" : "order-1"}`}>
                   <div
-                    className={`px-3.5 py-2 rounded-2xl text-sm leading-relaxed ${
-                      msg.blocked
-                        ? "bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 line-through"
-                        : isMine
-                          ? "bg-brand-primary text-white rounded-br-md"
-                          : isDriverMsg
-                            ? "bg-blue-500 text-white rounded-bl-md"
-                            : "bg-emerald-500 text-white rounded-bl-md"
-                    }`}
+                    className={`px-3.5 py-2 rounded-2xl text-xs md:text-sm leading-relaxed ${msg.blocked
+                      ? "bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 line-through"
+                      : isMine
+                        ? "bg-brand-primary text-white rounded-br-md"
+                        : isDriverMsg
+                          ? "bg-blue-500 text-white rounded-bl-md"
+                          : "bg-emerald-500 text-white rounded-bl-md"
+                      }`}
                   >
                     <div>{msg.text}</div>
-                    
+
                     {/* Translated Text Display */}
                     {translations[msg.id] && (
                       <div className="mt-1.5 pt-1.5 border-t border-white/20 text-xs opacity-90 italic">
@@ -357,10 +374,10 @@ export default function ChatOverlay(props: ChatOverlayProps) {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className={`flex items-center gap-1.5 mt-0.5 ${isMine ? "justify-end" : "justify-start"}`}>
                     <span className="text-[10px] text-foreground/40">{formatTime(msg.createdAt)}</span>
-                    
+
                     {!isMine && !msg.blocked && (
                       <button
                         onClick={() => handleTranslate(msg.id, msg.text)}
@@ -370,7 +387,7 @@ export default function ChatOverlay(props: ChatOverlayProps) {
                         {translatingMsgId === msg.id ? (
                           <Loader2 className="w-3 h-3 animate-spin" />
                         ) : (
-                          <Languages className="w-3 h-3" /> 
+                          <Languages className="w-3 h-3" />
                         )}
                         Translate
                       </button>

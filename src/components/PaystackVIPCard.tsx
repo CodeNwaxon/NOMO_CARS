@@ -9,6 +9,14 @@ export default function PaystackVIPCard({ plan, profile, user, onSuccess, onClos
     email: user?.email || "user@nomocars.com",
     amount: plan.price * 100,
     publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "pk_test_9b16ad62bf9ea9b6eef84d379f866e3fa52e31e2",
+    metadata: {
+      userId: user?.uid,
+      planType: "vip",
+      planStars: plan.stars,
+      planName: plan.name,
+      planPrice: plan.price,
+      custom_fields: []
+    }
   };
 
   const initializePayment = usePaystackPayment(config);

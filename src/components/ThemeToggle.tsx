@@ -3,17 +3,20 @@
 import * as React from "react"
 import { Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
+import { usePathname } from "next/navigation"
 
 export function ThemeToggle() {
   const { theme, setTheme, systemTheme } = useTheme()
   const [mounted, setMounted] = React.useState(false)
 
+  const pathname = usePathname()
+
   React.useEffect(() => {
     setMounted(true)
   }, [])
 
-  if (!mounted) {
-    return <div className="fixed bottom-6 right-6 w-12 h-12" />
+  if (!mounted || pathname?.includes('/driver/profile')) {
+    return <div className="fixed bottom-6 right-6 w-12 h-12 hidden" />
   }
 
   const currentTheme = theme === "system" ? systemTheme : theme

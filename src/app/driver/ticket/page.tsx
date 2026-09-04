@@ -50,42 +50,24 @@ export default function TicketPage() {
 
   const handlePurchaseSuccess = async (reference: any, plan: typeof TICKET_PLANS[0]) => {
     try {
-      // 1. Update Firestore
-      const docRef = doc(db, "users", user.uid);
-      const expiryDate = new Date();
-      expiryDate.setDate(expiryDate.getDate() + plan.days);
-
-      await updateDoc(docRef, {
-        ticketExpiry: expiryDate.toISOString(),
-        lastTicketPrice: plan.price,
-        lastTicketDays: plan.days,
-      });
-      await refreshProfile();
-
-      // 2. Add In-App Notification
-      addNotification(
-        "Ticket Purchased",
-        `You have successfully purchased a ${plan.name}. Valid until ${expiryDate.toLocaleDateString()}.`
-      );
-
-      // 3. Call Server Action to Verify & Email
       toast.success("Payment successful! Finalizing your ticket...");
-      const res = await verifyAndNotifyPayment(
-        reference.reference,
-        user.email || "",
-        profile?.username || profile?.firstName || "Driver",
-        plan.name,
-        plan.price
+
+      // Notify the user locally so they see a response immediately.
+      // The backend webhook will handle the actual Firestore update securely.
+      addNotification(
+        "Ticket Processing",
+        `Your payment for the ${plan.name} was successful. Your ticket will be active momentarily.`
       );
 
-      if (!res.success) {
-        console.error("Verification warning:", res.error);
-      }
+      // Wait a moment for the webhook to process before refreshing
+      setTimeout(async () => {
+        await refreshProfile();
+        router.push("/driver/dashboard");
+      }, 2000);
 
-      router.push("/driver/dashboard");
     } catch (error) {
-      console.error("Error finalizing purchase:", error);
-      toast.error("An error occurred while finalizing your ticket.");
+      console.error("Error processing ticket success callback:", error);
+      toast.error("An error occurred while finalizing your ticket locally.");
     } finally {
       setProcessingPlan(null);
     }

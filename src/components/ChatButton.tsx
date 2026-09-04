@@ -19,12 +19,12 @@ export default function ChatButton({ driverId, driverName, driverImage, driverTi
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="group fixed bottom-6 right-6 md:bottom-10 md:right-10 z-40 w-20 h-20 md:w-24 md:h-24 flex items-center justify-center"
+        className="group fixed bottom-6 right-6 md:bottom-10 md:right-10 z-50 w-20 h-20 md:w-24 md:h-24 flex items-center justify-center"
         aria-label="Chat with driver"
       >
         {/* Rotating text ring */}
         <svg
-          className="absolute inset-0 w-full h-full animate-spin-slow"
+          className="absolute inset-0 w-full h-full animate-spin-slow z-20"
           viewBox="0 0 100 100"
         >
           <defs>
@@ -34,7 +34,7 @@ export default function ChatButton({ driverId, driverName, driverImage, driverTi
               fill="none"
             />
           </defs>
-          <text className="fill-brand-primary dark:fill-brand-primary font-bold" style={{ fontSize: "11px", letterSpacing: "5px" }}>
+          <text className="z-50 fill-brand-primary dark:fill-brand-primary font-bold" style={{ fontSize: "11px", letterSpacing: "5px" }}>
             <textPath href="#chatCirclePath" startOffset="0%">
               CHAT ME UP • CHAT ME UP •
             </textPath>

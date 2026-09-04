@@ -17,6 +17,14 @@ export default function DriverDashboard() {
   const [showSignOutModal, setShowSignOutModal] = useState(false);
 
   useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "messages" || tabParam === "vehicles" || tabParam === "profile") {
+      setActiveTab(tabParam);
+    }
+  }, []);
+
+  useEffect(() => {
     if (!loading) {
       if (!user) {
         router.push("/");

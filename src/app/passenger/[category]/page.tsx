@@ -8,6 +8,7 @@ import { Loader2, ArrowLeft, Car, Search, PlusCircle, Briefcase, User, Star } fr
 import { VIP_PLANS, getVIPBadge, hasValidTicket } from "@/lib/constants";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import PassengerServicesModal from "@/components/PassengerServicesModal";
 
 export default function CategoryVehicles() {
   const params = useParams();
@@ -30,6 +31,7 @@ export default function CategoryVehicles() {
   const [visibleCount, setVisibleCount] = useState(30);
   const [driverSearchResults, setDriverSearchResults] = useState<any[]>([]);
   const [searchingDrivers, setSearchingDrivers] = useState(false);
+  const [viewingServicesFor, setViewingServicesFor] = useState<{id: string, name: string} | null>(null);
 
   // Debounced search for drivers by username
   useEffect(() => {
@@ -38,14 +40,14 @@ export default function CategoryVehicles() {
         setDriverSearchResults([]);
         return;
       }
-      
+
       setSearchingDrivers(true);
       try {
         const q = query(collection(db, "users"), where("role", "==", "driver"));
         const snapshot = await getDocs(q);
         const drivers: any[] = [];
         const queryLower = searchQuery.toLowerCase();
-        
+
         snapshot.forEach(doc => {
           const data = doc.data();
           if (data.username && data.username.toLowerCase().includes(queryLower)) {
@@ -55,7 +57,7 @@ export default function CategoryVehicles() {
             }
           }
         });
-        
+
         setDriverSearchResults(drivers);
       } catch (err) {
         console.error("Error searching drivers:", err);
@@ -63,7 +65,7 @@ export default function CategoryVehicles() {
         setSearchingDrivers(false);
       }
     };
-    
+
     const t = setTimeout(searchDrivers, 500);
     return () => clearTimeout(t);
   }, [searchQuery]);
@@ -208,17 +210,17 @@ export default function CategoryVehicles() {
 
           return (
             <div className="px-1 md:px-0">
-              
+
               {/* Driver Search Results */}
               {searchQuery && driverSearchResults.length > 0 && (
                 <div className="mb-12">
                   <h2 className="text-xl md:text-2xl font-bold mb-6 flex items-center gap-2">
                     <User className="text-brand-primary" /> Driver Profiles Found
                   </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 md:gap-6">
                     {driverSearchResults.map(driver => (
-                      <div key={driver.id} className="glass-panel p-6 rounded-2xl flex items-center gap-4 hover:shadow-lg transition-all border border-brand-primary/20">
-                        <div className="relative w-16 h-16 flex-shrink-0">
+                      <div key={driver.id} className="glass-panel p-3 md:p-6 rounded-md md:rounded-2xl flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-2 md:gap-4 hover:shadow-lg transition-all border border-brand-primary/20">
+                        <div className="relative w-12 h-12 md:w-16 md:h-16 flex-shrink-0">
                           {getVIPBadge(driver.vipStars) && (
                             <div className={`absolute -top-1 -right-1 z-10 px-1 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider shadow-lg ${getVIPBadge(driver.vipStars)?.colorClass}`}>
                               {getVIPBadge(driver.vipStars)?.tag}
@@ -228,21 +230,41 @@ export default function CategoryVehicles() {
                             {driver.displayImage ? (
                               <img src={driver.displayImage} alt={driver.username} className="w-full h-full object-cover" />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-brand-primary/10 text-brand-primary font-bold text-xl uppercase">
+                              <div className="w-full h-full flex items-center justify-center bg-brand-primary/10 text-brand-primary font-bold text-lg md:text-xl uppercase">
                                 {driver.username?.charAt(0) || "D"}
                               </div>
                             )}
                           </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-lg truncate flex items-center gap-2">
-                            {driver.username} 
-                            {driver.vipStars >= 1 && <Star className="w-4 h-4 text-amber-500 fill-amber-500" />}
+                        <div className="flex-1 min-w-0 w-full flex flex-col items-center md:items-start">
+                          <h3 className="font-bold text-sm md:text-lg w-full truncate flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-2">
+                            <span className="truncate">{driver.username}</span>
+                            {driver.vipStars >= 1 && driver.vipStars < 5 && (
+                              <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                            )}
+                            {driver.vipStars === 5 && (
+                              <span className="flex items-center justify-center gap-1 text-[8px] md:text-[10px] font-black text-amber-500 bg-gradient-to-br from-slate-900 to-black px-2 py-0.5 rounded-full border border-slate-700 shadow-md">
+                                ULTIMATE VIP <Star className="w-2 h-2 md:w-3 md:h-3 fill-amber-500" />
+                              </span>
+                            )}
                           </h3>
-                          <p className="text-sm text-foreground/60 truncate">{driver.operatingCity || "No city set"}</p>
-                          <Link 
+                          <p className="text-[10px] md:text-sm text-foreground/60 w-full truncate mt-0.5">{driver.operatingCity || "No city set"}</p>
+
+                          <div className="flex items-center justify-center md:justify-start gap-0.5 mt-1.5 mb-1 w-full">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`w-2 h-2 md:w-3 md:h-3 ${star <= Math.round(Number(driver.rating || 5.0)) ? "text-yellow-500 fill-yellow-500" : "text-gray-300 dark:text-gray-600 fill-gray-300 dark:fill-gray-600"}`}
+                              />
+                            ))}
+                            <span className="text-[9px] md:text-[10px] font-medium text-gray-500 dark:text-gray-400 ml-1">
+                              ({Number(driver.rating || 5.0).toFixed(1)})
+                            </span>
+                          </div>
+
+                          <Link
                             href={`/driver/profile/${driver.id}`}
-                            className="mt-2 text-xs font-semibold text-brand-primary hover:underline inline-block"
+                            className="mt-1 text-xs font-semibold text-brand-primary hover:underline inline-block"
                           >
                             View Profile →
                           </Link>
@@ -313,9 +335,17 @@ export default function CategoryVehicles() {
                               Yr: {v.details.year} • AC: {v.details.ac ? "Yes" : "No"}
                             </p>
 
-                            <button className="w-full py-2 md:py-3 text-xs md:text-base bg-brand-secondary/10 hover:bg-brand-secondary text-brand-secondary hover:text-white font-medium rounded-lg md:rounded-xl transition-colors">
-                              View
-                            </button>
+                            <div className="flex gap-2">
+                              <button className="flex-1 py-2 md:py-3 text-[10px] md:text-sm bg-brand-secondary/10 hover:bg-brand-secondary text-brand-secondary hover:text-white font-medium rounded-lg md:rounded-xl transition-colors">
+                                View
+                              </button>
+                              <button 
+                                onClick={() => setViewingServicesFor({id: v.id, name: `${v.details.make} ${v.details.model}`})}
+                                className="flex-1 py-2 md:py-3 text-[10px] md:text-sm bg-brand-primary/10 hover:bg-brand-primary text-brand-primary hover:text-white font-medium rounded-lg md:rounded-xl transition-colors"
+                              >
+                                Services
+                              </button>
+                            </div>
                           </div>
                         </div>
                       ))}
@@ -338,6 +368,14 @@ export default function CategoryVehicles() {
           );
         })()}
       </div>
+
+      {viewingServicesFor && (
+        <PassengerServicesModal
+          vehicleId={viewingServicesFor.id}
+          vehicleName={viewingServicesFor.name}
+          onClose={() => setViewingServicesFor(null)}
+        />
+      )}
     </div>
   );
 }
