@@ -35,9 +35,15 @@ export default function CategoryVehicles() {
   const [viewingServicesFor, setViewingServicesFor] = useState<{ id: string, name: string, driverId: string } | null>(null);
   const [viewingVehicle, setViewingVehicle] = useState<any | null>(null);
   const [hiringDriverId, setHiringDriverId] = useState<string | null>(null);
+  const [showBidsModal, setShowBidsModal] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
+
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get("bids") === "open") {
+      setShowBidsModal(true);
+    }
 
     const fetchCategoryVehicles = async () => {
       try {
@@ -133,60 +139,68 @@ export default function CategoryVehicles() {
           </div>
 
           {/* Search and Action Buttons */}
-          <div className="flex flex-col xl:flex-row gap-3 md:gap-4 w-full xl:w-auto xl:items-center">
-            <div className="flex flex-row gap-2 md:gap-4 w-full xl:w-auto">
-              {/* Search Inputs */}
-              <div className="flex flex-col md:flex-row gap-2 w-full xl:w-[32rem]">
-                <div className="relative flex-grow">
-                  <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
-                    <Search className="h-4 w-4 md:h-5 md:w-5 text-foreground/50" />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Location (e.g. City/State)"
-                    value={locationQuery}
-                    onChange={(e) => setLocationQuery(e.target.value)}
-                    className="w-full pl-9 md:pl-11 pr-4 py-2 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl"
-                  />
+          <div className="flex flex-col-reverse xl:flex-row gap-3 md:gap-4 w-full xl:w-auto xl:items-center">
+            
+            {/* Search Inputs */}
+            <div className="flex flex-row gap-2 md:gap-4 w-full xl:w-[32rem]">
+              <div className="relative flex-grow">
+                <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
+                  <Search className="h-4 w-4 md:h-5 md:w-5 text-foreground/50" />
                 </div>
-                <div className="relative flex-grow">
-                  <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
-                    <MapPin className="h-4 w-4 md:h-5 md:w-5 text-foreground/50" />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder="Destination"
-                    value={destinationQuery}
-                    onChange={(e) => setDestinationQuery(e.target.value)}
-                    className="w-full pl-9 md:pl-11 pr-4 py-2 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl"
-                  />
-                </div>
+                <input
+                  type="text"
+                  placeholder="Location"
+                  value={locationQuery}
+                  onChange={(e) => setLocationQuery(e.target.value)}
+                  className="w-full pl-9 md:pl-11 pr-2 py-2 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-[11px] sm:text-sm md:text-base rounded-xl"
+                />
               </div>
+              <div className="relative flex-grow">
+                <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
+                  <MapPin className="h-4 w-4 md:h-5 md:w-5 text-foreground/50" />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Destination"
+                  value={destinationQuery}
+                  onChange={(e) => setDestinationQuery(e.target.value)}
+                  className="w-full pl-9 md:pl-11 pr-2 py-2 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-[11px] sm:text-sm md:text-base rounded-xl"
+                />
+              </div>
+            </div>
 
-              {/* Buttons beside search for Non-Driver */}
+            {/* Action Buttons */}
+            <div className="flex flex-row gap-2 md:gap-4 w-full xl:w-auto justify-start">
               {!isDriver && (
-                <button className="flex items-center justify-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-6 md:py-2 bg-brand-primary text-white rounded-xl font-medium text-sm md:text-base hover:bg-brand-primary/90 transition-all shadow-lg hover:shadow-brand-primary/30 hover:-translate-y-0.5 border border-brand-primary/50 flex-shrink-0">
-                  <PlusCircle className="w-4 h-4 md:w-5 md:h-5" />
+                <button 
+                  onClick={() => setShowBidsModal(true)}
+                  className="flex items-center justify-center gap-1.5 md:gap-2 px-4 py-2 md:px-6 md:py-2 bg-brand-primary text-white rounded-xl font-medium text-xs sm:text-sm md:text-base hover:bg-brand-primary/90 transition-all shadow-lg hover:shadow-brand-primary/30 hover:-translate-y-0.5 border border-brand-primary/50"
+                >
+                  <PlusCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" />
                   <span>Create Bid</span>
                 </button>
               )}
-            </div>
-
-            {/* Additional buttons for Drivers */}
-            {isDriver && (
-              <div className="flex flex-row gap-2 md:gap-4 w-full xl:w-auto">
-                {profile?.isApproved && (
-                  <button className="flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-6 md:py-2 bg-brand-secondary text-white rounded-xl font-medium text-sm md:text-base hover:bg-brand-secondary/90 transition-all shadow-lg hover:shadow-brand-secondary/30 hover:-translate-y-0.5 flex-1 xl:flex-none">
-                    <Briefcase className="w-4 h-4 md:w-5 md:h-5" />
-                    <span>Bid for jobs</span>
+              {isDriver && (
+                <>
+                  {profile?.isApproved && (
+                    <button 
+                      onClick={() => setShowBidsModal(true)}
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-6 md:py-2 bg-brand-secondary text-white rounded-xl font-medium text-xs sm:text-sm md:text-base hover:bg-brand-secondary/90 transition-all shadow-lg hover:shadow-brand-secondary/30 hover:-translate-y-0.5"
+                    >
+                      <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                      <span>Bid for jobs</span>
+                    </button>
+                  )}
+                  <button 
+                    onClick={() => setShowBidsModal(true)}
+                    className={`${profile?.isApproved ? 'flex-1 sm:flex-none' : ''} flex items-center justify-center gap-1.5 md:gap-2 px-4 py-2 md:px-6 md:py-2 bg-brand-primary text-white rounded-xl font-medium text-xs sm:text-sm md:text-base hover:bg-brand-primary/90 transition-all shadow-lg hover:shadow-brand-primary/30 hover:-translate-y-0.5 border border-brand-primary/50`}
+                  >
+                    <PlusCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" />
+                    <span>Create Bid</span>
                   </button>
-                )}
-                <button className="flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-6 md:py-2 bg-brand-primary text-white rounded-xl font-medium text-sm md:text-base hover:bg-brand-primary/90 transition-all shadow-lg hover:shadow-brand-primary/30 hover:-translate-y-0.5 border border-brand-primary/50 flex-1 xl:flex-none">
-                  <PlusCircle className="w-4 h-4 md:w-5 md:h-5" />
-                  <span>Create Bid</span>
-                </button>
-              </div>
-            )}
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -365,6 +379,42 @@ export default function CategoryVehicles() {
           driverId={hiringDriverId}
           onClose={() => setHiringDriverId(null)}
         />
+      )}
+
+      {/* Bids Modal */}
+      {showBidsModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-background dark:bg-[#0f172a] bg-[#f8fafc] border border-card-border rounded-3xl p-8 max-w-lg w-full text-center shadow-2xl relative zoom-in-95 duration-200">
+            <button
+              onClick={() => {
+                setShowBidsModal(false);
+                const newUrl = window.location.pathname;
+                window.history.pushState({}, '', newUrl);
+              }}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-card-border/50 text-foreground/50 hover:bg-card-border hover:text-foreground transition-all"
+            >
+              ✕
+            </button>
+            <div className="w-20 h-20 bg-card-border/50 rounded-full flex items-center justify-center mx-auto mb-6 border border-card-border shadow-inner">
+              <Briefcase className="w-10 h-10 text-foreground/40" />
+            </div>
+            <h2 className="text-2xl font-bold mb-4">Available Jobs ({category})</h2>
+            <div className="bg-foreground/5 border border-card-border border-dashed rounded-2xl p-8 py-12">
+              <p className="text-foreground/60 font-medium text-lg">No jobs found</p>
+              <p className="text-xs text-foreground/40 mt-2 max-w-xs mx-auto">There are currently no passenger requests for this vehicle category in your area.</p>
+            </div>
+            <button
+              onClick={() => {
+                setShowBidsModal(false);
+                const newUrl = window.location.pathname;
+                window.history.pushState({}, '', newUrl);
+              }}
+              className="w-full mt-6 py-3 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-primary/90 transition-colors shadow-lg shadow-brand-primary/20"
+            >
+              Close
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

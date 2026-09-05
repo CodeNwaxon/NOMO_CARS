@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import {
-  User, Phone, Star, Camera, Check, X, LogOut, MapPin, CarFront, Share2, Crown, Ticket
+  User, Phone, Star, Camera, Check, X, LogOut, MapPin, CarFront, Share2, Crown, Ticket, Briefcase, Bus, Truck, Car
 } from "lucide-react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -14,6 +14,14 @@ import { toast } from "react-hot-toast";
 import { checkUsernameUnique } from "@/lib/userUtils";
 import ShareOverlay from "@/components/ShareOverlay";
 import { websiteLink, getVIPBadge, VIP_PLANS, startTicketCollection, freeTicketPlanDays, ticketCollectionStartDate } from "@/lib/constants";
+
+const CATEGORIES = [
+  { id: "car", name: "Car", icon: Car, bg: "bg-blue-500/10", color: "text-blue-500", hoverShadow: "hover:shadow-blue-500/20", hoverBorder: "hover:border-blue-500/50" },
+  { id: "suv", name: "SUV", icon: CarFront, bg: "bg-brand-primary/10", color: "text-brand-primary", hoverShadow: "hover:shadow-brand-primary/20", hoverBorder: "hover:border-brand-primary/50" },
+  { id: "minibus", name: "Mini Bus", icon: Bus, bg: "bg-orange-500/10", color: "text-orange-500", hoverShadow: "hover:shadow-orange-500/20", hoverBorder: "hover:border-orange-500/50" },
+  { id: "bus", name: "Bus", icon: Bus, bg: "bg-amber-500/10", color: "text-amber-500", hoverShadow: "hover:shadow-amber-500/20", hoverBorder: "hover:border-amber-500/50" },
+  { id: "truck", name: "Truck", icon: Truck, bg: "bg-red-500/10", color: "text-red-500", hoverShadow: "hover:shadow-red-500/20", hoverBorder: "hover:border-red-500/50" },
+];
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg
@@ -34,6 +42,7 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
 
   const [isEditing, setIsEditing] = useState(false);
   const [showShareOverlay, setShowShareOverlay] = useState(false);
+  const [showBidCategoryModal, setShowBidCategoryModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -589,30 +598,41 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
       </div>
 
       {/* Action Buttons */}
-      <div className="mt-8 md:mt-10 flex flex-col md:flex-row items-center justify-center gap-4 md:gap-4 w-full px-4 md:px-0">
+      <div className="px-2 mt-10 flex flex-row items-center gap-2 md:gap-4 justify-center w-full">
+        <button
+          onClick={() => setShowBidCategoryModal(true)}
+          className="flex-1 sm:flex-none sm:w-auto px-2 py-3 md:px-8 md:py-4 bg-brand-primary text-white text-xs md:text-base font-bold rounded-md md:rounded-xl shadow-lg hover:bg-brand-primary/90 transition-all flex items-center justify-center gap-1 md:gap-2 hover:scale-105 whitespace-nowrap"
+        >
+          <Briefcase className="w-3.5 h-3.5 md:w-5 md:h-5" />
+          Bid for Job
+        </button>
         <Link
           href="/passenger"
-          className="w-full sm:flex-none sm:w-auto px-4 py-3 md:py-2 md:px-8 bg-brand-secondary text-white text-sm md:text-base font-bold rounded-xl shadow-lg hover:bg-brand-secondary/90 transition-all flex items-center justify-center gap-2 hover:scale-105 whitespace-nowrap"
+          className="flex-1 sm:flex-none sm:w-auto px-2 py-3 md:px-8 md:py-4 bg-brand-secondary text-white text-xs md:text-base font-bold rounded-md md:rounded-xl shadow-lg hover:bg-brand-secondary/90 transition-all flex items-center justify-center gap-1 md:gap-2 hover:scale-105 whitespace-nowrap"
         >
-          <CarFront className="w-4 h-4 md:w-5 md:h-5" />
+          <CarFront className="w-3.5 h-3.5 md:w-5 md:h-5" />
           Book a Ride
         </Link>
-        {onSignOut && (
-          <button
-            onClick={onSignOut}
-            className="w-full sm:flex-none sm:w-auto mt-12 md:mt-0 px-4 py-3 md:py-2 md:px-8 bg-red-500/10 text-red-500 hover:bg-red-500/20 text-sm md:text-base font-bold rounded-xl transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
-          >
-            <LogOut className="w-4 h-4 md:w-5 md:h-5" />
-            Sign Out
-          </button>
-        )}
       </div>
 
+      {/* Sign Out Button */}
+      {onSignOut && (
+        <div className="mt-16 flex justify-center">
+          <button
+            onClick={onSignOut}
+            className="flex items-center gap-2 px-6 py-3 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-xl transition-colors font-bold text-sm"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </button>
+        </div>
+      )}
+
       {/* Delete Account Button */}
-      <div className="mt-6 md:mt-8 flex justify-center">
+      <div className="mt-4 flex justify-center">
         <button
           onClick={initiateDelete}
-          className="text-red-500/70 hover:text-red-500 text-xs md:text-sm font-medium underline transition-colors"
+          className="text-red-500/70 hover:text-red-500 text-sm font-medium underline transition-colors"
         >
           Delete my account
         </button>
@@ -664,6 +684,44 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
           referralLink={`${websiteLink}/?ref=${user.uid}`}
           points={profile?.points || 0}
         />
+      )}
+
+      {/* Bid Category Modal */}
+      {showBidCategoryModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-background dark:bg-[#0f172a] bg-[#f8fafc] border border-card-border rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl relative zoom-in-95 duration-200 text-center">
+            <button 
+              onClick={() => setShowBidCategoryModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-card-border/50 text-foreground/50 hover:bg-card-border hover:text-foreground transition-all"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="w-16 h-16 bg-brand-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-brand-primary/20">
+              <Briefcase className="w-8 h-8 text-brand-primary" />
+            </div>
+            <h2 className="text-2xl font-bold mb-2">Bid for a Job</h2>
+            <p className="text-foreground/60 mb-8">Select the category of your vehicle to view available passenger jobs.</p>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
+              {CATEGORIES.map((cat) => {
+                const Icon = cat.icon;
+                return (
+                  <Link 
+                    key={cat.id} 
+                    href={`/passenger/${cat.id}?bids=open`}
+                    className={`glass-panel rounded-xl p-4 flex flex-col items-center justify-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg ${cat.hoverShadow} border border-transparent ${cat.hoverBorder}`}
+                  >
+                    <div className={`w-10 h-10 rounded-full ${cat.bg} flex items-center justify-center mb-2`}>
+                      <Icon className={`w-5 h-5 ${cat.color}`} />
+                    </div>
+                    <span className="font-bold text-sm">{cat.name}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

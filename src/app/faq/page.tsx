@@ -24,6 +24,24 @@ const faqData = [
   {
     question: "What payment methods are accepted?",
     answer: "We accept all major credit/debit cards and various digital wallets depending on your region. Payment is seamlessly handled within the platform."
+  },
+  {
+    question: "How does the job bidding system work?",
+    answer: (
+      <div className="space-y-4">
+        <div>
+          <strong className="block mb-1 text-foreground">For Passengers:</strong>
+          Post a job request for drivers to bid on by using the "Create Bid" button on any vehicle category page. Your VIP tier determines your request limits (Non-VIP users get 1 free request per month).
+        </div>
+        <div>
+          <strong className="block mb-1 text-foreground">For Drivers:</strong>
+          Find jobs by clicking "Bid for Job" on your dashboard, or on any vehicle category page. Placing a bid consumes one of your available bids (Non-VIP drivers receive 1 free bid per month).
+        </div>
+        <div className="text-xs opacity-80 italic">
+           Note: Limits reset monthly. If a passenger deletes a job you bid on, your bid is returned. If a user cancels maliciously, limits are not automatically returned, but you should report the user from their profile or chat.
+        </div>
+      </div>
+    )
   }
 ];
 
@@ -70,11 +88,11 @@ export default function FAQPage() {
               </button>
               
               <div 
-                className={`px-6 overflow-hidden transition-all duration-300 ease-in-out ${openIndex === index ? 'max-h-40 pb-5 opacity-100' : 'max-h-0 opacity-0'}`}
+                className={`px-6 overflow-hidden transition-all duration-300 ease-in-out ${openIndex === index ? 'max-h-[800px] pb-5 opacity-100' : 'max-h-0 opacity-0'}`}
               >
-                <p className="text-sm md:text-base text-foreground/70 leading-relaxed border-t border-border/50 pt-4 mt-2">
+                <div className="text-sm md:text-base text-foreground/70 leading-relaxed border-t border-border/50 pt-4 mt-2">
                   {faq.answer}
-                </p>
+                </div>
               </div>
             </div>
           ))}

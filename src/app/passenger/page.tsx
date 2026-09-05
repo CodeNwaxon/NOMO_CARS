@@ -14,10 +14,11 @@ import {
   Phone,
   ArrowRight,
   ShieldOff,
-  Loader2,
   Search,
   User,
-  Star
+  Star,
+  Info,
+  Loader2
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { collection, getDocs, doc, getDoc, query, where, limit, startAfter } from "firebase/firestore";
@@ -37,8 +38,9 @@ const categories = [
 ];
 
 export default function PassengerCategories() {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [showContactsModal, setShowContactsModal] = useState(false);
+  const [showHowToBidModal, setShowHowToBidModal] = useState(false);
   const [favoriteDrivers, setFavoriteDrivers] = useState<any[]>([]);
   const [loadingContacts, setLoadingContacts] = useState(false);
 
@@ -182,8 +184,19 @@ export default function PassengerCategories() {
             </div>
           </div>
 
-          <div className="flex justify-end mt-4 md:mt-0 w-full md:w-auto px-2 md:px-0 md:absolute md:right-0 md:top-2">
-            <button onClick={() => setShowContactsModal(true)} className="flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-brand-primary text-white rounded-xl font-medium text-xs md:text-sm hover:bg-brand-primary/90 transition-all shadow-lg hover:shadow-brand-primary/30 hover:-translate-y-0.5 border border-brand-primary/50">
+          <div className="flex justify-between items-center w-full mt-4 md:mt-0 px-2 md:px-0 md:absolute md:inset-x-0 md:top-2 pointer-events-none">
+            <button
+              onClick={() => setShowHowToBidModal(true)}
+              className="pointer-events-auto flex items-center gap-1.5 md:gap-2 px-2 py-1.5 md:px-4 md:py-2 bg-transparent text-black dark:text-blue-400 font-bold text-xs md:text-sm hover:underline transition-all"
+            >
+              <Info className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              <span className="hidden sm:inline">Learn how to create / find bids</span>
+              <span className="sm:hidden">Create / find bids</span>
+            </button>
+            <button
+              onClick={() => setShowContactsModal(true)}
+              className="pointer-events-auto flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-brand-primary text-white rounded-xl font-medium text-xs md:text-sm hover:bg-brand-primary/90 transition-all shadow-lg hover:shadow-brand-primary/30 hover:-translate-y-0.5 border border-brand-primary/50"
+            >
               <Users className="w-3.5 h-3.5 md:w-4 md:h-4" />
               <span>My Contacts</span>
             </button>
@@ -387,6 +400,62 @@ export default function PassengerCategories() {
               className="w-full py-3 bg-brand-primary text-white rounded-xl font-semibold hover:bg-brand-primary/90 transition-colors shadow-lg shadow-brand-primary/20"
             >
               Done
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* How To Bid Modal */}
+      {showHowToBidModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-background dark:bg-[#0f172a] bg-[#f8fafc] border border-card-border rounded-xl md:rounded-3xl p-4 md:p-8 max-w-2xl w-full shadow-2xl relative zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto">
+            <button
+              onClick={() => setShowHowToBidModal(false)}
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-card-border/50 text-foreground/50 hover:bg-card-border hover:text-foreground transition-all"
+            >
+              ✕
+            </button>
+            <div className="w-16 h-16 bg-brand-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-brand-primary/20">
+              <Info className="w-8 h-8 text-brand-primary" />
+            </div>
+
+            <h2 className="text-2xl font-bold mb-6 text-center">How Bidding Works</h2>
+            <div className="space-y-6 text-sm text-foreground/80 text-left">
+              <div className="bg-foreground/5 p-4 rounded-xl">
+                <h3 className="font-bold text-foreground mb-2">For Passengers: Creating Job Requests</h3>
+                <p>When you need a ride or service, you can post a job request for drivers to bid on. Use the <strong>"Create Bid"</strong> button directly on any vehicle category page to post your request.</p>
+                <ul className="list-disc pl-5 space-y-1 mt-2">
+                  <li>Your VIP tier determines how many requests you can create (Non-VIP users get <strong>1 free request</strong> per month). Limits reset monthly.</li>
+                  <li>Requests remain active for <strong>two weeks</strong> before automatically expiring.</li>
+                  <li>If you delete your own bid, or if it expires without a driver being chosen, the bid limit is <strong>not</strong> returned to you.</li>
+                </ul>
+              </div>
+              
+              <div className="bg-foreground/5 p-4 rounded-xl">
+                <h3 className="font-bold text-foreground mb-2">For Drivers: Bidding on Jobs</h3>
+                <p>Find jobs by clicking <strong>"Bid for Job"</strong> on your driver dashboard, or by using the <strong>"Bid for jobs"</strong> button directly on any vehicle category page.</p>
+                <ul className="list-disc pl-5 space-y-1 mt-2">
+                  <li>Placing a bid consumes one of your available bids. (Non-VIP drivers receive <strong>1 free bid</strong> per month). Higher VIP levels grant more bids.</li>
+                  <li>Bids reset completely at the start of each month (they do not roll over).</li>
+                  <li>If a passenger deletes a job request you bid on, your bid count <strong>is returned</strong> to you.</li>
+                </ul>
+              </div>
+
+              <div className="bg-foreground/5 p-4 rounded-xl">
+                <h3 className="font-bold text-foreground mb-2">Disappointments & Reporting</h3>
+                <p>If a passenger or driver cancels maliciously or disappoints:</p>
+                <ul className="list-disc pl-5 space-y-1 mt-2">
+                  <li>Your consumed bid or request limit is <strong>not automatically returned</strong>.</li>
+                  <li>You should <strong>report the user</strong> directly from their <strong>profile page</strong> or within the <strong>chat UI</strong> so the platform can take action.</li>
+                </ul>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowHowToBidModal(false)}
+              className="w-full mt-8 py-3 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-primary/90 transition-colors shadow-lg shadow-brand-primary/20"
+            >
+              I Understand
             </button>
           </div>
         </div>
