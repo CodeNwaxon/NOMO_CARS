@@ -10,6 +10,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { websiteLink, getVIPBadge, hasValidTicket } from "@/lib/constants";
+import ReportUserOverlay from "./ReportUserOverlay";
 
 interface Message {
   id: string;
@@ -44,10 +45,24 @@ function shouldBlockMessage(
   senderRole: "driver" | "passenger" | "admin",
   hasActiveTicket: boolean
 ): boolean {
-  // 1. Check for external links
-  const urls = text.match(URL_REGEX) || [];
-  const hasExternalLink = urls.some((url) => !url.startsWith(websiteLink));
-  if (hasExternalLink) return true;
+  // 1. Exempt our allowed domains by removing them from the text before checking
+  const allowedKeywords = ["nomocars", "nomostores"];
+  let textToCheck = text.toLowerCase();
+
+  if (allowedKeywords.length > 0) {
+    // Removes anything like https://nomocars, www.nomocars.com, nomostores.com, etc.
+    const keywordsPattern = allowedKeywords.join("|");
+    const regex = new RegExp(`(https?:\\/\\/)?(www\\.)?[a-z0-9.-]*(${keywordsPattern})[a-z0-9.-]*`, "g");
+    textToCheck = textToCheck.replace(regex, "");
+  }
+
+  // 2. Check for external links or .com / www. in the remaining text
+  const urls = textToCheck.match(URL_REGEX) || [];
+  const hasHttpLink = urls.length > 0;
+
+  const hasWwwOrCom = textToCheck.includes(".com") || textToCheck.includes("www.");
+
+  if (hasHttpLink || hasWwwOrCom) return true;
 
   // 2. Check for phone numbers
   const hasPhone = PHONE_REGEX.test(text);
@@ -78,6 +93,7 @@ export default function ChatOverlay(props: ChatOverlayProps) {
   const [targetLang, setTargetLang] = useState("en");
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [translatingMsgId, setTranslatingMsgId] = useState<string | null>(null);
+  const [showReportOverlay, setShowReportOverlay] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -145,8 +161,8 @@ export default function ChatOverlay(props: ChatOverlayProps) {
       // so the ChatContext's onSnapshot listener triggers and updates the unread counts in real-time
       if (markedAny) {
         try {
-          await updateDoc(doc(db, "chats", chatId), { 
-            [`lastReadAt_${user.uid}`]: serverTimestamp() 
+          await updateDoc(doc(db, "chats", chatId), {
+            [`lastReadAt_${user.uid}`]: serverTimestamp()
           });
         } catch (e) {
           console.error("Failed to update parent chat read status", e);
@@ -185,7 +201,7 @@ export default function ChatOverlay(props: ChatOverlayProps) {
         lastMessage: blocked ? "[Filtered]" : text,
         lastMessageAt: serverTimestamp(),
       };
-      
+
       // Only set these if we have them (i.e., not a driver replying with unknown passengerId)
       if (passengerId) {
         updateData.participants = [passengerId, driverId].sort();
@@ -198,15 +214,7 @@ export default function ChatOverlay(props: ChatOverlayProps) {
         updateData.createdAt = serverTimestamp();
       }
 
-      await setDoc(chatRef, updateData, { merge: true });
-
-      // If the passengerId was empty (driver started the chat), update it
-      if (isDriver && driverId === user.uid) {
-        // The "other" user is the driver we're chatting with
-        // This case is when a driver views their own messages tab
-      }
-
-      // Add message to subcollection
+      // Add message to subcollection FIRST to avoid race conditions with snapshot listeners
       const messagesRef = collection(db, "chats", chatId, "messages");
       await addDoc(messagesRef, {
         senderId: user.uid,
@@ -215,6 +223,15 @@ export default function ChatOverlay(props: ChatOverlayProps) {
         readBy: [user.uid],
         createdAt: serverTimestamp(),
       });
+
+      // THEN update the chat document so the snapshot listener picks up the new message
+      await setDoc(chatRef, updateData, { merge: true });
+
+      // If the passengerId was empty (driver started the chat), update it
+      if (isDriver && driverId === user.uid) {
+        // The "other" user is the driver we're chatting with
+        // This case is when a driver views their own messages tab
+      }
     } catch (error) {
       console.error("Error sending message:", error);
     } finally {
@@ -276,10 +293,10 @@ export default function ChatOverlay(props: ChatOverlayProps) {
   };
 
   return (
-    <div className="py-4 fixed inset-0 z-[150] flex items-center justify-center md:justify-end bg-black/50 backdrop-blur-sm">
-      <div className="w-full h-[100dvh] md:w-[420px] md:h-[70vh] md:mr-8 bg-white dark:bg-slate-950 md:rounded-2xl shadow-2xl flex flex-col overflow-hidden border-0 md:border md:border-gray-200 md:dark:border-slate-800">
+    <div className="py-4 fixed inset-0 z-[150] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="w-full h-[100dvh] md:w-[550px] md:h-[85vh] bg-white dark:bg-slate-950 md:rounded-2xl shadow-2xl flex flex-col overflow-hidden border-0 md:border md:border-gray-200 md:dark:border-slate-800">
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 bg-brand-primary text-white flex-shrink-0">
+        <div className="flex items-center gap-3 px-4 py-3 bg-blue-700 text-white flex-shrink-0">
           <div className="relative">
             <div className="w-10 h-10 rounded-full overflow-hidden bg-white/20 flex-shrink-0">
               {chatPartnerImage ? (
@@ -291,13 +308,15 @@ export default function ChatOverlay(props: ChatOverlayProps) {
               )}
             </div>
           </div>
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 flex flex-col">
             <h3 className="font-bold text-sm truncate">{chatPartnerName}</h3>
-            {chatPartnerTicketExpiry && (
-              <p className="text-[10px] text-white/70">
-                {new Date(chatPartnerTicketExpiry) > new Date() ? "Verified Driver" : "Ticket Expired"}
-              </p>
-            )}
+            <div className="flex items-center gap-2">
+              {chatPartnerTicketExpiry && (
+                <p className="text-[10px] text-white/70">
+                  {new Date(chatPartnerTicketExpiry) > new Date() ? "Verified Driver" : "Ticket Expired"}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Language Selector */}
@@ -324,11 +343,18 @@ export default function ChatOverlay(props: ChatOverlayProps) {
         </div>
 
         {/* Auto-delete notice */}
-        <div className="px-4 py-1.5 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800/30 flex-shrink-0">
-          <p className="text-[10px] text-amber-700 dark:text-amber-400 text-center flex items-center justify-center gap-1">
-            <AlertTriangle className="w-3 h-3" />
-            Messages older than 90 days are automatically deleted
+        <div className="px-1 md:px-4 py-1.5 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800/30 flex-shrink-0 flex items-center justify-between">
+          <p className="text-[9px] md:text-[10px] font-bold text-amber-700 dark:text-amber-400 flex items-center gap-1">
+            <AlertTriangle className="hidden md:block w-3 h-3" />
+            ! Messages older than 90 days are automatically deleted
           </p>
+          <button
+            onClick={() => setShowReportOverlay(true)}
+            className="text-[10px] font-medium text-red-600 dark:text-red-400 hover:text-red-700 hover:underline flex items-center gap-1 transition-colors bg-red-100 dark:bg-red-900/30 px-2 py-0.5 rounded-full border border-red-200 dark:border-red-800/50"
+            title="Report this account"
+          >
+            Report account
+          </button>
         </div>
 
         {/* Messages */}
@@ -359,10 +385,8 @@ export default function ChatOverlay(props: ChatOverlayProps) {
                     className={`px-3.5 py-2 rounded-2xl text-xs md:text-sm leading-relaxed ${msg.blocked
                       ? "bg-gray-200 dark:bg-gray-800 text-gray-400 dark:text-gray-600 line-through"
                       : isMine
-                        ? "bg-brand-primary text-white rounded-br-md"
-                        : isDriverMsg
-                          ? "bg-blue-500 text-white rounded-bl-md"
-                          : "bg-emerald-500 text-white rounded-bl-md"
+                        ? "bg-blue-700 text-white rounded-br-md"
+                        : "bg-green-700 text-white rounded-bl-md"
                       }`}
                   >
                     <div>{msg.text}</div>
@@ -382,7 +406,7 @@ export default function ChatOverlay(props: ChatOverlayProps) {
                       <button
                         onClick={() => handleTranslate(msg.id, msg.text)}
                         disabled={translatingMsgId === msg.id}
-                        className="opacity-0 group-hover:opacity-100 p-0.5 text-brand-primary hover:text-brand-primary/80 transition-all text-[10px] font-medium flex items-center gap-1"
+                        className="opacity-100 md:opacity-0 group-hover:opacity-100 p-0.5 text-brand-primary hover:text-brand-primary/80 transition-all text-[10px] font-medium flex items-center gap-1"
                       >
                         {translatingMsgId === msg.id ? (
                           <Loader2 className="w-3 h-3 animate-spin" />
@@ -396,7 +420,7 @@ export default function ChatOverlay(props: ChatOverlayProps) {
                     {isMine && (
                       <button
                         onClick={() => handleDelete(msg.id)}
-                        className="opacity-0 group-hover:opacity-100 p-0.5 text-red-400 hover:text-red-500 transition-all"
+                        className="opacity-100 md:opacity-0 group-hover:opacity-100 p-0.5 text-red-400 hover:text-red-500 transition-all ml-2"
                         title="Delete message"
                       >
                         <Trash2 className="w-3 h-3" />
@@ -437,6 +461,14 @@ export default function ChatOverlay(props: ChatOverlayProps) {
           </form>
         </div>
       </div>
+
+      {showReportOverlay && (
+        <ReportUserOverlay
+          reportedUserId={isDriver ? passengerId : driverId}
+          reportedUserRole={isDriver ? "passenger" : "driver"}
+          onClose={() => setShowReportOverlay(false)}
+        />
+      )}
     </div>
   );
 }

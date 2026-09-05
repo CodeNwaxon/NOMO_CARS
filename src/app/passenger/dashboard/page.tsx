@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import {
-  User, Phone, Star, Camera, Check, X, LogOut, MessageCircle, MapPin, Car, CarFront, Share2, Crown
+  User, Phone, Star, Camera, Check, X, LogOut, MessageCircle, MapPin, Car, CarFront, Share2, Crown, ArrowLeft
 } from "lucide-react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -14,6 +14,8 @@ import { toast } from "react-hot-toast";
 import { checkUsernameUnique } from "@/lib/userUtils";
 import ShareOverlay from "@/components/ShareOverlay";
 import { websiteLink, getVIPBadge, VIP_PLANS } from "@/lib/constants";
+import { useChat } from "@/context/ChatContext";
+import MessagesTab from "@/app/driver/dashboard/MessagesTab";
 
 const WhatsAppIcon = ({ className }: { className?: string }) => (
   <svg
@@ -34,8 +36,10 @@ export default function PassengerDashboard() {
 
   const [isEditing, setIsEditing] = useState(false);
   const [showShareOverlay, setShowShareOverlay] = useState(false);
+  const [showMessages, setShowMessages] = useState(false);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { totalUnread } = useChat();
 
   const [formData, setFormData] = useState({
     firstName: profile?.firstName || "",
@@ -56,12 +60,19 @@ export default function PassengerDashboard() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
-  // Redirect if not signed in
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/");
     }
   }, [user, authLoading, router]);
+
+  // Auto-open messages tab from notification link
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    if (searchParams.get("tab") === "messages") {
+      setShowMessages(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (profile) {
@@ -275,28 +286,51 @@ export default function PassengerDashboard() {
       {/* Background decorations */}
       <div className="absolute top-[-10%] right-[-10%] w-[40rem] h-[40rem] bg-brand-primary/5 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div className="max-w-5xl mx-auto z-10 relative">
+      <div className="max-w-5xl mx-auto relative">
         <div className="px-3 md:px-0 flex justify-between items-start md:items-center mb-10 gap-2 md:gap-4">
           <div>
             <h1 className="md:text-4xl text-xl font-bold md:mb-2 mb-0">My Dashboard</h1>
             <p className="text-[10px] md:text-sm text-foreground/70">Manage your passenger profile and preferences.</p>
           </div>
           <button
-            onClick={() => setShowSignOutModal(true)}
-            className="text-xs flex items-center gap-2 px-2 py-1.5 md:2 md:py-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors font-medium"
+            onClick={() => setShowMessages(!showMessages)}
+            className={`relative flex items-center gap-1.5 p-2 rounded-lg transition-colors ${showMessages ? "text-foreground/80 hover:bg-card-bg" : "text-brand-primary hover:bg-brand-primary/10"}`}
           >
-            <LogOut className="w-4 h-4" />
-            <span>Sign Out</span>
+            {showMessages ? (
+              <>
+                <ArrowLeft className="w-4 h-4" />
+                <span className="font-bold text-sm">Back</span>
+              </>
+            ) : (
+              <>
+                <span className="font-bold text-sm">Chat</span>
+                <div className="relative">
+                  <MessageCircle className="w-5 h-5" />
+                  {totalUnread > 0 && (
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center ring-2 ring-white dark:ring-slate-900">
+                      {totalUnread > 9 ? "9+" : totalUnread}
+                    </span>
+                  )}
+                </div>
+              </>
+            )}
           </button>
         </div>
 
-        <div className="px-4 md:px-0 grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Profile Card */}
-          <div className="glass-panel rounded-xl md:rounded-3xl p-4 lg:col-span-1 flex flex-col items-center text-center">
-            <div className="relative mb-6">
-              {vipBadge && (
-                <div className={`absolute -top-2 -right-2 z-10 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg ${vipBadge.colorClass}`}>
-                  {vipBadge.tag}
+        {showMessages ? (
+          /* Messages View - same as driver dashboard Messages tab */
+          <div className="pb-10">
+            <MessagesTab userId={user.uid} />
+          </div>
+        ) : (
+          <>
+            <div className="px-4 md:px-0 grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Profile Card */}
+              <div className="glass-panel rounded-xl md:rounded-3xl p-4 lg:col-span-1 flex flex-col items-center text-center">
+                <div className="relative mb-6">
+                  {vipBadge && (
+                    <div className={`absolute -top-2 -right-2 z-10 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-lg ${vipBadge.colorClass}`}>
+                      {vipBadge.tag}
                 </div>
               )}
               <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-brand-primary/20 bg-card-border shadow-xl">
@@ -505,8 +539,19 @@ export default function PassengerDashboard() {
           </Link>
         </div>
 
+        {/* Sign Out Button */}
+        <div className="mt-16 flex justify-center">
+          <button
+            onClick={() => setShowSignOutModal(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-xl transition-colors font-bold text-sm"
+          >
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </button>
+        </div>
+
         {/* Delete Account Button */}
-        <div className="mt-8 flex justify-center">
+        <div className="mt-4 flex justify-center">
           <button
             onClick={initiateDelete}
             className="text-red-500/70 hover:text-red-500 text-sm font-medium underline transition-colors"
@@ -514,6 +559,8 @@ export default function PassengerDashboard() {
             Delete my account
           </button>
         </div>
+          </>
+        )}
       </div>
 
       {/* Delete Confirmation Modal */}

@@ -1,21 +1,24 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { doc, getDoc, collection, query, where, getDocs, setDoc, deleteDoc, updateDoc, increment } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Loader2, ArrowLeft, Star, MapPin, Car, Phone, ShieldOff, Heart, MessageCircle } from "lucide-react";
+import { Loader2, ArrowLeft, Star, MapPin, Car, Phone, ShieldOff, Heart, MessageCircle, AlertTriangle, Flag } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "react-hot-toast";
 import ChatButton from "@/components/ChatButton";
 import { getVIPBadge } from "@/lib/constants";
 import PassengerServicesModal from "@/components/PassengerServicesModal";
+import ReportUserOverlay from "@/components/ReportUserOverlay";
 
 export default function DriverProfilePage() {
   const params = useParams();
   const driverId = params.id as string;
   const router = useRouter();
   const { user } = useAuth();
+  const searchParams = useSearchParams();
+  const autoOpenChat = searchParams.get("chat") === "open";
 
   const [driver, setDriver] = useState<any>(null);
   const [vehicles, setVehicles] = useState<any[]>([]);
@@ -23,6 +26,7 @@ export default function DriverProfilePage() {
   const [isFavorited, setIsFavorited] = useState(false);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
   const [viewingServicesFor, setViewingServicesFor] = useState<{id: string, name: string} | null>(null);
+  const [showReportOverlay, setShowReportOverlay] = useState(false);
 
   useEffect(() => {
     const fetchDriverAndVehicles = async () => {
@@ -126,14 +130,27 @@ export default function DriverProfilePage() {
       <div className="absolute top-[-10%] right-[-10%] w-[40rem] h-[40rem] bg-brand-primary/10 rounded-full blur-3xl pointer-events-none"></div>
 
       <div className="max-w-4xl mx-auto z-10 relative">
-        <div className="flex items-center gap-4 mb-8">
-          <button
-            onClick={() => router.back()}
-            className="p-2 md:p-3 bg-card-bg hover:bg-card-border border border-card-border rounded-full transition-colors shadow-sm"
-          >
-            <ArrowLeft className="w-4 h-4 md:w-6 md:h-6" />
-          </button>
-          <h1 className="text-2xl md:text-3xl font-bold">Driver Profile</h1>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => router.back()}
+              className="p-2 md:p-3 bg-card-bg hover:bg-card-border border border-card-border rounded-full transition-colors shadow-sm"
+            >
+              <ArrowLeft className="w-4 h-4 md:w-6 md:h-6" />
+            </button>
+            <h1 className="text-2xl md:text-3xl font-bold">Driver Profile</h1>
+          </div>
+          
+          {user && !isOwnProfile && (
+            <button
+              onClick={() => setShowReportOverlay(true)}
+              className="text-[10px] font-medium text-red-600 dark:text-red-400 hover:text-red-700 hover:underline flex items-center gap-1 transition-colors bg-red-100 dark:bg-red-900/30 px-3 py-1.5 rounded-full border border-red-200 dark:border-red-800/50"
+              title="Report Driver"
+            >
+              <Flag className="w-3 h-3" />
+              Report
+            </button>
+          )}
         </div>
 
         <div className="glass-panel rounded-3xl p-8 mb-8 flex flex-col md:flex-row gap-8 items-center md:items-start text-center md:text-left">
@@ -215,7 +232,7 @@ export default function DriverProfilePage() {
                 <button
                   onClick={toggleFavorite}
                   disabled={isTogglingFavorite}
-                  className={`inline-flex items-center gap-2 px-4 py-3 rounded-xl border transition-all ${
+                  className={`inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border transition-all ${
                     isFavorited 
                       ? "bg-rose-50 border-rose-200 text-rose-500 dark:bg-rose-500/10 dark:border-rose-500/20" 
                       : "bg-card-bg border-card-border hover:bg-card-border"
@@ -282,7 +299,6 @@ export default function DriverProfilePage() {
         )}
       </div>
 
-      {/* Chat Button - only show for logged-in users who are not the driver */}
       {user && !isOwnProfile && (
         <ChatButton 
           driverId={driverId} 
@@ -290,15 +306,23 @@ export default function DriverProfilePage() {
           driverImage={driver.displayImage || ""} 
           driverTicketExpiry={driver.ticketExpiry}
           driverVipStars={driver.vipStars}
+          autoOpen={autoOpenChat}
         />
       )}
 
-      {/* Services Modal */}
       {viewingServicesFor && (
         <PassengerServicesModal
           vehicleId={viewingServicesFor.id}
           vehicleName={viewingServicesFor.name}
           onClose={() => setViewingServicesFor(null)}
+        />
+      )}
+
+      {showReportOverlay && user && (
+        <ReportUserOverlay 
+          reportedUserId={driverId}
+          reportedUserRole="driver"
+          onClose={() => setShowReportOverlay(false)}
         />
       )}
     </div>

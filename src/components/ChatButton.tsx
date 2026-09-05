@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MessageCircle } from "lucide-react";
 import ChatOverlay from "./ChatOverlay";
 
@@ -10,10 +10,18 @@ interface ChatButtonProps {
   driverImage: string;
   driverTicketExpiry?: string;
   driverVipStars?: number;
+  autoOpen?: boolean;
 }
 
-export default function ChatButton({ driverId, driverName, driverImage, driverTicketExpiry, driverVipStars }: ChatButtonProps) {
+export default function ChatButton({ driverId, driverName, driverImage, driverTicketExpiry, driverVipStars, autoOpen }: ChatButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  // Auto-open chat when arriving from a notification link
+  useEffect(() => {
+    if (autoOpen) {
+      setIsOpen(true);
+    }
+  }, [autoOpen]);
 
   return (
     <>

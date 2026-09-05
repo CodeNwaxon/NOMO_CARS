@@ -28,7 +28,7 @@ const WhatsAppIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-export default function ProfileTab({ profile, userId }: { profile: any; userId: string }) {
+export default function ProfileTab({ profile, userId, onSignOut }: { profile: any; userId: string; onSignOut?: () => void }) {
   const { user, refreshProfile, deleteAccount } = useAuth();
   const router = useRouter();
 
@@ -589,14 +589,23 @@ export default function ProfileTab({ profile, userId }: { profile: any; userId: 
       </div>
 
       {/* Action Buttons */}
-      <div className="mt-8 md:mt-10 flex flex-row items-center justify-center w-full">
+      <div className="mt-8 md:mt-10 flex flex-col md:flex-row items-center justify-center gap-4 md:gap-4 w-full px-4 md:px-0">
         <Link
           href="/passenger"
-          className="w-full sm:w-auto px-4 py-2 md:px-8 bg-brand-secondary text-white text-sm md:text-base font-bold rounded-xl shadow-lg hover:bg-brand-secondary/90 transition-all flex items-center justify-center gap-2 hover:scale-105 whitespace-nowrap"
+          className="w-full sm:flex-none sm:w-auto px-4 py-3 md:py-2 md:px-8 bg-brand-secondary text-white text-sm md:text-base font-bold rounded-xl shadow-lg hover:bg-brand-secondary/90 transition-all flex items-center justify-center gap-2 hover:scale-105 whitespace-nowrap"
         >
           <CarFront className="w-4 h-4 md:w-5 md:h-5" />
           Book a Ride
         </Link>
+        {onSignOut && (
+          <button
+            onClick={onSignOut}
+            className="w-full sm:flex-none sm:w-auto mt-12 md:mt-0 px-4 py-3 md:py-2 md:px-8 bg-red-500/10 text-red-500 hover:bg-red-500/20 text-sm md:text-base font-bold rounded-xl transition-colors flex items-center justify-center gap-2 whitespace-nowrap"
+          >
+            <LogOut className="w-4 h-4 md:w-5 md:h-5" />
+            Sign Out
+          </button>
+        )}
       </div>
 
       {/* Delete Account Button */}

@@ -14,11 +14,15 @@ import {
   Phone,
   ArrowRight,
   ShieldOff,
-  Loader2
+  Loader2,
+  Search,
+  User,
+  Star
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
-import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import { collection, getDocs, doc, getDoc, query, where, limit, startAfter } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { getVIPBadge } from "@/lib/constants";
 
 const categories = [
   { name: "Dispatch Rider", id: "dispatch-rider", icon: Bike, color: "text-orange-500", bg: "bg-orange-500/10", hoverBorder: "hover:border-orange-500/50", hoverShadow: "hover:shadow-orange-500/20" },
@@ -37,6 +41,12 @@ export default function PassengerCategories() {
   const [showContactsModal, setShowContactsModal] = useState(false);
   const [favoriteDrivers, setFavoriteDrivers] = useState<any[]>([]);
   const [loadingContacts, setLoadingContacts] = useState(false);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [lastVisibleDoc, setLastVisibleDoc] = useState<any>(null);
+  const [hasMoreSearch, setHasMoreSearch] = useState(false);
 
   useEffect(() => {
     localStorage.setItem("lastVisitedPage", "/passenger");
@@ -70,6 +80,75 @@ export default function PassengerCategories() {
     }
   }, [user, showContactsModal]);
 
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setSearchResults([]);
+      setLastVisibleDoc(null);
+      setHasMoreSearch(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      fetchSearchResults();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const fetchSearchResults = async (loadMore = false) => {
+    if (!searchQuery.trim()) return;
+    
+    setIsSearching(true);
+    try {
+      const qLower = searchQuery.toLowerCase();
+      
+      let baseQuery = query(
+        collection(db, "users"),
+        where("role", "==", "driver"),
+        limit(40)
+      );
+
+      // We will perform a client-side filter for simplicity since Firestore doesn't easily support case-insensitive substring search across multiple fields without extensions.
+      // But to avoid loading all drivers, we just load in batches. Note: This means pagination combined with client-side filtering can be tricky if we don't fetch enough.
+      // A robust full-text search requires a 3rd party like Algolia. We will fetch 40 drivers per query.
+
+      if (loadMore && lastVisibleDoc) {
+        baseQuery = query(
+          collection(db, "users"),
+          where("role", "==", "driver"),
+          startAfter(lastVisibleDoc),
+          limit(40)
+        );
+      }
+
+      const querySnapshot = await getDocs(baseQuery);
+      
+      const results: any[] = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        const searchStr = `${data.username || ""} ${data.firstName || ""} ${data.lastName || ""} ${data.city || ""} ${data.state || ""}`.toLowerCase();
+        
+        if (searchStr.includes(qLower)) {
+          results.push({ id: doc.id, ...data });
+        }
+      });
+
+      if (loadMore) {
+        setSearchResults(prev => [...prev, ...results]);
+      } else {
+        setSearchResults(results);
+      }
+
+      setLastVisibleDoc(querySnapshot.docs[querySnapshot.docs.length - 1] || null);
+      setHasMoreSearch(querySnapshot.docs.length === 40);
+
+    } catch (error) {
+      console.error("Error searching drivers:", error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   return (
     <div className="min-h-screen py-8 md:py-16 px-3 md:px-6 relative overflow-hidden">
       {/* Background decorations */}
@@ -77,12 +156,29 @@ export default function PassengerCategories() {
 
       <div className="max-w-6xl mx-auto z-10 relative">
         <div className="text-center mb-6 md:mb-8 relative flex flex-col items-center">
-          <h1 className="text-2xl md:text-5xl font-bold mb-0 md:mb-4 text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary to-brand-primary">
+          <h1 className="text-2xl md:text-5xl font-bold mb-4 md:mb-6 text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary to-brand-primary">
             Choose Your Ride
           </h1>
-          <p className="px-3 md:px-0 text-sm md:text-lg text-foreground/70 max-w-2xl mx-auto">
-            Select a transport category below to find the perfect vehicle for your journey or cargo needs.
-          </p>
+          
+          <div className="w-full max-w-2xl px-4 mx-auto mb-6">
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-foreground/50" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search for drivers, names, or locations..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-4 py-[1.8rem] md:py-2 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 text-base rounded-2xl md:rounded-xl"
+              />
+              {isSearching && (
+                <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                  <Loader2 className="h-5 w-5 text-brand-primary animate-spin" />
+                </div>
+              )}
+            </div>
+          </div>
 
           <div className="flex justify-end mt-4 md:mt-0 w-full md:w-auto px-2 md:px-0 md:absolute md:right-0 md:top-2">
             <button onClick={() => setShowContactsModal(true)} className="flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-brand-primary text-white rounded-xl font-medium text-xs md:text-sm hover:bg-brand-primary/90 transition-all shadow-lg hover:shadow-brand-primary/30 hover:-translate-y-0.5 border border-brand-primary/50">
@@ -92,21 +188,92 @@ export default function PassengerCategories() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-6">
-          {categories.map((cat) => {
-            const Icon = cat.icon;
-            return (
-              <Link key={cat.id} href={`/passenger/${cat.id}`} className="group block">
-                <div className={`glass-panel rounded-lg md:rounded-2xl p-4 md:p-8 flex flex-col items-center justify-center text-center transition-all duration-300 hover:-translate-y-2 hover:shadow-xl ${cat.hoverShadow} border-2 border-transparent ${cat.hoverBorder} h-full`}>
-                  <div className={`w-16 h-16 rounded-full ${cat.bg} flex items-center justify-center mb-4 group-hover:scale-110 group-hover:${cat.bg.replace('/10', '/20')} transition-all duration-300`}>
-                    <Icon className={`w-8 h-8 ${cat.color}`} />
-                  </div>
-                  <h3 className="font-bold text-lg">{cat.name}</h3>
+        {searchQuery.trim() ? (
+          // Search Results View
+          <div className="px-1 md:px-0">
+            {searchResults.length > 0 ? (
+              <div className="mb-12">
+                <h2 className="text-xl md:text-2xl font-bold mb-6 flex items-center gap-2">
+                  <User className="text-brand-primary" /> Driver Profiles Found
+                </h2>
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 md:gap-6">
+                  {searchResults.map((driver, index) => (
+                    <Link key={`${driver.id}-${index}`} href={`/driver/profile/${driver.id}`} className="group block">
+                      <div className="glass-panel p-3 md:p-6 rounded-md md:rounded-2xl flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-2 md:gap-4 hover:shadow-lg transition-all border border-brand-primary/20 h-full">
+                        <div className="relative w-12 h-12 md:w-16 md:h-16 flex-shrink-0">
+                          {getVIPBadge(driver.vipStars) && (
+                            <div className={`absolute -top-1 -right-1 z-10 px-1 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider shadow-lg ${getVIPBadge(driver.vipStars)?.colorClass}`}>
+                              {getVIPBadge(driver.vipStars)?.tag}
+                            </div>
+                          )}
+                          <div className="w-full h-full rounded-full overflow-hidden bg-card-border">
+                            {driver.displayImage ? (
+                              <img src={driver.displayImage} alt={driver.username} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-brand-primary/10 text-brand-primary font-bold text-lg md:text-xl uppercase">
+                                {driver.username?.charAt(0) || "D"}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0 w-full flex flex-col items-center md:items-start">
+                          <h3 className="font-bold text-sm md:text-lg w-full truncate flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-2">
+                            <span className="truncate">{driver.username || driver.firstName}</span>
+                            {driver.vipStars >= 1 && driver.vipStars < 5 && (
+                              <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                            )}
+                            {driver.vipStars === 5 && (
+                              <span className="flex items-center justify-center gap-1 text-[8px] md:text-[10px] font-black text-amber-500 bg-gradient-to-br from-slate-900 to-black px-2 py-0.5 rounded-full border border-slate-700 shadow-md">
+                                ULTIMATE VIP <Star className="w-2 h-2 md:w-3 md:h-3 fill-amber-500" />
+                              </span>
+                            )}
+                          </h3>
+                        </div>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
-              </Link>
-            );
-          })}
-        </div>
+                {hasMoreSearch && (
+                  <div className="flex justify-center mt-8">
+                    <button 
+                      onClick={() => fetchSearchResults(true)}
+                      className="px-6 py-3 bg-card-border/50 text-foreground font-bold rounded-xl hover:bg-card-border transition-colors border border-card-border flex items-center gap-2"
+                    >
+                      {isSearching ? <Loader2 className="w-5 h-5 animate-spin" /> : "Load More"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              !isSearching && (
+                <div className="text-center py-20 bg-foreground/5 rounded-3xl border border-card-border border-dashed mt-8">
+                  <User className="w-16 h-16 text-foreground/20 mx-auto mb-4" />
+                  <h3 className="text-xl font-bold mb-2">No Drivers Found</h3>
+                  <p className="text-foreground/60 max-w-md mx-auto">
+                    We couldn't find any drivers matching "{searchQuery}". Try a different name or location.
+                  </p>
+                </div>
+              )
+            )}
+          </div>
+        ) : (
+          // Categories View (Default)
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-6">
+            {categories.map((cat) => {
+              const Icon = cat.icon;
+              return (
+                <Link key={cat.id} href={`/passenger/${cat.id}`} className="group block">
+                  <div className={`glass-panel rounded-lg md:rounded-2xl p-4 md:p-8 flex flex-col items-center justify-center text-center transition-all duration-300 hover:-translate-y-2 hover:shadow-xl ${cat.hoverShadow} border-2 border-transparent ${cat.hoverBorder} h-full`}>
+                    <div className={`w-16 h-16 rounded-full ${cat.bg} flex items-center justify-center mb-4 group-hover:scale-110 group-hover:${cat.bg.replace('/10', '/20')} transition-all duration-300`}>
+                      <Icon className={`w-8 h-8 ${cat.color}`} />
+                    </div>
+                    <h3 className="font-bold text-lg">{cat.name}</h3>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {showContactsModal && (

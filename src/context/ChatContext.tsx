@@ -113,8 +113,10 @@ export const ChatProvider = ({ children }: { children: React.ReactNode }) => {
             const chat = chatList.find((c) => c.chatId === chatId);
             if (chat) {
               const senderName = user.uid === chat.driverId ? chat.passengerName : chat.driverName;
-              const baseUrl = profileRef.current?.role === "driver" ? "/driver/dashboard" : "/passenger/dashboard";
-              const link = `${baseUrl}?tab=messages`;
+              const isCurrentUserDriver = profileRef.current?.role === "driver";
+              const link = isCurrentUserDriver
+                ? "/driver/dashboard?tab=messages"
+                : "/passenger/dashboard?tab=messages";
               addNotification(
                 "New Message",
                 `You have a message from ${senderName}`,

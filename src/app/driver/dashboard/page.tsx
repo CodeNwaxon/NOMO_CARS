@@ -132,7 +132,7 @@ export default function DriverDashboard() {
       <main className="flex-1 p-4 md:p-10 relative overflow-y-auto h-screen">
         <div className="absolute top-0 right-0 w-96 h-96 bg-brand-primary/5 rounded-full blur-3xl -z-10 pointer-events-none"></div>
         
-        {activeTab === "profile" && <ProfileTab profile={profile} userId={user.uid} />}
+        {activeTab === "profile" && <ProfileTab profile={profile} userId={user.uid} onSignOut={() => setShowSignOutModal(true)} />}
         {activeTab === "vehicles" && <VehiclesTab userId={user.uid} />}
         {activeTab === "messages" && <MessagesTab userId={user.uid} />}
       </main>
