@@ -5,16 +5,20 @@ import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { X, Loader2, MapPin, ChevronDown, ChevronUp } from "lucide-react";
 
+import HireContactOverlay from "./HireContactOverlay";
+
 interface PassengerServicesModalProps {
   vehicleId: string;
   vehicleName: string;
+  driverId: string;
   onClose: () => void;
 }
 
-export default function PassengerServicesModal({ vehicleId, vehicleName, onClose }: PassengerServicesModalProps) {
+export default function PassengerServicesModal({ vehicleId, vehicleName, driverId, onClose }: PassengerServicesModalProps) {
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedDesc, setExpandedDesc] = useState<string | null>(null);
+  const [showContactOverlay, setShowContactOverlay] = useState(false);
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -42,15 +46,28 @@ export default function PassengerServicesModal({ vehicleId, vehicleName, onClose
       {/* Modal */}
       <div className="relative bg-[#1A1A1A] text-white border border-white/10 rounded-3xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-white/10 bg-white/5">
-          <div>
-            <h2 className="text-xl font-bold bg-gradient-to-r from-brand-primary to-brand-secondary bg-clip-text text-transparent">Available Routes</h2>
-            <p className="text-xs text-white/60 mt-1">For: <span className="font-bold text-white">{vehicleName}</span></p>
+        <div className="flex justify-between items-center p-4 md:p-6 border-b border-white/10 bg-white/5">
+          <div className="flex-1">
+            <h2 className="text-lg md:text-xl font-bold bg-gradient-to-r from-brand-primary to-brand-secondary bg-clip-text text-transparent">Available Routes</h2>
+            <p className="text-[10px] md:text-xs text-white/60 mt-1">For: <span className="font-bold text-white">{vehicleName}</span></p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full transition-colors border border-white/10">
-            <X className="w-5 h-5 text-white/80" />
-          </button>
+          <div className="flex items-center gap-2 md:gap-3">
+            <button 
+              onClick={() => setShowContactOverlay(true)}
+              className="px-3 py-1.5 md:px-4 md:py-2 text-[10px] md:text-xs bg-brand-primary hover:bg-brand-primary/90 text-white font-bold rounded-lg transition-colors border border-brand-primary/50 whitespace-nowrap"
+            >
+              Contact Driver
+            </button>
+            <button onClick={onClose} className="p-1.5 md:p-2 hover:bg-white/10 rounded-full transition-colors border border-white/10">
+              <X className="w-4 h-4 md:w-5 md:h-5 text-white/80" />
+            </button>
+          </div>
         </div>
+
+        {/* Contact Overlay */}
+        {showContactOverlay && (
+          <HireContactOverlay driverId={driverId} onClose={() => setShowContactOverlay(false)} />
+        )}
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">

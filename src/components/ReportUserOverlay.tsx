@@ -24,8 +24,8 @@ const REPORT_REASONS = [
 
 export default function ReportUserOverlay({ reportedUserId, reportedUserRole, onClose }: ReportUserOverlayProps) {
   const { user, profile } = useAuth();
-  
-  const [phone, setPhone] = useState("");
+
+  const [phone, setPhone] = useState(profile?.phone || "");
   const [reason, setReason] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -50,7 +50,7 @@ export default function ReportUserOverlay({ reportedUserId, reportedUserRole, on
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!user || !profile) {
       toast.error("You must be logged in to report an account.");
       return;
@@ -61,14 +61,7 @@ export default function ReportUserOverlay({ reportedUserId, reportedUserRole, on
       return;
     }
 
-    // Phone validation
-    const isReporterDriver = profile.role === "driver";
-    if (isReporterDriver && !phone.trim()) {
-      toast.error("Phone number is required for drivers submitting a report.");
-      return;
-    }
-
-    if (phone.trim() && !/^0\d{10}$/.test(phone)) {
+    if (phone.trim() && !/^0\d{10}$/.test(phone.trim())) {
       toast.error("Phone number must be exactly 11 digits and start with 0.");
       return;
     }
@@ -77,7 +70,7 @@ export default function ReportUserOverlay({ reportedUserId, reportedUserRole, on
 
     try {
       const reportRef = doc(db, "reports", reportedUserId);
-      
+
       const newIncident = {
         reporterId: user.uid,
         reporterName: profile.username || profile.firstName || "Unknown User",
@@ -88,22 +81,15 @@ export default function ReportUserOverlay({ reportedUserId, reportedUserRole, on
         date: new Date().toISOString(), // Use ISO string to avoid complex serialization issues
       };
 
-      const reportDoc = await getDoc(reportRef);
-      if (reportDoc.exists()) {
-        await setDoc(reportRef, {
-          incidents: arrayUnion(newIncident)
-        }, { merge: true });
-      } else {
-        await setDoc(reportRef, {
-          reportedUserId,
-          reportedUserEmail: reportedUserData?.email || "",
-          reportedUserName: reportedUserData?.username || reportedUserData?.firstName || "Unknown",
-          reportedUserImage: reportedUserData?.displayImage || "",
-          reportedUserRole,
-          reportedUserPhone: reportedUserData?.phone || "",
-          incidents: [newIncident]
-        });
-      }
+      await setDoc(reportRef, {
+        reportedUserId,
+        reportedUserEmail: reportedUserData?.email || "",
+        reportedUserName: reportedUserData?.username || reportedUserData?.firstName || "Unknown",
+        reportedUserImage: reportedUserData?.displayImage || "",
+        reportedUserRole,
+        reportedUserPhone: reportedUserData?.phone || "",
+        incidents: arrayUnion(newIncident)
+      }, { merge: true });
 
       toast.success("Report submitted successfully. We will review it shortly.");
       onClose();
@@ -116,22 +102,22 @@ export default function ReportUserOverlay({ reportedUserId, reportedUserRole, on
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-      <div className="bg-background dark:bg-[#0f172a] bg-[#f8fafc] border border-card-border rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl relative zoom-in-95 duration-200">
-        <button 
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-3 animate-in fade-in duration-200">
+      <div className="bg-background dark:bg-[#0f172a] bg-[#f8fafc] border border-card-border rounded-3xl p-4 md:p-8 max-w-lg w-full shadow-2xl relative zoom-in-95 duration-200">
+        <button
           onClick={onClose}
-          className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-card-border/50 text-foreground/50 hover:bg-card-border hover:text-foreground transition-all"
+          className="absolute top-2 right-2 w-8 h-8 flex items-center justify-center rounded-full bg-card-border/50 text-foreground/50 hover:bg-card-border hover:text-foreground transition-all"
         >
           <X className="w-5 h-5" />
         </button>
-        
+
         <div className="flex items-center gap-3 mb-6">
           <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center border border-red-200 dark:border-red-800 flex-shrink-0">
-            <AlertTriangle className="w-6 h-6 text-red-500" />
+            <AlertTriangle className="w-5 h-5 text-red-500" />
           </div>
           <div>
-            <h2 className="text-xl font-bold">Report Account</h2>
-            <p className="text-sm text-foreground/60">
+            <h2 className="text-lg md:text-xl font-bold">Report Account</h2>
+            <p className="text-xs md:text-sm text-foreground/60">
               Please provide details about the issue with this {reportedUserRole}.
             </p>
           </div>
@@ -145,24 +131,24 @@ export default function ReportUserOverlay({ reportedUserId, reportedUserRole, on
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="block text-sm font-medium mb-1">Your Email</label>
-              <input 
-                type="email" 
+              <input
+                type="email"
                 value={user?.email || ""}
-                disabled
-                className="w-full px-4 py-3 bg-foreground/5 border border-card-border rounded-xl text-foreground/70 cursor-not-allowed font-medium"
+                readOnly
+                className="text-sm md:text-base w-full px-4 py-2 bg-foreground/5 border border-card-border rounded-xl text-foreground/70 cursor-not-allowed font-medium"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium mb-1">
-                Your Phone Number {profile?.role === "driver" ? <span className="text-red-500">*</span> : <span className="text-foreground/50 font-normal">(Optional)</span>}
+                Your Phone Number <span className="text-foreground/50 font-normal">(Optional)</span>
               </label>
-              <input 
-                type="tel" 
+              <input
+                type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="08012345678"
-                className="w-full px-4 py-3 bg-transparent border border-card-border rounded-xl text-foreground focus:outline-none focus:border-brand-primary transition-colors placeholder:text-foreground/30"
+                className="text-sm md:text-base w-full px-4 py-2 bg-transparent border border-card-border rounded-xl text-foreground focus:outline-none focus:border-brand-primary transition-colors placeholder:text-foreground/30"
               />
             </div>
 
@@ -180,20 +166,20 @@ export default function ReportUserOverlay({ reportedUserId, reportedUserRole, on
                   </button>
                 ))}
               </div>
-              <textarea 
+              <textarea
                 value={reason}
                 onChange={(e) => setReason(e.target.value)}
                 placeholder="Describe the issue in detail..."
                 rows={4}
                 required
-                className="w-full px-4 py-3 bg-transparent border border-card-border rounded-xl text-foreground focus:outline-none focus:border-brand-primary transition-colors placeholder:text-foreground/30 resize-none"
+                className="w-full px-4 py-2 bg-transparent border border-card-border rounded-xl text-foreground focus:outline-none focus:border-brand-primary transition-colors placeholder:text-foreground/30 resize-none"
               />
             </div>
 
-            <button 
+            <button
               type="submit"
               disabled={isSubmitting || !reason.trim()}
-              className="w-full flex items-center justify-center gap-2 py-4 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition-colors shadow-lg shadow-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 py-3 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition-colors shadow-lg shadow-red-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <Loader2 className="w-5 h-5 animate-spin" />

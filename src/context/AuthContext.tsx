@@ -87,13 +87,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (currentUser) {
         await fetchProfile(currentUser.uid);
         
-        const lastVisited = localStorage.getItem("lastVisitedPage");
-        const hasRedirected = sessionStorage.getItem("hasRedirected");
-        
-        if (!hasRedirected && lastVisited && lastVisited !== window.location.pathname && window.location.pathname === "/") {
-          sessionStorage.setItem("hasRedirected", "true");
-          router.push(lastVisited);
-        }
+        // Removed redirect logic
       } else {
         setProfile(null);
       }
@@ -130,11 +124,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setProfile(docSnap.data() as UserProfile);
       }
 
-      // Redirect to last visited page after successful login
-      const lastVisited = localStorage.getItem("lastVisitedPage");
-      if (lastVisited && lastVisited !== window.location.pathname) {
-        router.push(lastVisited);
-      }
+      // Removed redirect logic
 
     } catch (error) {
       console.error("Error signing in with Google:", error);

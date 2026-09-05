@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Loader2, ArrowLeft, Car, Search, PlusCircle, Briefcase, User, Star } from "lucide-react";
+import { Loader2, ArrowLeft, Car, Search, PlusCircle, Briefcase, User, Star, MapPin, Eye } from "lucide-react";
 import { VIP_PLANS, getVIPBadge, hasValidTicket } from "@/lib/constants";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import PassengerServicesModal from "@/components/PassengerServicesModal";
+import VehicleViewModal from "@/components/VehicleViewModal";
+import HireContactOverlay from "@/components/HireContactOverlay";
 
 export default function CategoryVehicles() {
   const params = useParams();
@@ -27,48 +29,12 @@ export default function CategoryVehicles() {
 
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [locationQuery, setLocationQuery] = useState("");
+  const [destinationQuery, setDestinationQuery] = useState("");
   const [visibleCount, setVisibleCount] = useState(30);
-  const [driverSearchResults, setDriverSearchResults] = useState<any[]>([]);
-  const [searchingDrivers, setSearchingDrivers] = useState(false);
-  const [viewingServicesFor, setViewingServicesFor] = useState<{id: string, name: string} | null>(null);
-
-  // Debounced search for drivers by username
-  useEffect(() => {
-    const searchDrivers = async () => {
-      if (!searchQuery || searchQuery.trim().length < 2) {
-        setDriverSearchResults([]);
-        return;
-      }
-
-      setSearchingDrivers(true);
-      try {
-        const q = query(collection(db, "users"), where("role", "==", "driver"));
-        const snapshot = await getDocs(q);
-        const drivers: any[] = [];
-        const queryLower = searchQuery.toLowerCase();
-
-        snapshot.forEach(doc => {
-          const data = doc.data();
-          if (data.username && data.username.toLowerCase().includes(queryLower)) {
-            // Only include drivers with an active ticket
-            if (hasValidTicket(data.ticketExpiry)) {
-              drivers.push({ id: doc.id, ...data });
-            }
-          }
-        });
-
-        setDriverSearchResults(drivers);
-      } catch (err) {
-        console.error("Error searching drivers:", err);
-      } finally {
-        setSearchingDrivers(false);
-      }
-    };
-
-    const t = setTimeout(searchDrivers, 500);
-    return () => clearTimeout(t);
-  }, [searchQuery]);
+  const [viewingServicesFor, setViewingServicesFor] = useState<{ id: string, name: string, driverId: string } | null>(null);
+  const [viewingVehicle, setViewingVehicle] = useState<any | null>(null);
+  const [hiringDriverId, setHiringDriverId] = useState<string | null>(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -97,6 +63,25 @@ export default function CategoryVehicles() {
           }
         }));
 
+        // Fetch vehicle services to get destinations
+        const vehicleIds = fetchedVehicles.map(v => v.id);
+        const servicesMap: Record<string, any[]> = {};
+        
+        if (vehicleIds.length > 0) {
+          const chunkArray = (arr: any[], size: number) => Array.from({ length: Math.ceil(arr.length / size) }, (v, i) => arr.slice(i * size, i * size + size));
+          const idChunks = chunkArray(vehicleIds, 10);
+          
+          await Promise.all(idChunks.map(async (chunk) => {
+            const sq = query(collection(db, "vehicleServices"), where("vehicleId", "in", chunk));
+            const sSnap = await getDocs(sq);
+            sSnap.forEach(serviceDoc => {
+               const data = serviceDoc.data();
+               if (!servicesMap[data.vehicleId]) servicesMap[data.vehicleId] = [];
+               servicesMap[data.vehicleId].push(data);
+            });
+          }));
+        }
+
         const vehiclesWithDrivers = fetchedVehicles
           .filter(v => {
             // Only show vehicles from drivers with an active ticket
@@ -108,6 +93,8 @@ export default function CategoryVehicles() {
             driverCity: driversMap[v.driverId]?.operatingCity || "",
             driverState: driversMap[v.driverId]?.operatingState || "",
             driverVipStars: driversMap[v.driverId]?.vipStars || 0,
+            driverName: driversMap[v.driverId]?.username || driversMap[v.driverId]?.firstName || "Unknown",
+            services: servicesMap[v.id] || [],
           }));
 
         setVehicles(vehiclesWithDrivers);
@@ -148,18 +135,32 @@ export default function CategoryVehicles() {
           {/* Search and Action Buttons */}
           <div className="flex flex-col xl:flex-row gap-3 md:gap-4 w-full xl:w-auto xl:items-center">
             <div className="flex flex-row gap-2 md:gap-4 w-full xl:w-auto">
-              {/* Search Input */}
-              <div className="relative flex-grow xl:w-80">
-                <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
-                  <Search className="h-4 w-4 md:h-5 md:w-5 text-foreground/50" />
+              {/* Search Inputs */}
+              <div className="flex flex-col md:flex-row gap-2 w-full xl:w-[32rem]">
+                <div className="relative flex-grow">
+                  <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
+                    <Search className="h-4 w-4 md:h-5 md:w-5 text-foreground/50" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Location (e.g. City/State)"
+                    value={locationQuery}
+                    onChange={(e) => setLocationQuery(e.target.value)}
+                    className="w-full pl-9 md:pl-11 pr-4 py-2 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl"
+                  />
                 </div>
-                <input
-                  type="text"
-                  placeholder="Search city/state..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 md:pl-11 pr-4 py-2 md:py-2 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl"
-                />
+                <div className="relative flex-grow">
+                  <div className="absolute inset-y-0 left-0 pl-3 md:pl-4 flex items-center pointer-events-none">
+                    <MapPin className="h-4 w-4 md:h-5 md:w-5 text-foreground/50" />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Destination"
+                    value={destinationQuery}
+                    onChange={(e) => setDestinationQuery(e.target.value)}
+                    className="w-full pl-9 md:pl-11 pr-4 py-2 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl"
+                  />
+                </div>
               </div>
 
               {/* Buttons beside search for Non-Driver */}
@@ -191,11 +192,21 @@ export default function CategoryVehicles() {
 
         {(() => {
           const filteredVehicles = vehicles.filter((v) => {
-            const queryText = searchQuery.toLowerCase();
-            const city = (v.driverCity || "").toLowerCase();
-            const state = (v.driverState || "").toLowerCase();
-            return city.includes(queryText) || state.includes(queryText);
-          });
+            const locQuery = locationQuery.toLowerCase();
+            const destQuery = destinationQuery.toLowerCase();
+            
+            // Check location match against driver city/state or any service start point
+            const locMatches = locQuery === "" || 
+              (v.driverCity || "").toLowerCase().includes(locQuery) || 
+              (v.driverState || "").toLowerCase().includes(locQuery) ||
+              (v.services || []).some((s: any) => (s.startPoint || "").toLowerCase().includes(locQuery));
+              
+            // Check destination match against any service destination
+            const destMatches = destQuery === "" || 
+              (v.services || []).some((s: any) => (s.destination || "").toLowerCase().includes(destQuery));
+              
+            return locMatches && destMatches;
+          }).sort((a, b) => (b.driverVipStars || 0) - (a.driverVipStars || 0));
 
           const displayedVehicles = filteredVehicles.slice(0, visibleCount);
 
@@ -211,82 +222,18 @@ export default function CategoryVehicles() {
           return (
             <div className="px-1 md:px-0">
 
-              {/* Driver Search Results */}
-              {searchQuery && driverSearchResults.length > 0 && (
-                <div className="mb-12">
-                  <h2 className="text-xl md:text-2xl font-bold mb-6 flex items-center gap-2">
-                    <User className="text-brand-primary" /> Driver Profiles Found
-                  </h2>
-                  <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 md:gap-6">
-                    {driverSearchResults.map(driver => (
-                      <div key={driver.id} className="glass-panel p-3 md:p-6 rounded-md md:rounded-2xl flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-2 md:gap-4 hover:shadow-lg transition-all border border-brand-primary/20">
-                        <div className="relative w-12 h-12 md:w-16 md:h-16 flex-shrink-0">
-                          {getVIPBadge(driver.vipStars) && (
-                            <div className={`absolute -top-1 -right-1 z-10 px-1 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider shadow-lg ${getVIPBadge(driver.vipStars)?.colorClass}`}>
-                              {getVIPBadge(driver.vipStars)?.tag}
-                            </div>
-                          )}
-                          <div className="w-full h-full rounded-full overflow-hidden bg-card-border">
-                            {driver.displayImage ? (
-                              <img src={driver.displayImage} alt={driver.username} className="w-full h-full object-cover" />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center bg-brand-primary/10 text-brand-primary font-bold text-lg md:text-xl uppercase">
-                                {driver.username?.charAt(0) || "D"}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex-1 min-w-0 w-full flex flex-col items-center md:items-start">
-                          <h3 className="font-bold text-sm md:text-lg w-full truncate flex flex-col md:flex-row items-center justify-center md:justify-start gap-1 md:gap-2">
-                            <span className="truncate">{driver.username}</span>
-                            {driver.vipStars >= 1 && driver.vipStars < 5 && (
-                              <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                            )}
-                            {driver.vipStars === 5 && (
-                              <span className="flex items-center justify-center gap-1 text-[8px] md:text-[10px] font-black text-amber-500 bg-gradient-to-br from-slate-900 to-black px-2 py-0.5 rounded-full border border-slate-700 shadow-md">
-                                ULTIMATE VIP <Star className="w-2 h-2 md:w-3 md:h-3 fill-amber-500" />
-                              </span>
-                            )}
-                          </h3>
-                          <p className="text-[10px] md:text-sm text-foreground/60 w-full truncate mt-0.5">{driver.operatingCity || "No city set"}</p>
-
-                          <div className="flex items-center justify-center md:justify-start gap-0.5 mt-1.5 mb-1 w-full">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star
-                                key={star}
-                                className={`w-2 h-2 md:w-3 md:h-3 ${star <= Math.round(Number(driver.rating || 5.0)) ? "text-yellow-500 fill-yellow-500" : "text-gray-300 dark:text-gray-600 fill-gray-300 dark:fill-gray-600"}`}
-                              />
-                            ))}
-                            <span className="text-[9px] md:text-[10px] font-medium text-gray-500 dark:text-gray-400 ml-1">
-                              ({Number(driver.rating || 5.0).toFixed(1)})
-                            </span>
-                          </div>
-
-                          <Link
-                            href={`/driver/profile/${driver.id}`}
-                            className="mt-1 text-xs font-semibold text-brand-primary hover:underline inline-block"
-                          >
-                            View Profile →
-                          </Link>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {filteredVehicles.length === 0 && (!searchQuery || driverSearchResults.length === 0) ? (
+              {filteredVehicles.length === 0 ? (
                 <div className="glass-panel rounded-2xl md:p-12 p-6 text-center flex flex-col items-center max-w-2xl mx-auto">
                   <div className="w-24 h-24 bg-card-border/50 rounded-full flex items-center justify-center mb-4">
                     <Car className="w-12 h-12 text-foreground/50" />
                   </div>
                   <h2 className="text-2xl font-bold mb-2">No Transports Found</h2>
                   <p className="px-2 text-foreground/70 mb-6">
-                    {searchQuery ? "No transports or drivers match your search." : "No transport found choose another category"}
+                    {(locationQuery || destinationQuery) ? "No transports or drivers match your search." : "No transport found choose another category"}
                   </p>
-                  {searchQuery ? (
+                  {(locationQuery || destinationQuery) ? (
                     <button
-                      onClick={() => setSearchQuery("")}
+                      onClick={() => { setLocationQuery(""); setDestinationQuery(""); }}
                       className="px-4 py-2 md:px-8 md:py-4 bg-brand-secondary text-sm md:text-base text-white font-medium rounded-lg md:rounded-xl hover:bg-brand-secondary/90 transition-colors shadow-lg shadow-brand-secondary/30"
                     >
                       Clear Search
@@ -303,11 +250,11 @@ export default function CategoryVehicles() {
               ) : (
                 filteredVehicles.length > 0 && (
                   <div>
-                    {searchQuery && <h2 className="text-xl md:text-2xl font-bold mb-6 flex items-center gap-2"><Car className="text-brand-secondary" /> Vehicles Found</h2>}
+                    {(locationQuery || destinationQuery) && <h2 className="text-xl md:text-2xl font-bold mb-6 flex items-center gap-2"><Car className="text-brand-secondary" /> Vehicles Found</h2>}
                     <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-8">
                       {displayedVehicles.map((v) => (
                         <div key={v.id} className="glass-panel rounded-xl md:rounded-3xl overflow-hidden group hover:shadow-xl hover:shadow-brand-secondary/10 transition-all duration-300">
-                          <div className="h-32 md:h-48 w-full bg-card-border relative overflow-hidden">
+                          <div className="h-32 md:h-48 w-full bg-card-border relative overflow-hidden group/img">
                             {v.images?.front ? (
                               <img
                                 src={v.images.front}
@@ -319,29 +266,47 @@ export default function CategoryVehicles() {
                                 <Car className="w-8 h-8 md:w-12 md:h-12" />
                               </div>
                             )}
+                            
+                            {/* Badges */}
                             <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-background/80 backdrop-blur-md px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold shadow-sm">
-                              {v.details.seats} Seats
+                              {v.details.payload ? `${v.details.payload} Tons` : v.details.seats ? `${v.details.seats} Seats` : v.details.capacity ? `${v.details.capacity} Cap.` : "Standard"}
                             </div>
+                            
                             {getVIPBadge(v.driverVipStars) && (
                               <div className={`absolute top-2 left-2 md:top-4 md:left-4 z-10 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-md ${getVIPBadge(v.driverVipStars)?.colorClass}`}>
                                 {getVIPBadge(v.driverVipStars)?.tag} Driver
                               </div>
                             )}
+
+                            {/* View Button Overlay on Image */}
+                            <button
+                              onClick={() => setViewingVehicle(v)}
+                              className="absolute bottom-2 right-2 md:bottom-4 md:right-4 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] md:text-xs font-bold flex items-center gap-1 opacity-0 group-hover/img:opacity-100 transition-opacity"
+                            >
+                              <Eye className="w-3 h-3 md:w-4 md:h-4" /> View
+                            </button>
                           </div>
 
-                          <div className="p-3 md:p-6">
+                          <div className="p-3 md:p-6 flex flex-col flex-grow">
                             <h3 className="text-sm md:text-xl font-bold mb-1 truncate">{v.details.make} {v.details.model}</h3>
-                            <p className="text-[10px] md:text-sm text-foreground/60 mb-2 md:mb-4 border-b border-card-border pb-2 md:pb-4 truncate">
-                              Yr: {v.details.year} • AC: {v.details.ac ? "Yes" : "No"}
+                            <p className="text-[10px] md:text-sm text-foreground/60 mb-1 truncate">
+                              {v.details.year} • {v.details.color || "Standard Color"} • AC: {v.details.ac ? "Yes" : "No"}
                             </p>
+                            
+                            <Link href={`/driver/profile/${v.driverId}`} className="text-[10px] md:text-sm text-brand-primary font-semibold hover:underline mt-1 mb-4 inline-block truncate">
+                              View {v.driverName}'s Profile →
+                            </Link>
 
-                            <div className="flex gap-2">
-                              <button className="flex-1 py-2 md:py-3 text-[10px] md:text-sm bg-brand-secondary/10 hover:bg-brand-secondary text-brand-secondary hover:text-white font-medium rounded-lg md:rounded-xl transition-colors">
-                                View
-                              </button>
+                            <div className="mt-auto flex gap-2 w-full border-t border-card-border pt-3 md:pt-4">
                               <button 
-                                onClick={() => setViewingServicesFor({id: v.id, name: `${v.details.make} ${v.details.model}`})}
-                                className="flex-1 py-2 md:py-3 text-[10px] md:text-sm bg-brand-primary/10 hover:bg-brand-primary text-brand-primary hover:text-white font-medium rounded-lg md:rounded-xl transition-colors"
+                                onClick={() => setHiringDriverId(v.driverId)}
+                                className="flex-2 py-2 md:py-3 text-[10px] md:text-sm bg-brand-primary hover:bg-brand-primary/90 text-white font-bold rounded-lg md:rounded-xl transition-colors flex-grow shadow-lg shadow-brand-primary/20"
+                              >
+                                Hire
+                              </button>
+                              <button
+                                onClick={() => setViewingServicesFor({ id: v.id, name: `${v.details.make} ${v.details.model}`, driverId: v.driverId })}
+                                className="flex-1 py-2 md:py-3 text-[10px] md:text-sm bg-brand-secondary/10 hover:bg-brand-secondary text-brand-secondary hover:text-white font-bold rounded-lg md:rounded-xl transition-colors flex flex-col items-center justify-center"
                               >
                                 Services
                               </button>
@@ -369,11 +334,36 @@ export default function CategoryVehicles() {
         })()}
       </div>
 
+      {/* Modals & Overlays */}
       {viewingServicesFor && (
         <PassengerServicesModal
           vehicleId={viewingServicesFor.id}
           vehicleName={viewingServicesFor.name}
+          driverId={viewingServicesFor.driverId}
           onClose={() => setViewingServicesFor(null)}
+        />
+      )}
+
+      {viewingVehicle && (
+        <VehicleViewModal
+          vehicle={viewingVehicle}
+          allVehicles={vehicles.filter(v => v.id !== viewingVehicle.id)} // Pass other vehicles
+          onClose={() => setViewingVehicle(null)}
+          onViewServices={(vid, vname, did) => {
+            setViewingVehicle(null);
+            setViewingServicesFor({ id: vid, name: vname, driverId: did });
+          }}
+          onHire={(driverId) => {
+            // Keep view modal open or close it? Let's close it so the hire overlay is clear, or just open hire overlay on top
+            setHiringDriverId(driverId);
+          }}
+        />
+      )}
+
+      {hiringDriverId && (
+        <HireContactOverlay
+          driverId={hiringDriverId}
+          onClose={() => setHiringDriverId(null)}
         />
       )}
     </div>

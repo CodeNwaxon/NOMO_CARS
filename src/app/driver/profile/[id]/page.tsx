@@ -16,7 +16,7 @@ export default function DriverProfilePage() {
   const params = useParams();
   const driverId = params.id as string;
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, signInWithGoogle } = useAuth();
   const searchParams = useSearchParams();
   const autoOpenChat = searchParams.get("chat") === "open";
 
@@ -43,12 +43,7 @@ export default function DriverProfilePage() {
           vSnap.forEach(d => vData.push({ id: d.id, ...d.data() }));
           setVehicles(vData);
 
-          // Check if favorited by current user
-          if (user) {
-            const favRef = doc(db, "users", user.uid, "favorites", driverId);
-            const favSnap = await getDoc(favRef);
-            setIsFavorited(favSnap.exists());
-          }
+          // We remove the favorite check from here because user auth might not be resolved yet
         }
       } catch (err) {
         console.error("Error fetching driver profile:", err);
@@ -61,6 +56,23 @@ export default function DriverProfilePage() {
       fetchDriverAndVehicles();
     }
   }, [driverId]);
+
+  // Separate useEffect for checking favorite status when user auth resolves
+  useEffect(() => {
+    const fetchFavoriteStatus = async () => {
+      if (user && driverId) {
+        try {
+          const favRef = doc(db, "users", user.uid, "favorites", driverId);
+          const favSnap = await getDoc(favRef);
+          setIsFavorited(favSnap.exists());
+        } catch (error) {
+          console.error("Error checking favorite status:", error);
+        }
+      }
+    };
+    
+    fetchFavoriteStatus();
+  }, [user, driverId]);
 
   if (loading) {
     return (
@@ -95,7 +107,12 @@ export default function DriverProfilePage() {
 
   const toggleFavorite = async () => {
     if (!user) {
-      toast.error("Please log in to add favorites");
+      toast.error("Please sign in to like this driver");
+      try {
+        await signInWithGoogle();
+      } catch (err) {
+        console.error("Login failed:", err);
+      }
       return;
     }
     
@@ -228,7 +245,7 @@ export default function DriverProfilePage() {
                 </div>
               )}
 
-              {user && !isOwnProfile && (
+              {!isOwnProfile && (
                 <button
                   onClick={toggleFavorite}
                   disabled={isTogglingFavorite}
@@ -314,6 +331,7 @@ export default function DriverProfilePage() {
         <PassengerServicesModal
           vehicleId={viewingServicesFor.id}
           vehicleName={viewingServicesFor.name}
+          driverId={driverId}
           onClose={() => setViewingServicesFor(null)}
         />
       )}

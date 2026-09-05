@@ -48,9 +48,6 @@ export default function PassengerCategories() {
   const [lastVisibleDoc, setLastVisibleDoc] = useState<any>(null);
   const [hasMoreSearch, setHasMoreSearch] = useState(false);
 
-  useEffect(() => {
-    localStorage.setItem("lastVisitedPage", "/passenger");
-  }, []);
 
   useEffect(() => {
     const fetchFavorites = async () => {
@@ -65,7 +62,7 @@ export default function PassengerCategories() {
           }
           return null;
         });
-        
+
         const drivers = (await Promise.all(driverPromises)).filter(Boolean);
         setFavoriteDrivers(drivers);
       } catch (err) {
@@ -97,11 +94,11 @@ export default function PassengerCategories() {
 
   const fetchSearchResults = async (loadMore = false) => {
     if (!searchQuery.trim()) return;
-    
+
     setIsSearching(true);
     try {
       const qLower = searchQuery.toLowerCase();
-      
+
       let baseQuery = query(
         collection(db, "users"),
         where("role", "==", "driver"),
@@ -122,19 +119,24 @@ export default function PassengerCategories() {
       }
 
       const querySnapshot = await getDocs(baseQuery);
-      
+
       const results: any[] = [];
       querySnapshot.forEach((doc) => {
         const data = doc.data();
-        const searchStr = `${data.username || ""} ${data.firstName || ""} ${data.lastName || ""} ${data.city || ""} ${data.state || ""}`.toLowerCase();
-        
+        const searchStr = `${data.username || ""} ${data.firstName || ""} ${data.lastName || ""} ${data.operatingState || ""} ${data.operatingCity || ""}`.toLowerCase();
+
         if (searchStr.includes(qLower)) {
           results.push({ id: doc.id, ...data });
         }
       });
 
+      results.sort((a, b) => (b.vipStars || 0) - (a.vipStars || 0));
+
       if (loadMore) {
-        setSearchResults(prev => [...prev, ...results]);
+        setSearchResults(prev => {
+          const combined = [...prev, ...results];
+          return combined.sort((a, b) => (b.vipStars || 0) - (a.vipStars || 0));
+        });
       } else {
         setSearchResults(results);
       }
@@ -159,7 +161,7 @@ export default function PassengerCategories() {
           <h1 className="text-2xl md:text-5xl font-bold mb-4 md:mb-6 text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary to-brand-primary">
             Choose Your Ride
           </h1>
-          
+
           <div className="w-full max-w-2xl px-4 mx-auto mb-6">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -170,7 +172,7 @@ export default function PassengerCategories() {
                 placeholder="Search for drivers, names, or locations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-[1.8rem] md:py-2 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 text-base rounded-2xl md:rounded-xl"
+                className="text-sm md:text-base w-full pl-10 md:pl-12 pr-4 py-1.5 md:py-2 bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-lg placeholder:text-slate-400 dark:placeholder:text-slate-500 text-base rounded-2xl md:rounded-xl"
               />
               {isSearching && (
                 <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
@@ -198,8 +200,8 @@ export default function PassengerCategories() {
                 </h2>
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 md:gap-6">
                   {searchResults.map((driver, index) => (
-                    <Link key={`${driver.id}-${index}`} href={`/driver/profile/${driver.id}`} className="group block">
-                      <div className="glass-panel p-3 md:p-6 rounded-md md:rounded-2xl flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-2 md:gap-4 hover:shadow-lg transition-all border border-brand-primary/20 h-full">
+                    <Link href={`/driver/profile/${driver.id}`} key={`${driver.id}-${index}`} className="block">
+                      <div className="glass-panel p-3 md:p-6 rounded-md md:rounded-2xl flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-2 md:gap-4 hover:shadow-lg transition-all border border-brand-primary/20 hover:border-brand-primary/50 cursor-pointer h-full">
                         <div className="relative w-12 h-12 md:w-16 md:h-16 flex-shrink-0">
                           {getVIPBadge(driver.vipStars) && (
                             <div className={`absolute -top-1 -right-1 z-10 px-1 py-0.5 rounded-full text-[8px] font-bold uppercase tracking-wider shadow-lg ${getVIPBadge(driver.vipStars)?.colorClass}`}>
@@ -211,7 +213,7 @@ export default function PassengerCategories() {
                               <img src={driver.displayImage} alt={driver.username} className="w-full h-full object-cover" />
                             ) : (
                               <div className="w-full h-full flex items-center justify-center bg-brand-primary/10 text-brand-primary font-bold text-lg md:text-xl uppercase">
-                                {driver.username?.charAt(0) || "D"}
+                                {driver.username?.charAt(0) || driver.firstName?.charAt(0) || "D"}
                               </div>
                             )}
                           </div>
@@ -228,6 +230,23 @@ export default function PassengerCategories() {
                               </span>
                             )}
                           </h3>
+                          <p className="text-[10px] md:text-sm text-foreground/60 w-full truncate mt-0.5">{driver.operatingCity || "No city set"}</p>
+
+                          <div className="flex items-center justify-center md:justify-start gap-0.5 mt-1.5 mb-1 w-full">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`w-2 h-2 md:w-3 md:h-3 ${star <= Math.round(Number(driver.rating || 5.0)) ? "text-yellow-500 fill-yellow-500" : "text-gray-300 dark:text-gray-600 fill-gray-300 dark:fill-gray-600"}`}
+                              />
+                            ))}
+                            <span className="text-[9px] md:text-[10px] font-medium text-gray-500 dark:text-gray-400 ml-1">
+                              ({Number(driver.rating || 5.0).toFixed(1)})
+                            </span>
+                          </div>
+
+                          <div className="mt-1 text-xs font-semibold text-brand-primary inline-block">
+                            View Profile →
+                          </div>
                         </div>
                       </div>
                     </Link>
@@ -235,7 +254,7 @@ export default function PassengerCategories() {
                 </div>
                 {hasMoreSearch && (
                   <div className="flex justify-center mt-8">
-                    <button 
+                    <button
                       onClick={() => fetchSearchResults(true)}
                       className="px-6 py-3 bg-card-border/50 text-foreground font-bold rounded-xl hover:bg-card-border transition-colors border border-card-border flex items-center gap-2"
                     >
@@ -279,7 +298,7 @@ export default function PassengerCategories() {
       {showContactsModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="bg-background dark:bg-[#0f172a] bg-[#f8fafc] border border-card-border rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl relative zoom-in-95 duration-200">
-            <button 
+            <button
               onClick={() => setShowContactsModal(false)}
               className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-card-border/50 text-foreground/50 hover:bg-card-border hover:text-foreground transition-all"
             >
@@ -289,7 +308,7 @@ export default function PassengerCategories() {
               <Users className="w-8 h-8 text-foreground/50" />
             </div>
             <h2 className="text-xl font-bold mb-4">My Contacts</h2>
-            
+
             <div className="max-h-[60vh] overflow-y-auto px-2 mb-6 space-y-3">
               {loadingContacts ? (
                 <div className="flex flex-col items-center justify-center py-8 text-foreground/50">
@@ -303,7 +322,7 @@ export default function PassengerCategories() {
               ) : (
                 favoriteDrivers.map(driver => {
                   const hasTicket = driver.ticketExpiry ? new Date(driver.ticketExpiry) > new Date() : false;
-                  
+
                   return (
                     <div key={driver.id} className="flex items-center gap-3 p-3 glass-panel rounded-xl border border-card-border hover:border-brand-primary/30 transition-all text-left">
                       <div className="w-12 h-12 rounded-full bg-card-border overflow-hidden flex-shrink-0">
@@ -315,21 +334,44 @@ export default function PassengerCategories() {
                           </div>
                         )}
                       </div>
-                      
+
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-sm truncate">{driver.username || driver.firstName}</h4>
+                        <h4 className="font-bold text-sm truncate flex items-center gap-1">
+                          <span className="truncate">{driver.username || driver.firstName}</span>
+                          {driver.vipStars >= 1 && driver.vipStars < 5 && (
+                            <Star className="w-3 h-3 text-amber-500 fill-amber-500 flex-shrink-0" />
+                          )}
+                          {driver.vipStars === 5 && (
+                            <span className="flex items-center justify-center gap-1 text-[8px] font-black text-amber-500 bg-gradient-to-br from-slate-900 to-black px-1.5 py-0.5 rounded-full border border-slate-700 shadow-md flex-shrink-0">
+                              VIP <Star className="w-2 h-2 fill-amber-500" />
+                            </span>
+                          )}
+                        </h4>
                         {hasTicket && driver.phone ? (
-                          <p className="text-xs text-foreground/60 flex items-center gap-1 mt-0.5">
-                            <Phone className="w-3 h-3 text-brand-primary" /> {driver.phone}
-                          </p>
+                          <div className="flex flex-col mt-0.5 gap-1">
+                            <p className="text-xs text-foreground/60 flex items-center gap-1">
+                              <Phone className="w-3 h-3 text-brand-primary" /> {driver.phone}
+                            </p>
+                            <div className="flex items-center gap-0.5">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`w-2.5 h-2.5 ${star <= Math.round(Number(driver.rating || 5.0)) ? "text-yellow-500 fill-yellow-500" : "text-gray-300 dark:text-gray-600 fill-gray-300 dark:fill-gray-600"}`}
+                                />
+                              ))}
+                              <span className="text-[9px] font-medium text-gray-500 dark:text-gray-400 ml-1">
+                                ({Number(driver.rating || 5.0).toFixed(1)})
+                              </span>
+                            </div>
+                          </div>
                         ) : (
                           <p className="text-[10px] text-rose-500/80 flex items-center gap-1 mt-0.5">
                             <ShieldOff className="w-3 h-3" /> Contact hidden
                           </p>
                         )}
                       </div>
-                      
-                      <Link 
+
+                      <Link
                         href={`/driver/profile/${driver.id}`}
                         className="p-2 bg-brand-primary/10 text-brand-primary hover:bg-brand-primary hover:text-white rounded-lg transition-colors flex-shrink-0"
                       >
@@ -340,7 +382,7 @@ export default function PassengerCategories() {
                 })
               )}
             </div>
-            <button 
+            <button
               onClick={() => setShowContactsModal(false)}
               className="w-full py-3 bg-brand-primary text-white rounded-xl font-semibold hover:bg-brand-primary/90 transition-colors shadow-lg shadow-brand-primary/20"
             >
