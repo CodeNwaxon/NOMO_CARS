@@ -3,17 +3,17 @@
 import { useState } from "react";
 import { db } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
-import { Headphones, CheckCircle, ArrowLeft, Mail, Phone, MapPin, Send } from "lucide-react";
+import { Headphones, CheckCircle, ArrowLeft, Mail, Phone, MapPin, Send, User } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 
 export default function HelpPage() {
   const { user } = useAuth();
-  
+
   const [email, setEmail] = useState(user?.email || "");
   const [phone, setPhone] = useState("");
   const [message, setMessage] = useState("");
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
@@ -31,7 +31,7 @@ export default function HelpPage() {
         createdAt: new Date(),
         userId: user?.uid || null
       });
-      
+
       setIsSuccess(true);
       setMessage("");
       setPhone("");
@@ -50,7 +50,7 @@ export default function HelpPage() {
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-blue-500/20 rounded-full blur-3xl opacity-50 pointer-events-none" />
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col items-center pt-8 md:pt-16 pb-12 px-6 lg:px-20 relative z-10">
+      <main className="flex-1 flex flex-col items-center pt-8 md:pt-16 pb-12 px-4 lg:px-20 relative z-10">
         {/* Header - mobile only (above grid) */}
         <div className="w-full max-w-6xl mb-8 lg:hidden">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-primary/10 text-brand-primary text-sm font-semibold mb-4">
@@ -66,7 +66,7 @@ export default function HelpPage() {
         </div>
 
         <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20 items-start">
-          
+
           {/* Left Column: Header (desktop) + Contact Info */}
           <div className="flex flex-col space-y-4 order-2 lg:order-1">
             {/* Header - desktop only (inside left column) */}
@@ -91,7 +91,7 @@ export default function HelpPage() {
                 <div>
                   <h3 className="text-sm lg:text-lg font-bold text-foreground mb-0.5 lg:mb-1">Email Support</h3>
                   <p className="text-sm lg:text-base text-foreground/70">Drop us a line anytime at</p>
-                  <a href="mailto:support@nomocars.com" className="text-sm lg:text-base text-brand-primary font-medium hover:underline">support@nomocars.com</a>
+                  <a href="mailto:nomopoventures@gmail.com" className="text-sm lg:text-base text-brand-primary font-medium hover:underline">nomopoventures@gmail.com</a>
                 </div>
               </div>
 
@@ -103,9 +103,10 @@ export default function HelpPage() {
                 <div>
                   <h3 className="text-sm lg:text-lg font-bold text-foreground mb-0.5 lg:mb-1">Customer Care</h3>
                   <p className="text-sm lg:text-base text-foreground/70">Available Mon-Fri, 9am-6pm</p>
-                  <a href="tel:+15551234567" className="text-sm lg:text-base text-brand-primary font-medium hover:underline">+1 (555) 123-4567</a>
+                  <a href="tel:+2349023688246" className="text-sm lg:text-base text-brand-primary font-medium hover:underline">+234 902 368 8246</a>
                 </div>
               </div>
+
 
               {/* Office Address */}
               <div className="flex items-start gap-3 lg:gap-5 p-3 lg:p-4 rounded-xl lg:rounded-2xl hover:bg-card-bg/50 transition-colors border border-transparent hover:border-card-border">
@@ -128,7 +129,7 @@ export default function HelpPage() {
           <div className="w-full order-1 lg:order-2">
             <div className="bg-card-bg rounded-md shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(255,255,255,0.05)] p-4 md:p-10 backdrop-blur-xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-brand-primary/10 rounded-bl-full -z-10" />
-              
+
               <h2 className="text-xl md:text-2xl font-bold text-foreground mb-2">Send a Message</h2>
               <p className="text-xs md:text-sm text-foreground/60 mb-8">Fill out the form below and we'll get back to you.</p>
 
@@ -141,7 +142,7 @@ export default function HelpPage() {
                   <p className="text-foreground/80 mb-8 leading-relaxed">
                     Thank you for reaching out. Our support team has received your message and will contact you shortly.
                   </p>
-                  <button 
+                  <button
                     onClick={() => setIsSuccess(false)}
                     className="w-full px-6 py-3 bg-card-bg border border-card-border hover:bg-foreground/5 text-foreground rounded-xl font-semibold transition-all shadow-sm"
                   >
@@ -167,7 +168,7 @@ export default function HelpPage() {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="you@example.com"
-                      className="w-full px-5 py-3.5 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all text-foreground placeholder:text-foreground/40 font-medium shadow-sm"
+                      className="text-sm md:text-base w-full px-5 py-3.5 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all text-foreground placeholder:text-foreground/40 font-medium shadow-sm"
                     />
                   </div>
 
@@ -180,7 +181,7 @@ export default function HelpPage() {
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       placeholder="+234 800 000 0000"
-                      className="w-full px-5 py-3.5 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all text-foreground placeholder:text-foreground/40 font-medium shadow-sm"
+                      className="text-sm md:text-base w-full px-5 py-3.5 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all text-foreground placeholder:text-foreground/40 font-medium shadow-sm"
                     />
                   </div>
 
@@ -194,7 +195,7 @@ export default function HelpPage() {
                       onChange={(e) => setMessage(e.target.value)}
                       placeholder="How can we help you today?"
                       rows={5}
-                      className="w-full px-5 py-3.5 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all text-foreground placeholder:text-foreground/40 font-medium resize-none shadow-sm"
+                      className="text-sm md:text-base w-full px-5 py-3.5 bg-white dark:bg-slate-800 rounded-xl focus:outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 transition-all text-foreground placeholder:text-foreground/40 font-medium resize-none shadow-sm"
                     />
                   </div>
 

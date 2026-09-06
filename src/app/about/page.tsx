@@ -34,21 +34,21 @@ export default function AboutPage() {
                   className="object-cover"
                 />
               </div>
-              <h3 className="text-2xl font-bold dark:text-white">John Doe</h3>
+              <h3 className="text-2xl font-bold dark:text-white">Prince O. Nwachukwu</h3>
               <p className="text-brand-primary font-medium mb-4">CEO & Founder, Nomo Cars</p>
 
-              <div className="flex flex-col gap-2 w-full max-w-[250px]">
-                <a href="tel:+1234567890" className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card-bg border border-card-border hover:border-brand-primary/50 hover:shadow-sm transition-all text-sm group">
+              <div className="flex flex-col gap-2 w-full max-w-[300px]">
+                <a href="tel:+2347034632037" className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card-bg border border-card-border hover:border-brand-primary/50 hover:shadow-sm transition-all text-sm group">
                   <div className="w-8 h-8 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary group-hover:bg-brand-primary group-hover:text-white transition-colors">
                     <Phone className="w-4 h-4" />
                   </div>
-                  <span className="font-medium">+1 (234) 567-890</span>
+                  <span className="font-medium">+234 703 463 2037</span>
                 </a>
-                <a href="mailto:ceo@nomocars.com" className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card-bg border border-card-border hover:border-brand-secondary/50 hover:shadow-sm transition-all text-sm group">
-                  <div className="w-8 h-8 rounded-full bg-brand-secondary/10 flex items-center justify-center text-brand-secondary group-hover:bg-brand-secondary group-hover:text-white transition-colors">
+                <a href="mailto:princenwachukwu308@yahoo.com" className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card-bg border border-card-border hover:border-brand-secondary/50 hover:shadow-sm transition-all text-[13px] sm:text-sm group">
+                  <div className="w-8 h-8 rounded-full bg-brand-secondary/10 flex items-center justify-center text-brand-secondary group-hover:bg-brand-secondary group-hover:text-white transition-colors shrink-0">
                     <Mail className="w-4 h-4" />
                   </div>
-                  <span className="font-medium">ceo@nomocars.com</span>
+                  <span className="font-medium truncate">princenwachukwu308@yahoo.com</span>
                 </a>
               </div>
             </div>
