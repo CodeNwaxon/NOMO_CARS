@@ -169,13 +169,13 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
 
   const activeDocs = config.docs.show
     ? Object.entries(config.docs)
-        .filter(([key, show]) => key !== "show" && show)
-        .map(([key]) => key)
-        .concat(["license", "insurance", "registration"])
+      .filter(([key, show]) => key !== "show" && show)
+      .map(([key]) => key)
+      .concat(["license", "insurance", "registration"])
     : [];
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-0 md:p-4">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -185,12 +185,12 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
         onChange={handleFileSelected}
       />
 
-      <div className="w-full max-w-2xl max-h-[90vh] bg-background rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-card-border">
+      <div className="w-full h-full md:h-auto max-w-2xl max-h-screen md:max-h-[90vh] bg-white dark:bg-slate-950 md:rounded-2xl shadow-2xl flex flex-col overflow-hidden md:border border-card-border">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-brand-primary text-white flex-shrink-0">
+        <div className="flex items-center justify-between px-4 md:px-6 py-4 bg-blue-950 text-white flex-shrink-0 shadow-md">
           <div>
-            <h2 className="font-bold text-lg">Edit Vehicle</h2>
-            <p className="text-xs text-white/70 capitalize">{vehicle.category} — {vehicle.details?.make} {vehicle.details?.model}</p>
+            <h2 className="font-bold text-lg md:text-xl">Edit Vehicle</h2>
+            <p className="text-xs text-white/70 capitalize mt-1">{vehicle.category} — <span className="font-bold text-white">{vehicle.details?.make} {vehicle.details?.model}</span></p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full transition-colors">
             <X className="w-5 h-5" />
@@ -205,14 +205,14 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
               <span className="w-6 h-6 rounded-full bg-brand-primary text-white flex items-center justify-center text-xs">1</span>
               General Details
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-card-bg/30 p-4 rounded-2xl border border-card-border/50">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-900/50 p-4 md:p-6 rounded-2xl">
               <div>
                 <label className="block text-sm font-medium mb-1">Make</label>
                 <input
                   value={form.make}
                   onChange={(e) => handleChange("make", e.target.value)}
                   placeholder="e.g. Toyota"
-                  className="w-full bg-background border border-card-border rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary"
+                  className="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary focus:outline-none transition-all"
                 />
               </div>
               <div>
@@ -221,7 +221,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
                   value={form.model}
                   onChange={(e) => handleChange("model", e.target.value)}
                   placeholder="e.g. Camry"
-                  className="w-full bg-background border border-card-border rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary"
+                  className="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary focus:outline-none transition-all"
                 />
               </div>
               <div>
@@ -231,7 +231,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
                   value={form.year}
                   onChange={(e) => handleChange("year", e.target.value)}
                   placeholder="e.g. 2018"
-                  className="w-full bg-background border border-card-border rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary"
+                  className="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary focus:outline-none transition-all"
                 />
               </div>
 
@@ -242,7 +242,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
                     value={form.plateNumber}
                     onChange={(e) => handleChange("plateNumber", e.target.value)}
                     placeholder="ABC-123-XY"
-                    className="w-full bg-background border border-card-border rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary"
+                    className="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary focus:outline-none transition-all"
                   />
                 </div>
               )}
@@ -254,7 +254,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
                     value={form.registrationNumber}
                     onChange={(e) => handleChange("registrationNumber", e.target.value)}
                     placeholder="e.g. N12345"
-                    className="w-full bg-background border border-card-border rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary"
+                    className="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary focus:outline-none transition-all"
                   />
                 </div>
               )}
@@ -267,7 +267,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
                     value={form.seats}
                     onChange={(e) => handleChange("seats", e.target.value)}
                     placeholder="4"
-                    className="w-full bg-background border border-card-border rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary"
+                    className="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary focus:outline-none transition-all"
                   />
                 </div>
               )}
@@ -281,7 +281,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
                     value={form.payloadCapacity}
                     onChange={(e) => handleChange("payloadCapacity", e.target.value)}
                     placeholder="e.g. 15.5"
-                    className="w-full bg-background border border-card-border rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary"
+                    className="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary focus:outline-none transition-all"
                   />
                 </div>
               )}
@@ -293,7 +293,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
                     value={form.totalCapacity}
                     onChange={(e) => handleChange("totalCapacity", e.target.value)}
                     placeholder="e.g. 150 Passengers"
-                    className="w-full bg-background border border-card-border rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary"
+                    className="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary focus:outline-none transition-all"
                   />
                 </div>
               )}
@@ -320,7 +320,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
               Vehicle Images
               <span className="text-xs font-normal text-foreground/50 ml-1">Tap an image to replace it</span>
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-card-bg/30 p-4 rounded-2xl border border-card-border/50">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl">
               {activeImages.map((key) => {
                 const currentUrl = updatedImages[key];
                 const isUploading = uploadingImage === `images_${key}`;
@@ -331,7 +331,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
                     type="button"
                     onClick={() => triggerFileUpload("images", key)}
                     disabled={isUploading}
-                    className="relative group border border-dashed border-card-border rounded-xl overflow-hidden aspect-square flex items-center justify-center bg-card-bg/50 hover:border-brand-primary/50 transition-all"
+                    className="relative group border border-dashed border-gray-300 dark:border-slate-700 rounded-xl overflow-hidden aspect-square flex items-center justify-center bg-white dark:bg-slate-950 hover:border-brand-primary/50 transition-all shadow-sm"
                   >
                     {currentUrl ? (
                       <>
@@ -373,7 +373,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
                 Documents
                 <span className="text-xs font-normal text-foreground/50 ml-1">Tap to replace a document</span>
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-card-bg/30 p-4 rounded-2xl border border-card-border/50">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl">
                 {activeDocs.map((key) => {
                   const currentUrl = updatedDocs[key];
                   const isUploading = uploadingImage === `docs_${key}`;
@@ -384,7 +384,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
                       type="button"
                       onClick={() => triggerFileUpload("docs", key)}
                       disabled={isUploading}
-                      className="relative group border border-dashed border-card-border rounded-xl overflow-hidden aspect-[4/3] flex items-center justify-center bg-card-bg/50 hover:border-brand-primary/50 transition-all"
+                      className="relative group border border-dashed border-gray-300 dark:border-slate-700 rounded-xl overflow-hidden aspect-[4/3] flex items-center justify-center bg-white dark:bg-slate-950 hover:border-brand-primary/50 transition-all shadow-sm"
                     >
                       {currentUrl ? (
                         <>
@@ -421,7 +421,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-card-border flex gap-3 flex-shrink-0 bg-card-bg/30">
+        <div className="px-6 pt-3 pb-8 border-t border-card-border flex gap-3 flex-shrink-0 bg-slate-50 dark:bg-slate-900 pb-8 md:pb-4">
           <button
             onClick={onClose}
             className="flex-1 py-3 border border-card-border rounded-xl font-bold text-sm hover:bg-card-border/50 transition-colors"

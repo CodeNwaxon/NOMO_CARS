@@ -7,14 +7,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { collection, addDoc, query, where, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
-import { Loader2, Plus, UploadCloud, ArrowLeft, Car, Bike, Truck, Plane, Ship, Bus, Settings, Edit3, Trash2 } from "lucide-react";
+import { Loader2, Plus, UploadCloud, ArrowLeft, Car, CarFront, Bike, Truck, Plane, Ship, Bus, Settings, Edit3, Trash2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import ManageServicesModal from "./ManageServicesModal";
 import EditVehicleModal from "./EditVehicleModal";
 
 const vehicleCategories = [
-  { id: "motorbike", name: "Motorbike", icon: Bike, desc: "Two-wheeled vehicles" },
-  { id: "keke", name: "Keke (Tricycle)", icon: Bike, desc: "Three-wheeled transport" },
+  { id: "motorbike", name: "Motorbike (Dispatch Rider)", icon: Bike, desc: "Two-wheeled vehicles" },
+  { id: "keke", name: "Keke (Tricycle)", icon: CarFront, desc: "Three-wheeled transport" },
   { id: "car", name: "Car", icon: Car, desc: "Standard 4-door passenger cars" },
   { id: "mini van", name: "Mini Van", icon: Bus, desc: "Small multi-passenger vans" },
   { id: "van", name: "Van", icon: Bus, desc: "Standard vans" },
@@ -79,15 +79,50 @@ export default function VehiclesTab({ userId }: { userId: string }) {
   const [managingServicesFor, setManagingServicesFor] = useState<{ id: string, name: string } | null>(null);
   const [editingVehicle, setEditingVehicle] = useState<any | null>(null);
 
-  const handleDeleteVehicle = async (vehicleId: string) => {
-    if (!confirm("Are you sure you want to delete this vehicle? All its data will be lost.")) return;
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteCode, setDeleteCode] = useState("");
+  const [deleteInput, setDeleteInput] = useState("");
+  const [vehicleToDelete, setVehicleToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const initiateDelete = (vehicleId: string) => {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const numbers = '0123456789';
+    let codeArr = [
+      letters[Math.floor(Math.random() * letters.length)],
+      numbers[Math.floor(Math.random() * numbers.length)]
+    ];
+    const all = letters + numbers;
+    for (let i = 0; i < 6; i++) {
+      codeArr.push(all[Math.floor(Math.random() * all.length)]);
+    }
+    const code = codeArr.sort(() => Math.random() - 0.5).join('');
+
+    setDeleteCode(code);
+    setDeleteInput("");
+    setVehicleToDelete(vehicleId);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (deleteInput !== deleteCode) {
+      toast.error("Confirmation code does not match.");
+      return;
+    }
+    if (!vehicleToDelete) return;
+
     try {
-      await deleteDoc(doc(db, "vehicles", vehicleId));
+      setIsDeleting(true);
+      await deleteDoc(doc(db, "vehicles", vehicleToDelete));
       toast.success("Vehicle deleted successfully");
       fetchVehicles();
+      setShowDeleteModal(false);
+      setVehicleToDelete(null);
     } catch (error) {
       console.error("Error deleting vehicle", error);
       toast.error("Failed to delete vehicle");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -98,6 +133,7 @@ export default function VehiclesTab({ userId }: { userId: string }) {
   const [images, setImages] = useState<Record<string, File | null>>({
     front: null, back: null, side: null, interior: null, exterior: null, cargoSpace: null, cockpit: null
   });
+  const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
@@ -132,6 +168,7 @@ export default function VehiclesTab({ userId }: { userId: string }) {
     reset();
     setDocs({ roadWorthiness: null, license: null, insurance: null, registration: null });
     setImages({ front: null, back: null, side: null, interior: null, exterior: null, cargoSpace: null, cockpit: null });
+    setPreviewUrls({});
   };
 
   const onSubmit = async (data: VehicleFormData) => {
@@ -224,6 +261,19 @@ export default function VehiclesTab({ userId }: { userId: string }) {
 
   const handleFileChange = (type: "docs" | "images", key: string, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null;
+    const combinedKey = `${type}-${key}`;
+
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setPreviewUrls(prev => ({ ...prev, [combinedKey]: url }));
+    } else {
+      setPreviewUrls(prev => {
+        const next = { ...prev };
+        delete next[combinedKey];
+        return next;
+      });
+    }
+
     if (type === "docs") {
       setDocs(prev => ({ ...prev, [key]: file }));
     } else {
@@ -233,18 +283,30 @@ export default function VehiclesTab({ userId }: { userId: string }) {
 
   const renderFileInput = (type: "docs" | "images", key: string, label: string) => {
     const file = type === "docs" ? docs[key] : images[key];
+    const previewUrl = previewUrls[`${type}-${key}`];
+
     return (
-      <div className="border border-dashed border-card-border rounded-xl p-4 text-center hover:bg-card-bg/50 transition-colors relative h-full flex flex-col justify-center items-center min-h-[100px]">
+      <div className={`rounded-lg md:rounded-xl p-4 text-center transition-all relative h-full flex flex-col justify-center items-center min-h-[110px] cursor-pointer group bg-white dark:bg-slate-950 shadow-sm border overflow-hidden ${file ? 'border-brand-primary ring-1 ring-brand-primary' : 'border-gray-300 dark:border-slate-700 hover:border-brand-primary/50'}`}>
         <input
           type="file"
           accept="image/*"
           onChange={(e) => handleFileChange(type, key, e)}
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50"
         />
-        <UploadCloud className="w-5 h-5 mb-2 text-foreground/50" />
-        <p className="text-xs font-medium px-2 max-w-full truncate">
+
+        {previewUrl && (
+          <div className="absolute inset-0 z-0">
+            <img src={previewUrl} alt={label} className="w-full h-full object-cover opacity-40 group-hover:opacity-30 transition-opacity" />
+          </div>
+        )}
+
+        <div className={`relative z-20 w-10 h-10 rounded-xl flex items-center justify-center mb-2 transition-colors ${file ? 'bg-brand-primary/90 text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-400 group-hover:text-brand-primary group-hover:bg-brand-primary/10'}`}>
+          <UploadCloud className="w-5 h-5" />
+        </div>
+        <p className={`relative z-20 text-xs font-medium px-2 max-w-full truncate ${file ? 'text-brand-primary bg-white/90 dark:bg-slate-900/90 py-0.5 rounded shadow-sm' : 'text-slate-600 dark:text-slate-400'}`}>
           {file ? file.name : label}
         </p>
+        {!file && <p className="relative z-20 text-[10px] text-slate-400 dark:text-slate-500 mt-1">Click to upload</p>}
       </div>
     );
   };
@@ -254,32 +316,32 @@ export default function VehiclesTab({ userId }: { userId: string }) {
   // -------------------------
   if (step === "category") {
     return (
-      <div className="max-w-5xl mx-auto">
-        <div className="flex items-center gap-4 mb-8">
-          <button onClick={() => setStep("list")} className="p-2 hover:bg-card-bg rounded-full transition-colors border border-card-border shadow-sm">
-            <ArrowLeft className="w-5 h-5" />
+      <div className="max-w-5xl mx-auto px-6 md:px-0">
+        <div className="flex items-center gap-3 mb-5">
+          <button onClick={() => setStep("list")} className="p-1.5 hover:bg-card-bg rounded-full transition-colors border border-card-border shadow-sm">
+            <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h2 className="text-2xl font-bold">What are you registering?</h2>
-            <p className="text-foreground/60 text-sm mt-1">Select the category that best fits your vehicle.</p>
+            <h2 className="text-lg md:text-xl font-bold leading-tight">What are you registering?</h2>
+            <p className="text-foreground/60 text-[11px] md:text-xs mt-0.5">Select the category that best fits your vehicle.</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
           {vehicleCategories.map(cat => {
             const Icon = cat.icon;
             return (
               <button
                 key={cat.id}
                 onClick={() => handleCategorySelect(cat.id)}
-                className="glass-panel p-6 rounded-2xl flex flex-col items-center text-center gap-4 hover:shadow-xl hover:scale-[1.02] transition-all border border-card-border/50 hover:border-brand-primary group"
+                className="glass-panel p-4 md:p-5 rounded-2xl flex flex-col items-center text-center gap-3 hover:shadow-lg hover:-translate-y-1 transition-all border border-card-border/50 hover:border-brand-primary group bg-white dark:bg-slate-900"
               >
-                <div className="w-16 h-16 rounded-full bg-brand-primary/10 flex items-center justify-center group-hover:bg-brand-primary/20 transition-colors">
-                  <Icon className="w-8 h-8 text-brand-primary" />
+                <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-brand-primary/10 flex items-center justify-center group-hover:bg-brand-primary/20 transition-colors mb-1">
+                  <Icon className="w-6 h-6 md:w-7 md:h-7 text-brand-primary" />
                 </div>
-                <div>
-                  <h3 className="font-bold text-lg mb-1">{cat.name}</h3>
-                  <p className="text-xs text-foreground/60">{cat.desc}</p>
+                <div className="w-full">
+                  <h3 className="font-bold text-sm md:text-base mb-1">{cat.name}</h3>
+                  <p className="text-[11px] md:text-xs text-foreground/60 leading-tight line-clamp-2">{cat.desc}</p>
                 </div>
               </button>
             )
@@ -297,7 +359,7 @@ export default function VehiclesTab({ userId }: { userId: string }) {
     const catData = vehicleCategories.find(c => c.id === selectedCategory);
 
     return (
-      <div className="max-w-4xl glass-panel rounded-3xl p-4 md:p-8">
+      <div className="pb-18 max-w-4xl mx-auto glass-panel rounded md:rounded-3xl p-2 md:p-8">
         <div className="flex items-center gap-4 mb-8 border-b border-card-border pb-6">
           <button onClick={() => setStep("category")} className="p-2 hover:bg-card-bg rounded-full transition-colors border border-card-border shadow-sm flex-shrink-0">
             <ArrowLeft className="w-5 h-5" />
@@ -311,83 +373,83 @@ export default function VehiclesTab({ userId }: { userId: string }) {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 md:space-y-8">
           {/* Details Section */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-brand-primary text-white flex items-center justify-center text-xs">1</span>
+          <div className="space-y-3 md:space-y-4">
+            <h3 className="text-base md:text-lg font-bold flex items-center gap-3">
+              <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand-primary to-brand-secondary text-white flex items-center justify-center text-xs font-bold shadow-sm">1</span>
               General Details
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 bg-card-bg/30 p-4 rounded-2xl border border-card-border/50">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-4 p-4 md:p-5 rounded-2xl bg-foreground/[0.02]">
               <div>
                 <label className="block text-sm font-medium mb-1">Make</label>
-                <input {...register("make")} placeholder="e.g. Toyota / Boeing" className="w-full bg-background border border-card-border rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary" />
+                <input {...register("make")} placeholder="e.g. Toyota / Boeing" className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl" />
                 {errors.make && <p className="text-brand-accent text-xs mt-1">{errors.make.message}</p>}
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-1">Model</label>
-                <input {...register("model")} placeholder="e.g. Camry / 737" className="w-full bg-background border border-card-border rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary" />
+                <input {...register("model")} placeholder="e.g. Camry / 737" className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl" />
                 {errors.model && <p className="text-brand-accent text-xs mt-1">{errors.model.message}</p>}
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-1">Year Manufactured</label>
-                <input type="number" {...register("year")} placeholder="e.g. 2018" className="w-full bg-background border border-card-border rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary" />
+                <input type="number" {...register("year")} placeholder="e.g. 2018" className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl" />
                 {errors.year && <p className="text-brand-accent text-xs mt-1">{errors.year.message}</p>}
               </div>
 
               {config.details.plateNumber && (
                 <div>
                   <label className="block text-sm font-medium mb-1">Plate Number</label>
-                  <input {...register("plateNumber")} placeholder="ABC-123-XY" className="w-full bg-background border border-card-border rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary" />
+                  <input {...register("plateNumber")} placeholder="ABC-123-XY" className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl" />
                 </div>
               )}
 
               {config.details.registrationNumber && (
                 <div>
                   <label className="block text-sm font-medium mb-1">Registration / Tail Number</label>
-                  <input {...register("registrationNumber")} placeholder="e.g. N12345" className="w-full bg-background border border-card-border rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary" />
+                  <input {...register("registrationNumber")} placeholder="e.g. N12345" className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl" />
                 </div>
               )}
 
               {config.details.seats && (
                 <div>
                   <label className="block text-sm font-medium mb-1">Number of Seats</label>
-                  <input type="number" {...register("seats")} placeholder="4" className="w-full bg-background border border-card-border rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary" />
+                  <input type="number" {...register("seats")} placeholder="4" className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl" />
                 </div>
               )}
 
               {config.details.payload && (
                 <div>
                   <label className="block text-sm font-medium mb-1">Payload Capacity (Tons)</label>
-                  <input type="number" step="0.1" {...register("payload")} placeholder="e.g. 15.5" className="w-full bg-background border border-card-border rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary" />
+                  <input type="number" step="0.1" {...register("payload")} placeholder="e.g. 15.5" className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl" />
                 </div>
               )}
 
               {config.details.capacity && (
                 <div>
                   <label className="block text-sm font-medium mb-1">Total Capacity (Passengers/Cargo)</label>
-                  <input {...register("capacity")} placeholder="e.g. 150 Passengers" className="w-full bg-background border border-card-border rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary" />
+                  <input {...register("capacity")} placeholder="e.g. 150 Passengers" className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl" />
                 </div>
               )}
 
               {config.details.ac && (
                 <div className="flex items-center gap-3 pt-2 md:col-span-2">
                   <input type="checkbox" id="ac" {...register("ac")} className="w-5 h-5 accent-brand-primary rounded" />
-                  <label htmlFor="ac" className="font-medium cursor-pointer">AC is working</label>
+                  <label htmlFor="ac" className="text-sm font-medium cursor-pointer">AC is working</label>
                 </div>
               )}
             </div>
           </div>
 
           {/* Images Section */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <span className="w-6 h-6 rounded-full bg-brand-primary text-white flex items-center justify-center text-xs">2</span>
+          <div className="space-y-3 md:space-y-4">
+            <h3 className="text-base md:text-lg font-bold flex items-center gap-3">
+              <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand-primary to-brand-secondary text-white flex items-center justify-center text-xs font-bold shadow-sm">2</span>
               Images
             </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 bg-card-bg/30 p-4 rounded-2xl border border-card-border/50">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 p-4 md:p-5 rounded-2xl bg-foreground/[0.02]">
               {config.images.front && renderFileInput("images", "front", "Front View")}
               {config.images.back && renderFileInput("images", "back", "Back View")}
               {config.images.side && renderFileInput("images", "side", "Side View")}
@@ -400,12 +462,12 @@ export default function VehiclesTab({ userId }: { userId: string }) {
 
           {/* Documents Section (Conditionally Hidden) */}
           {config.docs.show && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <span className="w-6 h-6 rounded-full bg-brand-primary text-white flex items-center justify-center text-xs">3</span>
+            <div className="space-y-3 md:space-y-4">
+              <h3 className="text-base md:text-lg font-bold flex items-center gap-3">
+                <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand-primary to-brand-secondary text-white flex items-center justify-center text-xs font-bold shadow-sm">3</span>
                 Verification Documents
               </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 bg-card-bg/30 p-4 rounded-2xl border border-card-border/50">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 p-4 md:p-5 rounded-2xl bg-foreground/[0.02]">
                 {renderFileInput("docs", "license", "Driver's License")}
                 {renderFileInput("docs", "insurance", "Insurance")}
                 {renderFileInput("docs", "registration", "Vehicle Reg.")}
@@ -418,7 +480,7 @@ export default function VehiclesTab({ userId }: { userId: string }) {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-4 bg-gradient-to-r from-brand-secondary to-brand-primary text-white rounded-xl font-bold text-lg shadow-xl shadow-brand-secondary/30 hover:-translate-y-1 transition-all flex justify-center items-center gap-2"
+              className="text-sm md:text-base w-full py-3 md:py-3 bg-gradient-to-r from-brand-secondary to-brand-primary text-white rounded-xl font-bold text-lg shadow-xl shadow-brand-secondary/30 hover:-translate-y-1 transition-all flex justify-center items-center gap-2"
             >
               {isSubmitting && <Loader2 className="w-5 h-5 animate-spin" />}
               {isSubmitting ? "Uploading & Submitting..." : "Submit Registration"}
@@ -433,7 +495,7 @@ export default function VehiclesTab({ userId }: { userId: string }) {
   // RENDER: DEFAULT LIST
   // -------------------------
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="pb-18 max-w-5xl mx-auto px-2 md:px-0">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h2 className="text-xl md:text-2xl font-bold">My Registered Vehicles</h2>
@@ -441,7 +503,7 @@ export default function VehiclesTab({ userId }: { userId: string }) {
         </div>
         <button
           onClick={() => setStep("category")}
-          className="flex items-center gap-2 px-6 py-2 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-primary/90 transition-all shadow-lg shadow-brand-primary/30 hover:scale-105"
+          className="text-sm md:text-base flex items-center gap-2 px-4 md:px-6 py-2 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-primary/90 transition-all shadow-lg shadow-brand-primary/30 hover:scale-105"
         >
           <Plus className="w-5 h-5" /> Add New Vehicle
         </button>
@@ -468,7 +530,7 @@ export default function VehiclesTab({ userId }: { userId: string }) {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {vehicles.map((v) => {
             const displayImage = v.images.exterior || v.images.front || v.images.side;
             return (
@@ -491,33 +553,37 @@ export default function VehiclesTab({ userId }: { userId: string }) {
                 </div>
 
                 <div className="p-5">
-                  <h4 className="font-bold text-lg leading-tight">{v.details.make} {v.details.model}</h4>
-                  <p className="text-sm text-foreground/60 mb-4 font-medium">Yr: {v.details.year}</p>
+                  <h4 className="font-bold text-lg leading-tight mb-2">{v.details.make} {v.details.model}</h4>
 
-                  <div className="grid grid-cols-2 gap-2 text-xs text-foreground/80 bg-card-border/30 p-3 rounded-xl">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] md:text-xs text-foreground/70 font-medium">
+                    <span>{v.details.year}</span>
+
                     {(v.details.plateNumber || v.details.registrationNumber) && (
-                      <div className="flex flex-col">
-                        <span className="text-[10px] text-foreground/50 uppercase">Plate/Reg</span>
-                        <span className="font-bold truncate">{v.details.plateNumber || v.details.registrationNumber}</span>
-                      </div>
+                      <>
+                        <span className="w-1 h-1 rounded-full bg-foreground/30"></span>
+                        <span className="uppercase">{v.details.plateNumber || v.details.registrationNumber}</span>
+                      </>
                     )}
+
                     {v.details.seats && (
-                      <div className="flex flex-col">
-                        <span className="text-[10px] text-foreground/50 uppercase">Seats</span>
-                        <span className="font-bold">{v.details.seats}</span>
-                      </div>
+                      <>
+                        <span className="w-1 h-1 rounded-full bg-foreground/30"></span>
+                        <span>{v.details.seats} Seats</span>
+                      </>
                     )}
+
                     {v.details.payloadCapacity && (
-                      <div className="flex flex-col">
-                        <span className="text-[10px] text-foreground/50 uppercase">Payload</span>
-                        <span className="font-bold">{v.details.payloadCapacity} T</span>
-                      </div>
+                      <>
+                        <span className="w-1 h-1 rounded-full bg-foreground/30"></span>
+                        <span>{v.details.payloadCapacity} T Payload</span>
+                      </>
                     )}
+
                     {v.details.ac !== undefined && (
-                      <div className="flex flex-col">
-                        <span className="text-[10px] text-foreground/50 uppercase">AC</span>
-                        <span className="font-bold">{v.details.ac ? "Yes" : "No"}</span>
-                      </div>
+                      <>
+                        <span className="w-1 h-1 rounded-full bg-foreground/30"></span>
+                        <span>{v.details.ac ? "AC" : "No AC"}</span>
+                      </>
                     )}
                   </div>
 
@@ -537,7 +603,7 @@ export default function VehiclesTab({ userId }: { userId: string }) {
                         <Edit3 className="w-4 h-4" /> Edit
                       </button>
                       <button
-                        onClick={() => handleDeleteVehicle(v.id)}
+                        onClick={() => initiateDelete(v.id)}
                         className="flex-1 py-2 bg-red-500/10 text-red-500 font-bold rounded-lg text-sm hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center gap-2"
                       >
                         <Trash2 className="w-4 h-4" /> Delete
@@ -549,6 +615,46 @@ export default function VehiclesTab({ userId }: { userId: string }) {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-6 md:p-8 max-w-md w-full shadow-2xl text-slate-800 dark:text-slate-100">
+            <h3 className="text-xl font-bold text-red-500 mb-4">Delete Vehicle</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-300 mb-6 leading-relaxed">
+              This action is irreversible. All this vehicle's data will be permanently wiped from our database.
+              To confirm, please type the following code:
+            </p>
+            <div className="bg-gray-100 dark:bg-slate-800/50 p-4 rounded-lg text-center tracking-[0.3em] font-mono text-2xl font-bold mb-6 text-slate-900 dark:text-slate-100 shadow-inner">
+              {deleteCode}
+            </div>
+            <input
+              type="text"
+              value={deleteInput}
+              onChange={(e) => setDeleteInput(e.target.value.toUpperCase())}
+              placeholder="Enter code here"
+              className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all mb-8 text-center font-mono tracking-widest uppercase shadow-sm"
+            />
+            <div className="flex gap-4">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={isDeleting}
+                className="flex-1 py-3 bg-gray-200 hover:bg-gray-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-xl transition-colors shadow-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={isDeleting || deleteInput !== deleteCode}
+                className="flex-1 py-3 bg-red-500 text-white font-semibold rounded-xl hover:bg-red-600 transition-colors disabled:opacity-50 disabled:hover:bg-red-500 shadow-sm flex items-center justify-center gap-2"
+              >
+                {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+                {isDeleting ? "Deleting..." : "Confirm Delete"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

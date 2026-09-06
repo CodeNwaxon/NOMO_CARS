@@ -94,27 +94,27 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-4">
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
       
       {/* Modal */}
-      <div className="relative bg-background border border-card-border rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="relative bg-white dark:bg-slate-950 md:border border-card-border md:rounded-3xl shadow-2xl w-full h-full md:h-auto max-w-2xl max-h-screen md:max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b border-card-border bg-card-bg/30">
+        <div className="flex justify-between items-center p-4 md:p-6 bg-blue-950 text-white shadow-md">
           <div>
             <h2 className="text-xl font-bold">Routes & Services</h2>
-            <p className="text-xs text-foreground/60 mt-1">Managing routes for: <span className="font-bold text-foreground">{vehicleName}</span></p>
+            <p className="text-xs text-white/70 mt-1">Managing routes for: <span className="font-bold text-white">{vehicleName}</span></p>
           </div>
-          <button onClick={onClose} className="p-2 hover:bg-card-bg rounded-full transition-colors border border-card-border">
+          <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6">
           {isAdding ? (
-            <form onSubmit={handleSubmit} className="space-y-4 bg-card-bg/20 p-6 rounded-2xl border border-card-border/50 mb-6 shadow-sm">
+            <form onSubmit={handleSubmit} className="space-y-4 bg-slate-50 dark:bg-slate-900/50 p-4 md:p-6 rounded-2xl mb-6 shadow-sm">
               <h3 className="font-bold mb-4 flex items-center gap-2 text-brand-primary"><Plus className="w-5 h-5"/> Add New Route</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -124,7 +124,7 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
                     value={formData.startPoint} 
                     onChange={e => setFormData({...formData, startPoint: e.target.value})}
                     placeholder="e.g. Lagos" 
-                    className="w-full bg-background border border-card-border rounded-xl px-4 py-3 text-sm focus:border-brand-primary outline-none shadow-sm" 
+                    className="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:border-brand-primary outline-none shadow-sm" 
                   />
                 </div>
                 <div>
@@ -133,7 +133,7 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
                     value={formData.destination} 
                     onChange={e => setFormData({...formData, destination: e.target.value})}
                     placeholder="e.g. Abuja" 
-                    className="w-full bg-background border border-card-border rounded-xl px-4 py-3 text-sm focus:border-brand-primary outline-none shadow-sm" 
+                    className="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:border-brand-primary outline-none shadow-sm" 
                   />
                 </div>
               </div>
@@ -142,9 +142,25 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
                 <label className="block text-xs font-medium mb-1">Amount / Price *</label>
                 <input 
                   value={formData.price} 
-                  onChange={e => setFormData({...formData, price: e.target.value})}
+                  onChange={e => {
+                    const input = e.target;
+                    const cursorPosition = input.selectionStart || 0;
+                    const oldLength = input.value.length;
+                    
+                    const num = input.value.replace(/\D/g, "");
+                    const formatted = num ? parseInt(num, 10).toLocaleString() : "";
+                    
+                    setFormData({...formData, price: formatted});
+                    
+                    window.requestAnimationFrame(() => {
+                      const newLength = formatted.length;
+                      let newCursorPos = cursorPosition + (newLength - oldLength);
+                      if (newCursorPos < 0) newCursorPos = 0;
+                      input.setSelectionRange(newCursorPos, newCursorPos);
+                    });
+                  }}
                   placeholder="e.g. 50,000" 
-                  className="w-full bg-background border border-card-border rounded-xl px-4 py-3 text-sm focus:border-brand-primary outline-none shadow-sm" 
+                  className="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:border-brand-primary outline-none shadow-sm" 
                 />
               </div>
 
@@ -153,8 +169,8 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
                 <textarea 
                   value={formData.description} 
                   onChange={e => setFormData({...formData, description: e.target.value})}
-                  placeholder="e.g. Air-conditioned, free Wi-Fi, stops at Ibadan." 
-                  className="w-full bg-background border border-card-border rounded-xl px-4 py-3 text-sm focus:border-brand-primary outline-none resize-none h-20 shadow-sm" 
+                  placeholder="Any details, stopovers, timing..." 
+                  className="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 rounded-xl px-4 py-3 text-sm focus:border-brand-primary outline-none shadow-sm min-h-[80px] resize-none" 
                 />
               </div>
 
@@ -198,7 +214,7 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
           ) : (
             <div className="space-y-3">
               {services.map(service => (
-                <div key={service.id} className="flex flex-col md:flex-row md:items-center justify-between p-5 bg-card-bg/50 border border-card-border rounded-xl gap-4 hover:border-brand-primary/30 transition-colors group">
+                <div key={service.id} className="flex flex-col md:flex-row md:items-center justify-between p-5 bg-slate-50 dark:bg-slate-900/50 border border-card-border rounded-xl gap-4 hover:border-brand-primary/30 transition-colors group">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 font-bold text-lg">
                       <span className="text-brand-primary truncate">{service.startPoint}</span>
