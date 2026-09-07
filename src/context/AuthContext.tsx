@@ -4,10 +4,11 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { User, onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut } from "firebase/auth";
 import { auth, googleProvider, db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 
 interface UserProfile {
   role: "driver" | "passenger" | "admin";
+  email?: string;
   firstName?: string;
   lastName?: string;
   middleName?: string;
@@ -18,6 +19,7 @@ interface UserProfile {
   operatingCity?: string;
   operatingState?: string;
   isApproved?: boolean;
+  isDisabled?: boolean;
   username?: string;
   displayImage?: string;
   rating?: number;
@@ -56,45 +58,71 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (uid: string) => {
+  const fetchProfile = async (userObj: User) => {
     try {
-      const docRef = doc(db, "users", uid);
+      const docRef = doc(db, "users", userObj.uid);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
         const data = docSnap.data() as UserProfile;
         
+        let needsUpdate = false;
+        const updates: any = {};
+
+        if (!data.email && userObj.email) {
+          data.email = userObj.email;
+          updates.email = userObj.email;
+          needsUpdate = true;
+        }
+
         // Handle VIP expiry logic
         if (data.vipExpiry && new Date(data.vipExpiry) < new Date() && (data.vipStars || 0) > 0) {
           // Reset stars and points in DB if expired
-          await setDoc(docRef, { vipStars: 0, points: 0 }, { merge: true });
+          updates.vipStars = 0;
+          updates.points = 0;
           data.vipStars = 0;
           data.points = 0;
+          needsUpdate = true;
         }
 
-        setProfile(data);
-      } else {
-        setProfile(null);
+        if (needsUpdate) {
+          await setDoc(docRef, updates, { merge: true });
+        }
       }
     } catch (error) {
-      console.error("Error fetching profile:", error);
-      setProfile(null);
+      console.error("Error fetching profile initial checks:", error);
     }
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    let profileUnsub: (() => void) | null = null;
+
+    const authUnsub = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
-        await fetchProfile(currentUser.uid);
+        await fetchProfile(currentUser);
         
-        // Removed redirect logic
+        profileUnsub = onSnapshot(doc(db, "users", currentUser.uid), (docSnap) => {
+          if (docSnap.exists()) {
+            setProfile(docSnap.data() as UserProfile);
+          } else {
+            setProfile(null);
+          }
+          setLoading(false);
+        });
       } else {
+        if (profileUnsub) {
+          profileUnsub();
+          profileUnsub = null;
+        }
         setProfile(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      authUnsub();
+      if (profileUnsub) profileUnsub();
+    };
   }, []);
 
   const signInWithGoogle = async () => {
@@ -112,6 +140,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         const newProfile: UserProfile = {
           role: "passenger", // Default role, they can upgrade to driver later
+          email: result.user.email || "",
           username: result.user.displayName || "User",
           displayImage: result.user.photoURL || "",
           firstName: result.user.displayName || "",
@@ -120,8 +149,27 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         };
         await setDoc(docRef, newProfile);
         setProfile(newProfile);
+
+        // Process referral on the backend securely
+        if (referralCode && referralCode !== result.user.uid) {
+          try {
+            await fetch("/api/referral", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ referrerId: referralCode }),
+            });
+          } catch (e) {
+            console.error("Failed to process referral:", e);
+          }
+          localStorage.removeItem("referralCode");
+        }
       } else {
-        setProfile(docSnap.data() as UserProfile);
+        const existingData = docSnap.data() as UserProfile;
+        if (!existingData.email && result.user.email) {
+          existingData.email = result.user.email;
+          await setDoc(docRef, { email: result.user.email }, { merge: true });
+        }
+        setProfile(existingData);
       }
 
       // Removed redirect logic
@@ -188,7 +236,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const refreshProfile = async () => {
     if (user) {
-      await fetchProfile(user.uid);
+      await fetchProfile(user);
     }
   };
 

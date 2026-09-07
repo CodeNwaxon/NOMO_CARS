@@ -4,20 +4,19 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/context/NotificationContext";
-import { Ticket, ArrowLeft, Loader2, Check } from "lucide-react";
+import { Ticket, ArrowLeft, Loader2, Check, ShieldAlert } from "lucide-react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { toast } from "react-hot-toast";
 import { usePaystackPayment } from "react-paystack";
 import { verifyAndNotifyPayment } from "@/actions/payment";
 import { freeTicketPlanDays, ticketCollectionStartDate } from "@/lib/constants";
-import { getDoc } from "firebase/firestore";
+import { onSnapshot } from "firebase/firestore";
 
 const TICKET_STYLES = [
   { color: "from-green-400 to-green-600", bg: "bg-green-50/50 dark:bg-green-900/10", border: "border-green-200 dark:border-green-800" },
   { color: "from-blue-400 to-blue-600", bg: "bg-blue-50/50 dark:bg-blue-900/10", border: "border-blue-200 dark:border-blue-800" },
   { color: "from-purple-400 to-purple-600", bg: "bg-purple-50/50 dark:bg-purple-900/10", border: "border-purple-200 dark:border-purple-800" },
-  { color: "from-amber-400 to-amber-600", bg: "bg-amber-50/50 dark:bg-amber-900/10", border: "border-amber-200 dark:border-amber-800", isPremium: true },
 ];
 
 
@@ -44,42 +43,64 @@ export default function TicketPage() {
       return;
     }
 
-    const fetchConfig = async () => {
-      try {
-        const pricingRef = doc(db, "adminSettings", "pricing");
-        const snap = await getDoc(pricingRef);
-        if (snap.exists()) {
-          const data = snap.data();
-          if (data.startTicketCollection !== undefined) setStartTicketCollection(data.startTicketCollection);
-          if (data.tickets && data.tickets.length > 0) {
-            const mappedTickets = data.tickets.map((t: any, index: number) => {
-              const style = TICKET_STYLES[index % TICKET_STYLES.length];
-              return {
-                days: t.durationDays,
-                price: t.price,
-                name: t.label,
-                ...style
-              };
-            });
-            setTicketPlans(mappedTickets);
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching pricing:", err);
-      } finally {
-        setFetchingConfig(false);
-      }
-    };
+    if (!user) return;
 
-    if (user) {
-      fetchConfig();
-    }
+    const pricingRef = doc(db, "adminSettings", "pricing");
+    const unsubscribe = onSnapshot(pricingRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data.startTicketCollection !== undefined) setStartTicketCollection(data.startTicketCollection);
+        if (data.tickets && data.tickets.length > 0) {
+          let maxPrice = 0;
+          data.tickets.forEach((t: any) => { if (t.price > maxPrice) maxPrice = t.price; });
+          
+          // Sort by duration so cards appear in order of days
+          const sortedTickets = [...data.tickets].sort((a: any, b: any) => a.durationDays - b.durationDays);
+
+          const mappedTickets = sortedTickets.map((t: any, index: number) => {
+            const isPremium = t.price === maxPrice && t.price > 0;
+            const baseStyle = TICKET_STYLES[index % TICKET_STYLES.length];
+            
+            return {
+              days: t.durationDays,
+              price: t.price,
+              name: t.label,
+              isPremium: isPremium,
+              color: isPremium ? "from-amber-400 to-amber-600" : baseStyle.color,
+              bg: isPremium ? "bg-amber-50/50 dark:bg-amber-900/10" : baseStyle.bg,
+              border: isPremium ? "border-amber-200 dark:border-amber-800" : baseStyle.border,
+            };
+          });
+          setTicketPlans(mappedTickets);
+        }
+      }
+      setFetchingConfig(false);
+    }, (error) => {
+      console.error("Error listening to pricing:", error);
+      setFetchingConfig(false);
+    });
+
+    return () => unsubscribe();
   }, [loading, user, profile, router]);
 
   if (loading || fetchingConfig || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-12 h-12 text-brand-primary animate-spin" />
+      </div>
+    );
+  }
+
+  if (profile?.isDisabled) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-24 h-24 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-6">
+          <ShieldAlert className="w-12 h-12 text-red-500" />
+        </div>
+        <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-4">Account Disabled</h1>
+        <p className="text-slate-600 dark:text-slate-400 mb-8 max-w-md mx-auto">
+          Your account has been temporarily disabled by an administrator. You currently do not have access to the platform.
+        </p>
       </div>
     );
   }
@@ -94,13 +115,14 @@ export default function TicketPage() {
       // The backend webhook will handle the actual Firestore update securely.
       addNotification(
         "Ticket Processing",
-        `Your payment for the ${plan.name} was successful. Your ticket will be active momentarily.`
+        `Your payment for the ${plan.name} was successful. Your ticket will be active momentarily.`,
+        `/receipt/${reference.reference}`
       );
 
       // Wait a moment for the webhook to process before refreshing
       setTimeout(async () => {
         await refreshProfile();
-        router.push("/driver/dashboard");
+        router.push(`/receipt/${reference.reference}`);
       }, 2000);
 
     } catch (error) {

@@ -11,6 +11,7 @@ import { Loader2, Plus, UploadCloud, ArrowLeft, Car, CarFront, Bike, Truck, Plan
 import { toast } from "react-hot-toast";
 import ManageServicesModal from "./ManageServicesModal";
 import EditVehicleModal from "./EditVehicleModal";
+import { useVIPLimits } from "@/hooks/useVIPLimits";
 
 const vehicleCategories = [
   { id: "motorbike", name: "Motorbike (Dispatch Rider)", icon: Bike, desc: "Two-wheeled vehicles" },
@@ -70,6 +71,9 @@ const getFieldConfig = (category: string) => {
 };
 
 export default function VehiclesTab({ userId, vipStars = 0 }: { userId: string, vipStars?: number }) {
+  const { limits, loadingLimits } = useVIPLimits(vipStars);
+  const maxCars = limits.maxCars;
+
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -505,9 +509,13 @@ export default function VehiclesTab({ userId, vipStars = 0 }: { userId: string, 
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h2 className="text-xl md:text-2xl font-bold">My Registered Vehicles</h2>
-          <p className="text-foreground/60 text-xs md:text-sm mt-1">Manage your fleet and approvals.</p>
+          <p className="text-foreground/60 text-xs md:text-sm mt-1">Manage your fleet and approvals. (Limit: {vehicles.length}/{maxCars})</p>
         </div>
-        {(vipStars < 1 && vehicles.length >= 1) ? null : (
+        {loadingLimits ? null : vehicles.length >= maxCars ? (
+          <div className="bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 px-4 py-2 rounded-xl text-sm font-bold shadow-sm">
+            Limit Reached ({maxCars}) - Upgrade VIP
+          </div>
+        ) : (
           <button
             onClick={() => setStep("category")}
             className="text-sm md:text-base flex items-center gap-2 px-4 md:px-6 py-2 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-primary/90 transition-all shadow-lg shadow-brand-primary/30 hover:scale-105"
@@ -530,7 +538,9 @@ export default function VehiclesTab({ userId, vipStars = 0 }: { userId: string, 
           <p className="text-foreground/60 text-xs md:text-base mb-8 max-w-md">
             You haven't registered any vehicles yet. Choose a category to get started.
           </p>
-          {(vipStars < 1 && vehicles.length >= 1) ? null : (
+          {loadingLimits ? null : vehicles.length >= maxCars ? (
+            <div className="bg-amber-500/10 text-amber-600 px-6 py-3 rounded-xl font-bold">Limit Reached</div>
+          ) : (
             <button
               onClick={() => setStep("category")}
               className="flex items-center gap-2 px-8 py-4 bg-card-bg border border-card-border rounded-xl font-bold hover:bg-brand-primary/10 hover:text-brand-primary hover:border-brand-primary/30 transition-all shadow-sm"
@@ -544,25 +554,30 @@ export default function VehiclesTab({ userId, vipStars = 0 }: { userId: string, 
           {vehicles.map((v) => {
             const displayImage = v.images.exterior || v.images.front || v.images.side;
             return (
-              <div key={v.id} className="glass-panel rounded-2xl overflow-hidden group border border-card-border/50 hover:border-brand-primary/30 transition-all shadow-sm hover:shadow-xl">
+              <div key={v.id} className={`glass-panel rounded-2xl overflow-hidden group border transition-all shadow-sm ${v.isSuspendedByLimit ? "opacity-60 grayscale border-red-500/30" : "border-card-border/50 hover:border-brand-primary/30 hover:shadow-xl"}`}>
                 <div className="h-40 relative bg-card-border">
                   {displayImage ? (
                     <img src={displayImage} alt={v.details.make} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-foreground/30"><Car className="w-10 h-10" /></div>
                   )}
-                  <div className="absolute top-3 right-3">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md ${v.isApproved ? "bg-green-500 text-white" : "bg-amber-500 text-white"
-                      }`}>
-                      {v.isApproved ? "Approved" : "Pending"}
-                    </span>
+                  <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
+                    {v.isSuspendedByLimit ? (
+                      <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md bg-red-600 text-white">
+                        Suspended (Over Limit)
+                      </span>
+                    ) : (
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md ${v.isApproved ? "bg-green-500 text-white" : "bg-amber-500 text-white"}`}>
+                        {v.isApproved ? "Approved" : "Pending"}
+                      </span>
+                    )}
                   </div>
                   <div className="absolute bottom-3 left-3 bg-slate-900/70 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold capitalize shadow-sm">
                     {v.category}
                   </div>
                 </div>
 
-                <div className="p-5">
+                <div className="p-5 relative">
                   <h4 className="font-bold text-lg leading-tight mb-2">{v.details.make} {v.details.model}</h4>
 
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] md:text-xs text-foreground/70 font-medium">
@@ -599,16 +614,24 @@ export default function VehiclesTab({ userId, vipStars = 0 }: { userId: string, 
 
                   {/* Actions Area */}
                   <div className="mt-4 flex flex-col gap-2 border-t border-card-border/50 pt-4">
+                    {v.isSuspendedByLimit ? (
+                      <div className="text-center text-xs text-red-500 font-bold mb-1">
+                        Upgrade VIP to unlock this vehicle
+                      </div>
+                    ) : null}
+                    
                     <button
                       onClick={() => setManagingServicesFor({ id: v.id, name: `${v.details.make} ${v.details.model}` })}
-                      className="w-full py-2 bg-brand-primary/10 text-brand-primary font-bold rounded-lg text-sm hover:bg-brand-primary hover:text-white transition-colors"
+                      disabled={v.isSuspendedByLimit}
+                      className={`w-full py-2 font-bold rounded-lg text-sm transition-colors ${v.isSuspendedByLimit ? "bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed" : "bg-brand-primary/10 text-brand-primary hover:bg-brand-primary hover:text-white"}`}
                     >
                       Manage Routes & Services
                     </button>
                     <div className="flex gap-2">
                       <button
                         onClick={() => setEditingVehicle(v)}
-                        className="flex-1 py-2 bg-card-bg border border-card-border font-bold rounded-lg text-sm hover:bg-card-border/50 transition-colors flex items-center justify-center gap-2 text-foreground/80"
+                        disabled={v.isSuspendedByLimit}
+                        className={`flex-1 py-2 border font-bold rounded-lg text-sm transition-colors flex items-center justify-center gap-2 ${v.isSuspendedByLimit ? "bg-gray-100 dark:bg-gray-800 border-transparent text-gray-400 cursor-not-allowed" : "bg-card-bg border-card-border hover:bg-card-border/50 text-foreground/80"}`}
                       >
                         <Edit3 className="w-4 h-4" /> Edit
                       </button>

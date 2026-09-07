@@ -40,7 +40,12 @@ export default function DriverProfilePage() {
           const q = query(collection(db, "vehicles"), where("driverId", "==", driverId), where("isApproved", "==", true));
           const vSnap = await getDocs(q);
           const vData: any[] = [];
-          vSnap.forEach(d => vData.push({ id: d.id, ...d.data() }));
+          vSnap.forEach(d => {
+            const data = d.data();
+            if (!data.isSuspendedByLimit) {
+              vData.push({ id: d.id, ...data });
+            }
+          });
           setVehicles(vData);
 
           // We remove the favorite check from here because user auth might not be resolved yet
@@ -87,6 +92,19 @@ export default function DriverProfilePage() {
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
         <h1 className="text-2xl font-bold mb-4">Driver Not Found</h1>
         <button onClick={() => router.back()} className="text-brand-primary hover:underline">
+          Go Back
+        </button>
+      </div>
+    );
+  }
+
+  if (driver.isDisabled) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 text-center">
+        <AlertTriangle className="w-16 h-16 text-red-500 mb-4" />
+        <h1 className="text-2xl font-bold mb-2">Account Suspended</h1>
+        <p className="text-foreground/70 mb-6">This driver account has been suspended.</p>
+        <button onClick={() => router.back()} className="px-6 py-2 bg-brand-primary text-white rounded-xl hover:bg-brand-primary/90 transition-colors">
           Go Back
         </button>
       </div>

@@ -178,7 +178,7 @@ export default function AdminPage() {
 
         {/* Top User & Revenue Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 md:p-6 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] flex flex-col transition-all">
             <div className="flex items-center gap-3 mb-4 text-gray-500 dark:text-gray-400">
               <div className="p-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg">
                 <Users className="w-5 h-5" />
@@ -188,7 +188,7 @@ export default function AdminPage() {
             <div className="text-2xl md:text-4xl font-extrabold text-gray-900 dark:text-white mt-auto">{stats.drivers}</div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 md:p-6 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] flex flex-col transition-all">
             <div className="flex items-center gap-3 mb-4 text-gray-500 dark:text-gray-400">
               <div className="p-2 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-lg">
                 <Users className="w-5 h-5" />
@@ -198,7 +198,7 @@ export default function AdminPage() {
             <div className="text-2xl md:text-4xl font-extrabold text-gray-900 dark:text-white mt-auto">{stats.passengers}</div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 md:p-6 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] flex flex-col transition-all">
             <div className="flex items-center gap-3 mb-4 text-gray-500 dark:text-gray-400">
               <div className="p-2 bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 rounded-lg">
                 <Ticket className="w-5 h-5" />
@@ -208,7 +208,7 @@ export default function AdminPage() {
             <div className="text-xl md:text-3xl font-extrabold text-gray-900 dark:text-white mt-auto">₦{stats.ticketRevenue.toLocaleString()}</div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-4 md:p-6 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 md:p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.1)] flex flex-col transition-all">
             <div className="flex items-center gap-3 mb-4 text-gray-500 dark:text-gray-400">
               <div className="p-2 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 rounded-lg">
                 <Crown className="w-5 h-5" />
@@ -225,7 +225,7 @@ export default function AdminPage() {
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-6 mb-8">
           {Object.entries(vehicleStats).map(([category, data]) => (
-            <div key={category} className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+            <div key={category} className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 shadow-sm transition-all hover:shadow-md">
               <h3 className="font-bold text-sm md:text-base mb-3 text-gray-800 dark:text-gray-200">{category} <span className="text-xs font-normal text-gray-400 ml-1">({data.total})</span></h3>
 
               <div className="space-y-2">
@@ -252,7 +252,7 @@ export default function AdminPage() {
         </h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6">
           {admins.map((admin) => (
-            <div key={admin.id} className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-100 dark:border-gray-700 flex items-center justify-between">
+            <div key={admin.id} className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 shadow-sm flex items-center justify-between transition-all hover:shadow-md">
               <div>
                 <h4 className="font-bold text-gray-900 dark:text-white capitalize">{admin.name}</h4>
                 <p className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-[200px]">{admin.email}</p>

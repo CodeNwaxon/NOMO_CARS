@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { X, Copy, Share2, Star } from "lucide-react";
 import { toast } from "react-hot-toast";
 
@@ -31,13 +32,33 @@ export default function ShareOverlay({ onClose, referralLink, points }: ShareOve
     }
   };
 
-  // Logic for VIP Progress (Resetting per star, 0/20)
-  const POINTS_PER_STAR = 20;
-  const MAX_POINTS = 100;
+  const [pointsPerStar, setPointsPerStar] = useState(20);
+
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const { doc, getDoc } = await import("firebase/firestore");
+        const { db } = await import("@/lib/firebase");
+        const pricingRef = doc(db, "adminSettings", "pricing");
+        const pricingSnap = await getDoc(pricingRef);
+        if (pricingSnap.exists()) {
+          const data = pricingSnap.data();
+          if (data.pointsPerStar) {
+            setPointsPerStar(data.pointsPerStar);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch pointsPerStar", err);
+      }
+    };
+    fetchPricing();
+  }, []);
+
+  const MAX_POINTS = pointsPerStar * 5;
   const cappedPoints = Math.min(points, MAX_POINTS);
 
-  const currentStars = Math.floor(cappedPoints / POINTS_PER_STAR);
-  const progressToNextStar = cappedPoints % POINTS_PER_STAR;
+  const currentStars = Math.floor(cappedPoints / pointsPerStar);
+  const progressToNextStar = cappedPoints % pointsPerStar;
   const nextStarTarget = currentStars + 1 > 5 ? 5 : currentStars + 1;
   const isMaxedOut = cappedPoints >= MAX_POINTS;
 
@@ -64,7 +85,7 @@ export default function ShareOverlay({ onClose, referralLink, points }: ShareOve
     }
   };
 
-  const progressPercentage = isMaxedOut ? 100 : (progressToNextStar / POINTS_PER_STAR) * 100;
+  const progressPercentage = isMaxedOut ? 100 : (progressToNextStar / pointsPerStar) * 100;
   const nextStarColorClass = getStarColor(nextStarTarget);
   const nextStarTextClass = getStarTextColor(nextStarTarget);
 
@@ -91,7 +112,7 @@ export default function ShareOverlay({ onClose, referralLink, points }: ShareOve
             <h4 className="text-xl font-black mb-2">Refer Friends, Get VIP</h4>
             <p className="text-sm text-foreground/70 leading-relaxed">
               Every user that joins through your link earns you <span className="font-bold text-brand-primary">2 points</span>.
-              Collect <span className="font-bold text-amber-500">20 points</span> to earn a VIP star for free.
+              Collect <span className="font-bold text-amber-500">{pointsPerStar} points</span> to earn a VIP star for free.
             </p>
           </div>
 

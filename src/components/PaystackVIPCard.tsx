@@ -48,7 +48,7 @@ export default function PaystackVIPCard({ plan, profile, user, onSuccess, onClos
 
   return (
     <div 
-      className={`relative flex flex-col rounded-3xl overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-xl ${
+      className={`relative flex flex-col h-full rounded-3xl overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-xl ${
         plan.isPremium ? plan.bg : `glass-panel ${plan.bg}`
       } border ${plan.border}`}
     >

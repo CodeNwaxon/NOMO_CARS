@@ -104,5 +104,21 @@ service cloud.firestore {
       // No one can read reports from the client side (protect privacy)
       allow read: if false;
     }
+
+    // Admin Settings collection
+    match /adminSettings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Transactions collection
+    match /transactions/{transactionId} {
+      allow read: if request.auth != null && (
+        resource == null ||
+        resource.data.userId == request.auth.uid || 
+        isAdmin()
+      );
+      allow write: if false;
+    }
   }
 }

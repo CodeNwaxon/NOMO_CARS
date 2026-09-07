@@ -2,6 +2,7 @@
 
 import { sendEmail } from "@/lib/email";
 import { websiteLink } from "@/lib/constants";
+import { getAdminDb } from "@/lib/firebaseAdmin";
 export async function verifyAndNotifyPayment(
   reference: string, 
   userEmail: string, 
@@ -65,5 +66,63 @@ export async function verifyAndNotifyPayment(
   } catch (error: any) {
     console.error("Payment Verification Error:", error);
     return { success: false, error: error.message };
+  }
+}
+
+export async function simulateWebhookForLocalhost(
+  metadata: any,
+  amountInKobo: number,
+  reference: string,
+  userEmail: string
+) {
+  if (process.env.NODE_ENV !== "development") {
+    console.log("Not in dev mode, skipping webhook simulation");
+    return { success: true };
+  }
+
+  try {
+    const adminDb = getAdminDb();
+    const userId = metadata.userId;
+
+    if (!userId) {
+      throw new Error("Missing userId in metadata");
+    }
+
+    const userRef = adminDb.collection("users").doc(userId);
+
+    if (metadata.planType === "vip") {
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + 180);
+
+      await userRef.update({
+        vipStars: metadata.planStars,
+        vipExpiry: expiryDate.toISOString(),
+      });
+    } else if (metadata.planType === "ticket") {
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + metadata.planDays);
+
+      await userRef.update({
+        ticketExpiry: expiryDate.toISOString(),
+        lastTicketPrice: metadata.planPrice,
+        lastTicketDays: metadata.planDays,
+      });
+    }
+
+    // Log transaction
+    const transactionRef = adminDb.collection("transactions").doc(reference);
+    await transactionRef.set({
+      userId,
+      amount: amountInKobo / 100,
+      type: metadata.planType || "unknown",
+      reference: reference,
+      createdAt: new Date().toISOString(),
+      userEmail: userEmail || "",
+    }, { merge: true });
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("Localhost Webhook Simulation Error:", err);
+    return { success: false, error: err.message };
   }
 }

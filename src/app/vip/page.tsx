@@ -11,14 +11,14 @@ import { usePaystackPayment } from "react-paystack";
 import { verifyAndNotifyPayment } from "@/actions/payment";
 import { useNotifications } from "@/context/NotificationContext";
 import { websiteLink } from "@/lib/constants";
-import { getDoc } from "firebase/firestore";
+import { onSnapshot } from "firebase/firestore";
 
 const VIP_STYLES = [
-  { color: "from-blue-400 to-blue-600", bg: "bg-blue-50/50 dark:bg-blue-900/10", border: "border-blue-200 dark:border-blue-800", features: ["Basic priority listing", "Extra bid daily", "VIP Badge"], tag: "Starter" },
-  { color: "from-green-400 to-green-600", bg: "bg-green-50/50 dark:bg-green-900/10", border: "border-green-200 dark:border-green-800", features: ["Enhanced priority listing", "3 Extra bids daily", "Premium VIP Badge"], tag: "Popular" },
-  { color: "from-purple-400 to-purple-600", bg: "bg-purple-50/50 dark:bg-purple-900/10", border: "border-purple-200 dark:border-purple-800", features: ["High priority listing", "5 Extra bids daily", "Featured profile tag"], tag: "Advanced" },
-  { color: "from-pink-400 to-rose-600", bg: "bg-pink-50/50 dark:bg-pink-900/10", border: "border-pink-200 dark:border-pink-800", features: ["Top-tier priority listing", "10 Extra bids daily", "Exclusive support"], tag: "Premium" },
-  { color: "from-slate-700 to-black dark:from-slate-300 dark:to-white", bg: "bg-gradient-to-br from-slate-900 to-black text-white shadow-2xl shadow-black/40", border: "border-slate-800", features: ["Ultimate priority listing", "Unlimited bids daily", "Prestigious Black Card", "Dedicated Account Manager"], isPremium: true, tag: "Ultimate" }
+  { color: "from-blue-400 to-blue-600", bg: "bg-blue-50/50 dark:bg-blue-900/10", border: "border-blue-200 dark:border-blue-800", features: ["Basic priority listing", "VIP Badge"], tag: "Starter" },
+  { color: "from-green-400 to-green-600", bg: "bg-green-50/50 dark:bg-green-900/10", border: "border-green-200 dark:border-green-800", features: ["Enhanced priority listing", "Premium VIP Badge"], tag: "Popular" },
+  { color: "from-purple-400 to-purple-600", bg: "bg-purple-50/50 dark:bg-purple-900/10", border: "border-purple-200 dark:border-purple-800", features: ["High priority listing", "Featured profile tag"], tag: "Advanced" },
+  { color: "from-pink-400 to-rose-600", bg: "bg-pink-50/50 dark:bg-pink-900/10", border: "border-pink-200 dark:border-pink-800", features: ["Top-tier priority listing", "Exclusive support"], tag: "Premium" },
+  { color: "from-slate-700 to-black dark:from-slate-300 dark:to-white", bg: "bg-gradient-to-br from-slate-900 to-black text-white shadow-2xl shadow-black/40", border: "border-slate-800", features: ["Ultimate priority listing", "Prestigious Black Card"], isPremium: true, tag: "Ultimate" }
 ];
 
 import dynamic from 'next/dynamic';
@@ -42,35 +42,61 @@ export default function VIPPage() {
       return;
     }
 
-    const fetchConfig = async () => {
-      try {
-        const pricingRef = doc(db, "adminSettings", "pricing");
-        const snap = await getDoc(pricingRef);
-        if (snap.exists()) {
-          const data = snap.data();
-          if (data.vip && data.vip.length > 0) {
-            const mappedVip = data.vip.map((v: any, index: number) => {
-              const style = VIP_STYLES[Math.min(index, VIP_STYLES.length - 1)];
-              return {
-                stars: v.stars,
-                price: v.price,
-                name: v.label,
-                ...style
-              };
-            });
-            setVipPlans(mappedVip);
-          }
-        }
-      } catch (err) {
-        console.error("Error fetching pricing:", err);
-      } finally {
-        setFetchingConfig(false);
-      }
-    };
+    if (!user) return;
 
-    if (user) {
-      fetchConfig();
-    }
+    const pricingRef = doc(db, "adminSettings", "pricing");
+    const unsubscribe = onSnapshot(pricingRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        let loadedVips = data?.vip || [];
+
+        // Ensure we always have 5 tiers, merging admin data if available
+        const defaultVips = [
+          { stars: 1, durationDays: 30, price: 5000, label: "1 Star VIP" },
+          { stars: 2, durationDays: 30, price: 10000, label: "2 Star VIP" },
+          { stars: 3, durationDays: 30, price: 15000, label: "3 Star VIP" },
+          { stars: 4, durationDays: 30, price: 20000, label: "4 Star VIP" },
+          { stars: 5, durationDays: 30, price: 25000, label: "5 Star VIP" }
+        ];
+
+        const fullVips = defaultVips.map(dv => {
+          const found = loadedVips.find((v: any) => v.stars === dv.stars);
+          return found ? found : dv;
+        }).sort((a, b) => a.stars - b.stars);
+
+        const mappedVip = fullVips.map((v: any, index: number) => {
+          const style = VIP_STYLES[Math.min(index, VIP_STYLES.length - 1)];
+
+          let dynamicFeatures = [...style.features];
+
+          if (v.dailyBids && Number(v.dailyBids) > 0) {
+            dynamicFeatures.splice(1, 0, `${v.dailyBids} Extra bid${Number(v.dailyBids) > 1 ? 's' : ''} monthly`);
+          }
+          if (v.maxCars && Number(v.maxCars) > 0) {
+            dynamicFeatures.splice(1, 0, `${v.maxCars} Extra vehicle slot${Number(v.maxCars) > 1 ? 's' : ''} for ${v.durationDays} days`);
+          }
+          if (v.maxRoutesPerCar && Number(v.maxRoutesPerCar) > 0) {
+            dynamicFeatures.splice(1, 0, `${v.maxRoutesPerCar} Extra route${Number(v.maxRoutesPerCar) > 1 ? 's' : ''} per vehicle`);
+          }
+
+          return {
+            stars: v.stars,
+            price: v.price,
+            name: v.label,
+            durationDays: v.durationDays,
+            ...style,
+            features: dynamicFeatures
+          };
+        });
+        setVipPlans(mappedVip);
+      }
+      setFetchingConfig(false);
+    }, (error) => {
+      console.error("Error listening to pricing:", error);
+      setFetchingConfig(false);
+    });
+
+    return () => unsubscribe();
   }, [loading, user, router]);
 
   if (loading || fetchingConfig || !user) {
@@ -84,25 +110,21 @@ export default function VIPPage() {
   const handlePurchaseSuccess = async (reference: any, plan: any) => {
     try {
       toast.success(`Payment successful! Your VIP status is being activated...`);
-      
+
       // Notify the user locally so they see a response immediately.
       // The backend webhook will handle the actual Firestore update securely.
       addNotification(
         "VIP Upgrading",
-        `Your payment for ${plan.name} was successful. Your account will be upgraded momentarily.`
+        `Your payment for ${plan.name} was successful. Your account will be upgraded momentarily.`,
+        `/receipt/${reference.reference}`
       );
 
       // Wait a moment for the webhook to process before refreshing
       setTimeout(async () => {
         await refreshProfile();
-        
-        if (profile?.role === "driver") {
-          router.push("/driver/dashboard");
-        } else {
-          router.push("/passenger/dashboard");
-        }
+        router.push(`/receipt/${reference.reference}`);
       }, 2000);
-      
+
     } catch (error) {
       console.error("Error processing VIP success callback:", error);
     } finally {

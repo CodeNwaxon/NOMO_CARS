@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ShieldCheck, MessageCircle, AlertTriangle, Phone, Mail, Loader2, ArrowLeft, User, Search, Flag } from "lucide-react";
-import { collection, getDocs, doc, deleteDoc } from "firebase/firestore";
+import { collection, getDocs, doc, deleteDoc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Link from "next/link";
 import toast from "react-hot-toast";
@@ -82,6 +82,20 @@ export default function ReportsPage() {
           reports.push({ id: doc.id, ...doc.data() } as UserReport);
         });
         setUserReports(reports);
+
+        // Mark as seen globally for all admins
+        if (reports.length > 0) {
+          const notifRef = doc(db, "adminSettings", "notifications");
+          const notifSnap = await getDoc(notifRef);
+          const data = notifSnap.exists() ? notifSnap.data() : {};
+          const currentSeen = new Set(data.seenReports || []);
+          reports.forEach(r => currentSeen.add(r.id));
+          
+          await setDoc(notifRef, {
+            ...data,
+            seenReports: Array.from(currentSeen)
+          }, { merge: true });
+        }
       } catch (err) {
         console.error("Error fetching reports data:", err);
       } finally {

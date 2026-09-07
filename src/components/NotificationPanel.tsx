@@ -123,7 +123,7 @@ export function NotificationPanel({ isOpen, onClose }: { isOpen: boolean; onClos
                           }}
                           className="mt-3 block w-full py-2 bg-brand-primary/10 hover:bg-brand-primary/20 text-brand-primary text-xs font-bold rounded-lg transition-colors text-center"
                         >
-                          View Details
+                          {notif.link.includes('/receipt/') ? 'View Receipt' : 'View Details'}
                         </button>
                       )}
                     </div>

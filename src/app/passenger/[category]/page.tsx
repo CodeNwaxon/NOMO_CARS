@@ -101,9 +101,9 @@ export default function CategoryVehicles() {
 
         const vehiclesWithDrivers = fetchedVehicles
           .filter(v => {
-            // Only show vehicles from drivers with an active ticket
+            // Only show vehicles from drivers with an active ticket and who are not disabled or suspended
             const driverData = driversMap[v.driverId];
-            return hasValidTicket(driverData?.ticketExpiry, dynamicStartTicketCollection);
+            return !v.isSuspendedByLimit && !driverData?.isDisabled && hasValidTicket(driverData?.ticketExpiry, dynamicStartTicketCollection);
           })
           .map(v => ({
             ...v,
@@ -191,7 +191,7 @@ export default function CategoryVehicles() {
                   <span>Create Bid</span>
                 </button>
               )}
-              {isDriver && (
+              {isDriver && !profile?.isDisabled && (
                 <>
                   {profile?.isApproved && (
                     <button 

@@ -6,6 +6,7 @@ import { db } from "@/lib/firebase";
 import { X, Loader2, Plus, MapPin, Trash2, Edit2, CheckCircle2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useAuth } from "@/context/AuthContext";
+import { useVIPLimits } from "@/hooks/useVIPLimits";
 
 interface ManageServicesModalProps {
   vehicleId: string;
@@ -16,6 +17,9 @@ interface ManageServicesModalProps {
 
 export default function ManageServicesModal({ vehicleId, driverId, vehicleName, onClose }: ManageServicesModalProps) {
   const { profile } = useAuth();
+  const { limits, loadingLimits } = useVIPLimits(profile?.vipStars || 0);
+  const maxRoutes = limits.maxRoutesPerCar;
+
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -191,10 +195,19 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
             </form>
           ) : (
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-foreground/80">Available Routes</h3>
-              <button onClick={() => setIsAdding(true)} className="flex items-center gap-2 px-4 py-2 bg-brand-primary/10 text-brand-primary rounded-lg font-bold text-sm hover:bg-brand-primary hover:text-white transition-colors">
-                <Plus className="w-4 h-4" /> Add New Route
-              </button>
+              <div>
+                <h3 className="font-bold text-foreground/80">Available Routes</h3>
+                <p className="text-xs text-foreground/50 mt-1">Limit: {services.length}/{maxRoutes}</p>
+              </div>
+              {loadingLimits ? null : services.length >= maxRoutes ? (
+                <div className="bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 px-4 py-2 rounded-lg text-xs font-bold shadow-sm">
+                  Limit Reached
+                </div>
+              ) : (
+                <button onClick={() => setIsAdding(true)} className="flex items-center gap-2 px-4 py-2 bg-brand-primary/10 text-brand-primary rounded-lg font-bold text-sm hover:bg-brand-primary hover:text-white transition-colors">
+                  <Plus className="w-4 h-4" /> Add New Route
+                </button>
+              )}
             </div>
           )}
 
@@ -205,7 +218,11 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
             <div className="text-center py-12 text-foreground/50 text-sm border border-dashed border-gray-300 dark:border-slate-700 rounded-2xl bg-slate-50 dark:bg-slate-900/50">
               <MapPin className="w-12 h-12 mx-auto mb-3 opacity-20" />
               <p>No routes added yet.</p>
-              <p className="text-xs mt-1 opacity-70">Click 'Add New Route' to create your first service.</p>
+              {loadingLimits ? null : services.length >= maxRoutes ? (
+                <p className="text-xs mt-1 text-amber-500 font-bold">Route limit reached.</p>
+              ) : (
+                <p className="text-xs mt-1 opacity-70">Click 'Add New Route' to create your first service.</p>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

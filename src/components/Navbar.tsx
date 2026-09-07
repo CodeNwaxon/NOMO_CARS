@@ -83,7 +83,7 @@ export function Navbar() {
             {siteConfig.siteLogo && (
               <img src={siteConfig.siteLogo} alt="Site Logo" className="w-8 h-8 rounded-full object-cover shadow-sm bg-white border border-gray-200 dark:border-gray-700" />
             )}
-            <span className="text-xs md:text-sm dark:text-white text-gray-900 font-bold tracking-widest whitespace-nowrap">
+            <span className="text-[9px] md:text-sm dark:text-white text-gray-900 font-bold tracking-widest whitespace-nowrap">
               {siteConfig.siteName}
             </span>
           </div>
@@ -144,7 +144,7 @@ export function Navbar() {
                     </p>
                   </div>
                   <div className="h-[1px] dark:bg-white/10 bg-black/5 mx-2 mb-1"></div>
-                  {user.uid === process.env.NEXT_PUBLIC_ADMIN_UID && (
+                  {(profile?.role === "admin" || user.uid === process.env.NEXT_PUBLIC_ADMIN_UID) && (
                     <>
                       <button
                         onClick={() => {
@@ -154,7 +154,9 @@ export function Navbar() {
                         className="flex items-center gap-3 w-full px-2 py-1.5 md:px-4 md:py-2 text-xs md:text-sm text-left dark:text-gray-200 text-gray-700 hover:bg-yellow-500/20 rounded-lg transition-colors group"
                       >
                         <ShieldCheck className="w-5 h-5 dark:text-gray-400 text-gray-500 group-hover:text-yellow-600 dark:group-hover:text-yellow-400" />
-                        <span className="text-xs md:text-sm font-medium group-hover:text-yellow-600 dark:group-hover:text-yellow-400">CEO Panel</span>
+                        <span className="text-xs md:text-sm font-medium group-hover:text-yellow-600 dark:group-hover:text-yellow-400">
+                          {user.uid === process.env.NEXT_PUBLIC_ADMIN_UID ? "CEO Panel" : "Admin Panel"}
+                        </span>
                       </button>
                       <div className="h-[1px] dark:bg-white/10 bg-black/5 mx-2 my-1"></div>
                     </>

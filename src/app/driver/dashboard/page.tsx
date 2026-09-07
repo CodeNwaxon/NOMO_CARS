@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
-import { LogOut, User as UserIcon, Car, MessageCircle, Loader2 } from "lucide-react";
+import { LogOut, User as UserIcon, Car, MessageCircle, Loader2, AlertTriangle } from "lucide-react";
 import { useChat } from "@/context/ChatContext";
 import ProfileTab from "./ProfileTab";
 import VehiclesTab from "./VehiclesTab";
@@ -32,6 +32,11 @@ export default function DriverDashboard() {
         router.push("/driver/register");
       } else if (!profile?.isApproved) {
         router.push("/driver/awaiting-approval");
+      } else {
+        // Enforce limits lazily on background load
+        import("@/actions/enforcement").then((m) => {
+          m.enforceDriverLimits(user.uid).catch(console.error);
+        });
       }
     }
   }, [user, profile, loading, router]);
@@ -48,6 +53,27 @@ export default function DriverDashboard() {
     await signOut();
     router.push("/");
   };
+
+  if (profile.isDisabled) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-24 h-24 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mb-6">
+          <AlertTriangle className="w-12 h-12 text-red-500" />
+        </div>
+        <h1 className="text-3xl font-black text-slate-900 dark:text-white mb-4">Account Disabled</h1>
+        <p className="text-slate-600 dark:text-slate-400 mb-8 max-w-md mx-auto">
+          Your account has been temporarily disabled by an administrator. You currently do not have access to the platform. Please contact support for assistance.
+        </p>
+        <button 
+          onClick={confirmSignOut}
+          className="px-8 py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-bold hover:bg-slate-800 dark:hover:bg-slate-100 transition shadow-lg flex items-center gap-2"
+        >
+          <LogOut className="w-5 h-5" />
+          Log Out
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">

@@ -44,12 +44,34 @@ export async function POST(req: NextRequest) {
 
       if (metadata.planType === "vip") {
         const expiryDate = new Date();
-        expiryDate.setDate(expiryDate.getDate() + 180);
+        expiryDate.setDate(expiryDate.getDate() + 180); // Alternatively, pull from metadata if passed
+
+        const userDoc = await userRef.get();
+        const userData = userDoc.data() || {};
+        const oldStars = userData.vipStars || 0;
 
         await userRef.update({
           vipStars: metadata.planStars,
           vipExpiry: expiryDate.toISOString(),
         });
+
+        // Enforce vehicle limits on ANY VIP purchase (upgrade or downgrade)
+        const pricingDoc = await adminDb.collection("adminSettings").doc("pricing").get();
+        const pricingData = pricingDoc.exists ? pricingDoc.data() : null;
+        let newMaxCars = 1; // Default
+        
+        if (pricingData && pricingData.vip) {
+          const configForStar = pricingData.vip.find((v: any) => v.stars === metadata.planStars);
+          if (configForStar && configForStar.maxCars) {
+            newMaxCars = configForStar.maxCars;
+          }
+        } else if (pricingData && pricingData.nonVipLimits) {
+          newMaxCars = pricingData.nonVipLimits.maxCars;
+        }
+
+        // Import and run enforcement helper
+        const { enforceVehicleLimits } = await import("@/lib/enforceVehicleLimits");
+        await enforceVehicleLimits(userId, newMaxCars);
       } else if (metadata.planType === "ticket") {
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + metadata.planDays);
