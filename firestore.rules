@@ -4,7 +4,10 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function isAdmin() {
       // Replace with the CEO's actual User UID from Firebase Auth
-      return request.auth != null && request.auth.uid == 'xFAB29wQyBfGk4W2oLaD9qwxgfY2';
+      return request.auth != null && (
+        request.auth.uid == 'xFAB29wQyBfGk4W2oLaD9qwxgfY2' ||
+        exists(/databases/$(database)/documents/adminRoles/$(request.auth.uid))
+      );
     }
 
     function changingSensitiveFields() {
@@ -38,7 +41,13 @@ service cloud.firestore {
       
       // Only authenticated users can create a vehicle.
       // Additionally, the driverId must match the authenticated user's uid.
-      allow create: if request.auth != null && request.resource.data.driverId == request.auth.uid;
+      // Non-VIPs can only have 1 vehicle (vehicleId == request.auth.uid). VIPs can have multiple.
+      allow create: if request.auth != null 
+                    && request.resource.data.driverId == request.auth.uid
+                    && (
+                      vehicleId == request.auth.uid ||
+                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.vipStars >= 1
+                    );
       
       // Only the vehicle owner can update or delete it
       allow update, delete: if request.auth != null && resource.data.driverId == request.auth.uid;

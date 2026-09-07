@@ -7,13 +7,13 @@ import { useRouter } from "next/navigation";
 import {
   User, Phone, Star, Camera, Check, X, LogOut, MapPin, CarFront, Share2, Crown, Ticket, Briefcase, Bus, Truck, Car
 } from "lucide-react";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { toast } from "react-hot-toast";
 import { checkUsernameUnique } from "@/lib/userUtils";
 import ShareOverlay from "@/components/ShareOverlay";
-import { websiteLink, getVIPBadge, VIP_PLANS, startTicketCollection, freeTicketPlanDays, ticketCollectionStartDate } from "@/lib/constants";
+import { websiteLink, getVIPBadge, freeTicketPlanDays, ticketCollectionStartDate } from "@/lib/constants";
 
 const CATEGORIES = [
   { id: "car", name: "Car", icon: Car, bg: "bg-blue-500/10", color: "text-blue-500", hoverShadow: "hover:shadow-blue-500/20", hoverBorder: "hover:border-blue-500/50" },
@@ -69,8 +69,24 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
+  const [startTicketCollection, setStartTicketCollection] = useState(true);
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        const pricingRef = doc(db, "adminSettings", "pricing");
+        const snap = await getDoc(pricingRef);
+        if (snap.exists() && snap.data().startTicketCollection !== undefined) {
+          setStartTicketCollection(snap.data().startTicketCollection);
+        }
+      } catch (err) {
+        console.error("Error fetching pricing config:", err);
+      }
+    };
+    fetchConfig();
+  }, []);
+
   const vipBadge = getVIPBadge(profile?.vipStars || 0);
-  const activeVipPlan = profile?.vipStars ? VIP_PLANS.find(p => p.stars === profile?.vipStars) : null;
 
   useEffect(() => {
     if (profile) {
@@ -391,15 +407,13 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
                 <Link
                   href="/vip"
                   className={`flex-1 py-2 font-semibold rounded-xl transition-opacity flex justify-center items-center gap-1 text-xs md:text-sm shadow-md ${
-                    activeVipPlan
-                      ? (activeVipPlan.isPremium 
-                          ? 'bg-gradient-to-br from-slate-900 to-black text-white hover:opacity-90 shadow-lg shadow-black/40 border border-slate-800' 
-                          : `bg-gradient-to-r ${activeVipPlan.color} text-white hover:opacity-90`)
+                    vipBadge
+                      ? vipBadge.colorClass + ' hover:opacity-90'
                       : 'bg-gradient-to-r from-amber-400 to-amber-600 text-white hover:opacity-90'
                   }`}
                 >
                   <Crown className="w-3.5 h-3.5 md:w-4 md:h-4" /> 
-                  {activeVipPlan ? `${activeVipPlan.tag} VIP` : 'Upgrade VIP'}
+                  {vipBadge ? `${vipBadge.tag} VIP` : 'Upgrade VIP'}
                 </Link>
               </div>
             </div>

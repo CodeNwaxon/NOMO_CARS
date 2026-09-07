@@ -7,6 +7,9 @@ import { useNotifications } from "@/context/NotificationContext";
 import { NotificationPanel } from "./NotificationPanel";
 import { useState, useRef, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { DEFAULT_SITE_CONFIG } from "@/lib/defaultCMS";
 
 export function Navbar() {
   const { user, profile, loading, signInWithGoogle, signOut } = useAuth();
@@ -26,6 +29,19 @@ export function Navbar() {
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const [siteConfig, setSiteConfig] = useState(DEFAULT_SITE_CONFIG);
+  useEffect(() => {
+    const fetchSiteConfig = async () => {
+      try {
+        const docSnap = await getDoc(doc(db, "adminSettings", "siteConfig"));
+        if (docSnap.exists()) {
+          setSiteConfig({ ...DEFAULT_SITE_CONFIG, ...docSnap.data() });
+        }
+      } catch (err) {}
+    };
+    fetchSiteConfig();
   }, []);
 
   const handleDashboardRedirect = () => {
@@ -63,8 +79,13 @@ export function Navbar() {
             <span className="hidden sm:inline text-sm">Home</span>
           </Link>
         ) : (
-          <div className="flex items-center gap-2 px-4 py-2 text-sm dark:text-white text-gray-900 font-bold tracking-widest">
-
+          <div className="flex items-center gap-2 px-4 py-2">
+            {siteConfig.siteLogo && (
+              <img src={siteConfig.siteLogo} alt="Site Logo" className="w-8 h-8 rounded-full object-cover shadow-sm bg-white border border-gray-200 dark:border-gray-700" />
+            )}
+            <span className="text-xs md:text-sm dark:text-white text-gray-900 font-bold tracking-widest whitespace-nowrap">
+              {siteConfig.siteName}
+            </span>
           </div>
         )}
       </div>

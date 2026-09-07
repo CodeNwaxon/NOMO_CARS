@@ -94,25 +94,21 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-4">
-      {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
-      
-      {/* Modal */}
-      <div className="relative bg-white dark:bg-slate-950 md:border border-card-border md:rounded-3xl shadow-2xl w-full h-full md:h-auto max-w-2xl max-h-screen md:max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-[100] bg-slate-900/50 backdrop-blur-sm md:overflow-y-auto flex flex-col items-center p-0 md:p-4">
+      <div className="w-full max-w-5xl bg-white dark:bg-slate-950 flex flex-col flex-1 md:flex-none md:h-auto md:my-6 md:rounded-2xl overflow-hidden shadow-2xl border border-transparent md:border-card-border">
         {/* Header */}
-        <div className="flex justify-between items-center p-4 md:p-6 bg-blue-950 text-white shadow-md">
+        <div className="flex justify-between items-center p-4 md:p-6 bg-blue-950 text-white shadow-md flex-shrink-0">
           <div>
-            <h2 className="text-xl font-bold">Routes & Services</h2>
-            <p className="text-xs text-white/70 mt-1">Managing routes for: <span className="font-bold text-white">{vehicleName}</span></p>
+            <h2 className="text-xl md:text-2xl font-bold">Routes & Services</h2>
+            <p className="text-xs md:text-sm text-white/70 mt-1">Managing routes for: <span className="font-bold text-white">{vehicleName}</span></p>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full transition-colors">
-            <X className="w-5 h-5" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-8">
           {isAdding ? (
             <form onSubmit={handleSubmit} className="space-y-4 bg-slate-50 dark:bg-slate-900/50 p-4 md:p-6 rounded-2xl mb-6 shadow-sm">
               <h3 className="font-bold mb-4 flex items-center gap-2 text-brand-primary"><Plus className="w-5 h-5"/> Add New Route</h3>
@@ -206,38 +202,47 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
           {loading ? (
             <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 animate-spin text-brand-primary" /></div>
           ) : services.length === 0 ? (
-            <div className="text-center py-12 text-foreground/50 text-sm border border-dashed border-card-border rounded-2xl bg-card-bg/10">
+            <div className="text-center py-12 text-foreground/50 text-sm border border-dashed border-gray-300 dark:border-slate-700 rounded-2xl bg-slate-50 dark:bg-slate-900/50">
               <MapPin className="w-12 h-12 mx-auto mb-3 opacity-20" />
               <p>No routes added yet.</p>
               <p className="text-xs mt-1 opacity-70">Click 'Add New Route' to create your first service.</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {services.map(service => (
-                <div key={service.id} className="flex flex-col md:flex-row md:items-center justify-between p-5 bg-slate-50 dark:bg-slate-900/50 border border-card-border rounded-xl gap-4 hover:border-brand-primary/30 transition-colors group">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 font-bold text-lg">
-                      <span className="text-brand-primary truncate">{service.startPoint}</span>
-                      <span className="text-foreground/30">➔</span>
-                      <span className="truncate">{service.destination}</span>
+                <div key={service.id} className="relative flex flex-col p-3 md:p-4 bg-slate-50 dark:bg-slate-900/50 border border-amber-500 dark:border-green-500 rounded-xl hover:-translate-y-1 transition-all shadow-[0_0_15px_rgba(245,158,11,0.25)] dark:shadow-[0_0_15px_rgba(34,197,94,0.25)] hover:shadow-[0_0_20px_rgba(245,158,11,0.5)] dark:hover:shadow-[0_0_20px_rgba(34,197,94,0.5)] group">
+                  
+                  {/* Delete Button top right */}
+                  <button 
+                    onClick={() => handleDelete(service.id)} 
+                    className="absolute top-3 right-3 p-2 text-red-500 bg-red-50 dark:bg-red-900/20 hover:bg-red-500 hover:text-white rounded-lg transition-colors border border-red-500/20 shadow-sm" 
+                    title="Delete Route"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+
+                  <div className="pr-10">
+                    <div className="flex flex-row items-center gap-1.5 font-bold text-sm md:text-base">
+                      <span className="text-brand-primary truncate max-w-[45%]">{service.startPoint}</span>
+                      <span className="text-foreground/30 text-[10px]">➔</span>
+                      <span className="truncate max-w-[45%]">{service.destination}</span>
                     </div>
-                    <div className="flex flex-wrap items-center gap-3 mt-2 text-sm">
-                      <span className="font-black bg-brand-secondary/10 text-brand-secondary px-2.5 py-1 rounded-md shadow-sm">₦{service.price}</span>
-                      {service.isNegotiable ? (
-                        <span className="text-green-600 bg-green-500/10 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Negotiable</span>
-                      ) : (
-                        <span className="text-foreground/50 bg-card-border px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Fixed Price</span>
-                      )}
-                    </div>
-                    {service.description && (
-                      <p className="text-xs text-foreground/60 mt-3 p-3 bg-background rounded-lg border border-card-border/50 italic line-clamp-2">"{service.description}"</p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    <span className="font-black bg-brand-secondary/10 text-brand-secondary px-2 py-0.5 rounded-md shadow-sm text-xs md:text-sm">₦{service.price}</span>
+                    {service.isNegotiable ? (
+                      <span className="text-green-700 dark:text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full text-[9px] md:text-[10px] font-bold uppercase tracking-wider">Negotiable</span>
+                    ) : (
+                      <span className="text-slate-600 dark:text-slate-400 bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-full text-[9px] md:text-[10px] font-bold uppercase tracking-wider">Fixed Price</span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 border-t border-card-border md:border-t-0 pt-3 md:pt-0">
-                    <button onClick={() => handleDelete(service.id)} className="p-2.5 text-red-500 bg-red-500/5 hover:bg-red-500 hover:text-white rounded-lg transition-colors ml-auto md:ml-0 border border-red-500/20 shadow-sm" title="Delete Route">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+
+                  {service.description && (
+                    <p className="text-[11px] md:text-xs mt-2 p-2 bg-blue-50 dark:bg-slate-800 text-blue-900 dark:text-slate-300 rounded-lg italic line-clamp-2 border border-blue-100 dark:border-slate-700">
+                      "{service.description}"
+                    </p>
+                  )}
                 </div>
               ))}
             </div>

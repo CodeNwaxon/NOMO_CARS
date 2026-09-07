@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { collection, query, where, getDocs, doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Loader2, ArrowLeft, Car, Search, PlusCircle, Briefcase, User, Star, MapPin, Eye } from "lucide-react";
-import { VIP_PLANS, getVIPBadge, hasValidTicket } from "@/lib/constants";
+import { getVIPBadge, hasValidTicket } from "@/lib/constants";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import PassengerServicesModal from "@/components/PassengerServicesModal";
@@ -47,6 +47,17 @@ export default function CategoryVehicles() {
 
     const fetchCategoryVehicles = async () => {
       try {
+        // Fetch pricing config to check startTicketCollection
+        const pricingRef = doc(db, "adminSettings", "pricing");
+        const pricingSnap = await getDoc(pricingRef);
+        let dynamicStartTicketCollection = true;
+        if (pricingSnap.exists()) {
+          const pData = pricingSnap.data();
+          if (pData.startTicketCollection !== undefined) {
+            dynamicStartTicketCollection = pData.startTicketCollection;
+          }
+        }
+
         const q = query(
           collection(db, "vehicles"),
           where("category", "==", category),
@@ -92,7 +103,7 @@ export default function CategoryVehicles() {
           .filter(v => {
             // Only show vehicles from drivers with an active ticket
             const driverData = driversMap[v.driverId];
-            return hasValidTicket(driverData?.ticketExpiry);
+            return hasValidTicket(driverData?.ticketExpiry, dynamicStartTicketCollection);
           })
           .map(v => ({
             ...v,

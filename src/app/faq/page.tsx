@@ -1,52 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronDown, MessageCircleQuestion } from "lucide-react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { DEFAULT_FAQ_CONFIG } from "@/lib/defaultCMS";
 
-const faqData = [
-  {
-    question: "How do I book a ride with Nomo Cars?",
-    answer: "Simply sign in as a passenger, browse our available transport categories (like Dispatch Riders, Cars, or Buses), select a vehicle, and follow the prompts to complete your booking."
-  },
-  {
-    question: "How can I register as a driver?",
-    answer: "Navigate to the Driver Portal from the home page. Sign in with Google, fill out your vehicle or logistic company details, and submit them for review. Once approved, you can start earning."
-  },
-  {
-    question: "Are the vehicles inspected before approval?",
-    answer: "Yes, all vehicles and drivers go through a thorough vetting process to ensure safety, reliability, and high service standards before they are activated on our platform."
-  },
-  {
-    question: "How is the pricing calculated?",
-    answer: "Pricing is dynamically calculated based on distance, vehicle category, and current demand. You will always see an estimated fare before confirming your booking."
-  },
-  {
-    question: "What payment methods are accepted?",
-    answer: "We accept all major credit/debit cards and various digital wallets depending on your region. Payment is seamlessly handled within the platform."
-  },
-  {
-    question: "How does the job bidding system work?",
-    answer: (
-      <div className="space-y-4">
-        <div>
-          <strong className="block mb-1 text-foreground">For Passengers:</strong>
-          Post a job request for drivers to bid on by using the "Create Bid" button on any vehicle category page. Your VIP tier determines your request limits (Non-VIP users get 1 free request per month).
-        </div>
-        <div>
-          <strong className="block mb-1 text-foreground">For Drivers:</strong>
-          Find jobs by clicking "Bid for Job" on your dashboard, or on any vehicle category page. Placing a bid consumes one of your available bids (Non-VIP drivers receive 1 free bid per month).
-        </div>
-        <div className="text-xs opacity-80 italic">
-           Note: Limits reset monthly. If a passenger deletes a job you bid on, your bid is returned. If a user cancels maliciously, limits are not automatically returned, but you should report the user from their profile or chat.
-        </div>
-      </div>
-    )
-  }
-];
+
 
 export default function FAQPage() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
+  const [faqData, setFaqData] = useState(DEFAULT_FAQ_CONFIG);
+
+  useEffect(() => {
+    const fetchFaq = async () => {
+      try {
+        const docSnap = await getDoc(doc(db, "adminSettings", "faq"));
+        if (docSnap.exists() && docSnap.data().items?.length > 0) {
+          setFaqData(docSnap.data().items);
+        }
+      } catch (err) {}
+    };
+    fetchFaq();
+  }, []);
 
   const toggleFAQ = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);

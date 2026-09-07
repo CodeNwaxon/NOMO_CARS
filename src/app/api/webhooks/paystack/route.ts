@@ -61,6 +61,17 @@ export async function POST(req: NextRequest) {
         });
       }
 
+      // Log transaction
+      const transactionRef = adminDb.collection("transactions").doc(data.reference);
+      await transactionRef.set({
+        userId,
+        amount: data.amount / 100,
+        type: metadata.planType || "unknown", // 'ticket' or 'vip'
+        reference: data.reference,
+        createdAt: new Date().toISOString(),
+        userEmail: data.customer.email || "",
+      }, { merge: true });
+
       // Also trigger the email verification via server action
       // We pass the data we need. We might need the user's name and email from Firestore if not in metadata
       const userDoc = await userRef.get();

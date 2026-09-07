@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { collection, addDoc, query, where, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { collection, addDoc, setDoc, query, where, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { Loader2, Plus, UploadCloud, ArrowLeft, Car, CarFront, Bike, Truck, Plane, Ship, Bus, Settings, Edit3, Trash2 } from "lucide-react";
@@ -69,7 +69,7 @@ const getFieldConfig = (category: string) => {
   };
 };
 
-export default function VehiclesTab({ userId }: { userId: string }) {
+export default function VehiclesTab({ userId, vipStars = 0 }: { userId: string, vipStars?: number }) {
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -238,7 +238,7 @@ export default function VehiclesTab({ userId }: { userId: string }) {
       if (config.details.registrationNumber) detailsToSave.registrationNumber = data.registrationNumber;
 
       // Save to firestore
-      await addDoc(collection(db, "vehicles"), {
+      const vehicleData = {
         driverId: userId,
         category: selectedCategory,
         details: detailsToSave,
@@ -246,7 +246,13 @@ export default function VehiclesTab({ userId }: { userId: string }) {
         images: uploadedImages,
         isApproved: false,
         createdAt: new Date(),
-      });
+      };
+
+      if (vipStars < 1) {
+        await setDoc(doc(db, "vehicles", userId), vehicleData);
+      } else {
+        await addDoc(collection(db, "vehicles"), vehicleData);
+      }
 
       toast.success("Vehicle submitted for approval!");
       setStep("list");
@@ -501,12 +507,14 @@ export default function VehiclesTab({ userId }: { userId: string }) {
           <h2 className="text-xl md:text-2xl font-bold">My Registered Vehicles</h2>
           <p className="text-foreground/60 text-xs md:text-sm mt-1">Manage your fleet and approvals.</p>
         </div>
-        <button
-          onClick={() => setStep("category")}
-          className="text-sm md:text-base flex items-center gap-2 px-4 md:px-6 py-2 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-primary/90 transition-all shadow-lg shadow-brand-primary/30 hover:scale-105"
-        >
-          <Plus className="w-5 h-5" /> Add New Vehicle
-        </button>
+        {(vipStars < 1 && vehicles.length >= 1) ? null : (
+          <button
+            onClick={() => setStep("category")}
+            className="text-sm md:text-base flex items-center gap-2 px-4 md:px-6 py-2 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-primary/90 transition-all shadow-lg shadow-brand-primary/30 hover:scale-105"
+          >
+            <Plus className="w-5 h-5" /> Add New Vehicle
+          </button>
+        )}
       </div>
 
       {loading ? (
@@ -522,12 +530,14 @@ export default function VehiclesTab({ userId }: { userId: string }) {
           <p className="text-foreground/60 text-xs md:text-base mb-8 max-w-md">
             You haven't registered any vehicles yet. Choose a category to get started.
           </p>
-          <button
-            onClick={() => setStep("category")}
-            className="flex items-center gap-2 px-8 py-4 bg-card-bg border border-card-border rounded-xl font-bold hover:bg-brand-primary/10 hover:text-brand-primary hover:border-brand-primary/30 transition-all shadow-sm"
-          >
-            Start Registration
-          </button>
+          {(vipStars < 1 && vehicles.length >= 1) ? null : (
+            <button
+              onClick={() => setStep("category")}
+              className="flex items-center gap-2 px-8 py-4 bg-card-bg border border-card-border rounded-xl font-bold hover:bg-brand-primary/10 hover:text-brand-primary hover:border-brand-primary/30 transition-all shadow-sm"
+            >
+              Start Registration
+            </button>
+          )}
         </div>
       ) : (
         <div className="px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -547,7 +557,7 @@ export default function VehiclesTab({ userId }: { userId: string }) {
                       {v.isApproved ? "Approved" : "Pending"}
                     </span>
                   </div>
-                  <div className="absolute bottom-3 left-3 bg-background/80 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold capitalize">
+                  <div className="absolute bottom-3 left-3 bg-slate-900/70 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold capitalize shadow-sm">
                     {v.category}
                   </div>
                 </div>

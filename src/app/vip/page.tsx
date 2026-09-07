@@ -10,7 +10,16 @@ import { toast } from "react-hot-toast";
 import { usePaystackPayment } from "react-paystack";
 import { verifyAndNotifyPayment } from "@/actions/payment";
 import { useNotifications } from "@/context/NotificationContext";
-import { websiteLink, VIP_PLANS } from "@/lib/constants";
+import { websiteLink } from "@/lib/constants";
+import { getDoc } from "firebase/firestore";
+
+const VIP_STYLES = [
+  { color: "from-blue-400 to-blue-600", bg: "bg-blue-50/50 dark:bg-blue-900/10", border: "border-blue-200 dark:border-blue-800", features: ["Basic priority listing", "Extra bid daily", "VIP Badge"], tag: "Starter" },
+  { color: "from-green-400 to-green-600", bg: "bg-green-50/50 dark:bg-green-900/10", border: "border-green-200 dark:border-green-800", features: ["Enhanced priority listing", "3 Extra bids daily", "Premium VIP Badge"], tag: "Popular" },
+  { color: "from-purple-400 to-purple-600", bg: "bg-purple-50/50 dark:bg-purple-900/10", border: "border-purple-200 dark:border-purple-800", features: ["High priority listing", "5 Extra bids daily", "Featured profile tag"], tag: "Advanced" },
+  { color: "from-pink-400 to-rose-600", bg: "bg-pink-50/50 dark:bg-pink-900/10", border: "border-pink-200 dark:border-pink-800", features: ["Top-tier priority listing", "10 Extra bids daily", "Exclusive support"], tag: "Premium" },
+  { color: "from-slate-700 to-black dark:from-slate-300 dark:to-white", bg: "bg-gradient-to-br from-slate-900 to-black text-white shadow-2xl shadow-black/40", border: "border-slate-800", features: ["Ultimate priority listing", "Unlimited bids daily", "Prestigious Black Card", "Dedicated Account Manager"], isPremium: true, tag: "Ultimate" }
+];
 
 import dynamic from 'next/dynamic';
 
@@ -24,14 +33,47 @@ export default function VIPPage() {
   const { addNotification } = useNotifications();
   const router = useRouter();
   const [purchasing, setPurchasing] = useState<number | null>(null);
+  const [vipPlans, setVipPlans] = useState<any[]>([]);
+  const [fetchingConfig, setFetchingConfig] = useState(true);
 
   useEffect(() => {
     if (!loading && !user) {
       router.push("/");
+      return;
+    }
+
+    const fetchConfig = async () => {
+      try {
+        const pricingRef = doc(db, "adminSettings", "pricing");
+        const snap = await getDoc(pricingRef);
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.vip && data.vip.length > 0) {
+            const mappedVip = data.vip.map((v: any, index: number) => {
+              const style = VIP_STYLES[Math.min(index, VIP_STYLES.length - 1)];
+              return {
+                stars: v.stars,
+                price: v.price,
+                name: v.label,
+                ...style
+              };
+            });
+            setVipPlans(mappedVip);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching pricing:", err);
+      } finally {
+        setFetchingConfig(false);
+      }
+    };
+
+    if (user) {
+      fetchConfig();
     }
   }, [loading, user, router]);
 
-  if (loading || !user) {
+  if (loading || fetchingConfig || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-12 h-12 text-brand-primary animate-spin" />
@@ -39,7 +81,7 @@ export default function VIPPage() {
     );
   }
 
-  const handlePurchaseSuccess = async (reference: any, plan: typeof VIP_PLANS[0]) => {
+  const handlePurchaseSuccess = async (reference: any, plan: any) => {
     try {
       toast.success(`Payment successful! Your VIP status is being activated...`);
       
@@ -100,7 +142,7 @@ export default function VIPPage() {
 
 
         <div className="px-10 md:px-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-          {VIP_PLANS.map((plan) => (
+          {vipPlans.map((plan) => (
             <PaystackVIPCard
               key={plan.stars}
               plan={plan}

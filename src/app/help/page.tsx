@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { collection, addDoc } from "firebase/firestore";
-import { Headphones, CheckCircle, ArrowLeft, Mail, Phone, MapPin, Send, User } from "lucide-react";
-import Link from "next/link";
+import { collection, addDoc, doc, getDoc } from "firebase/firestore";
+import { Headphones, CheckCircle, Mail, Phone, MapPin, Send } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { DEFAULT_SITE_CONFIG } from "@/lib/defaultCMS";
 
 export default function HelpPage() {
   const { user } = useAuth();
@@ -17,6 +17,20 @@ export default function HelpPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState("");
+
+  const [siteConfig, setSiteConfig] = useState(DEFAULT_SITE_CONFIG);
+
+  useEffect(() => {
+    const fetchSiteConfig = async () => {
+      try {
+        const docSnap = await getDoc(doc(db, "adminSettings", "siteConfig"));
+        if (docSnap.exists()) {
+          setSiteConfig({ ...DEFAULT_SITE_CONFIG, ...docSnap.data() });
+        }
+      } catch (err) {}
+    };
+    fetchSiteConfig();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,7 +105,7 @@ export default function HelpPage() {
                 <div>
                   <h3 className="text-sm lg:text-lg font-bold text-foreground mb-0.5 lg:mb-1">Email Support</h3>
                   <p className="text-sm lg:text-base text-foreground/70">Drop us a line anytime at</p>
-                  <a href="mailto:nomopoventures@gmail.com" className="text-sm lg:text-base text-brand-primary font-medium hover:underline">nomopoventures@gmail.com</a>
+                  <a href={`mailto:${siteConfig.contactEmail}`} className="text-sm lg:text-base text-brand-primary font-medium hover:underline">{siteConfig.contactEmail}</a>
                 </div>
               </div>
 
@@ -101,9 +115,9 @@ export default function HelpPage() {
                   <Phone className="w-4 h-4 lg:w-6 lg:h-6" />
                 </div>
                 <div>
-                  <h3 className="text-sm lg:text-lg font-bold text-foreground mb-0.5 lg:mb-1">Customer Care</h3>
-                  <p className="text-sm lg:text-base text-foreground/70">Available Mon-Fri, 9am-6pm</p>
-                  <a href="tel:+2349023688246" className="text-sm lg:text-base text-brand-primary font-medium hover:underline">+234 902 368 8246</a>
+                  <h3 className="text-sm lg:text-lg font-bold text-foreground mb-0.5 lg:mb-1">Phone Support</h3>
+                  <p className="text-sm lg:text-base text-foreground/70 mb-1">Available 24/7 for emergencies</p>
+                  <a href={`tel:${siteConfig.contactPhone}`} className="text-sm lg:text-base text-brand-primary font-medium hover:underline">{siteConfig.contactPhone}</a>
                 </div>
               </div>
 
@@ -115,10 +129,8 @@ export default function HelpPage() {
                 </div>
                 <div>
                   <h3 className="text-sm lg:text-lg font-bold text-foreground mb-0.5 lg:mb-1">Office Location</h3>
-                  <p className="text-sm lg:text-base text-foreground/70 leading-relaxed">
-                    123 Nomo Cars Boulevard<br />
-                    Innovation District<br />
-                    Tech City, TC 90210
+                  <p className="text-sm lg:text-base text-foreground/70 leading-relaxed whitespace-pre-wrap">
+                    {siteConfig.contactAddress}
                   </p>
                 </div>
               </div>

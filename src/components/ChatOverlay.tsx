@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import {
   collection, doc, setDoc, addDoc, deleteDoc, getDocs,
   onSnapshot, query, orderBy, updateDoc, arrayUnion,
-  serverTimestamp, Timestamp, where,
+  serverTimestamp, Timestamp, where, getDoc
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { websiteLink, getVIPBadge, hasValidTicket } from "@/lib/constants";
@@ -94,6 +94,22 @@ export default function ChatOverlay(props: ChatOverlayProps) {
   const [translations, setTranslations] = useState<Record<string, string>>({});
   const [translatingMsgId, setTranslatingMsgId] = useState<string | null>(null);
   const [showReportOverlay, setShowReportOverlay] = useState(false);
+  const [dynamicStartTicketCollection, setDynamicStartTicketCollection] = useState(true);
+
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const pricingRef = doc(db, "adminSettings", "pricing");
+        const snap = await getDoc(pricingRef);
+        if (snap.exists() && snap.data().startTicketCollection !== undefined) {
+          setDynamicStartTicketCollection(snap.data().startTicketCollection);
+        }
+      } catch (err) {
+        console.error("Error fetching pricing config:", err);
+      }
+    };
+    fetchPricing();
+  }, []);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -106,7 +122,7 @@ export default function ChatOverlay(props: ChatOverlayProps) {
   // Determine if the driver (the one whose profile we're on) has an active ticket
   // If we are the driver, use our own profile ticket expiry, otherwise use the chat partner's
   const driverTicketExpiryValue = isDriver ? profile?.ticketExpiry : chatPartnerTicketExpiry;
-  const driverHasTicket = hasValidTicket(driverTicketExpiryValue);
+  const driverHasTicket = hasValidTicket(driverTicketExpiryValue, dynamicStartTicketCollection);
 
   // Auto-scroll to bottom
   useEffect(() => {

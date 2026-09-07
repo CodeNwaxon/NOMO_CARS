@@ -10,13 +10,16 @@ import { db } from "@/lib/firebase";
 import { toast } from "react-hot-toast";
 import { usePaystackPayment } from "react-paystack";
 import { verifyAndNotifyPayment } from "@/actions/payment";
-import { startTicketCollection, freeTicketPlanDays, ticketCollectionStartDate } from "@/lib/constants";
-const TICKET_PLANS = [
-  { days: 1, price: 300, name: "1 Day Ticket", color: "from-green-400 to-green-600", bg: "bg-green-50/50 dark:bg-green-900/10", border: "border-green-200 dark:border-green-800" },
-  { days: 7, price: 1200, name: "7 Days Ticket", color: "from-blue-400 to-blue-600", bg: "bg-blue-50/50 dark:bg-blue-900/10", border: "border-blue-200 dark:border-blue-800" },
-  { days: 14, price: 1800, name: "2 Weeks Ticket", color: "from-purple-400 to-purple-600", bg: "bg-purple-50/50 dark:bg-purple-900/10", border: "border-purple-200 dark:border-purple-800" },
-  { days: 30, price: 2500, name: "1 Month Ticket", color: "from-amber-400 to-amber-600", bg: "bg-amber-50/50 dark:bg-amber-900/10", border: "border-amber-200 dark:border-amber-800", isPremium: true },
+import { freeTicketPlanDays, ticketCollectionStartDate } from "@/lib/constants";
+import { getDoc } from "firebase/firestore";
+
+const TICKET_STYLES = [
+  { color: "from-green-400 to-green-600", bg: "bg-green-50/50 dark:bg-green-900/10", border: "border-green-200 dark:border-green-800" },
+  { color: "from-blue-400 to-blue-600", bg: "bg-blue-50/50 dark:bg-blue-900/10", border: "border-blue-200 dark:border-blue-800" },
+  { color: "from-purple-400 to-purple-600", bg: "bg-purple-50/50 dark:bg-purple-900/10", border: "border-purple-200 dark:border-purple-800" },
+  { color: "from-amber-400 to-amber-600", bg: "bg-amber-50/50 dark:bg-amber-900/10", border: "border-amber-200 dark:border-amber-800", isPremium: true },
 ];
+
 
 import dynamic from 'next/dynamic';
 
@@ -31,14 +34,49 @@ export default function TicketPage() {
   const router = useRouter();
 
   const [processingPlan, setProcessingPlan] = useState<number | null>(null);
+  const [ticketPlans, setTicketPlans] = useState<any[]>([]);
+  const [startTicketCollection, setStartTicketCollection] = useState(true);
+  const [fetchingConfig, setFetchingConfig] = useState(true);
 
   useEffect(() => {
     if (!loading && (!user || profile?.role !== "driver")) {
       router.push("/");
+      return;
+    }
+
+    const fetchConfig = async () => {
+      try {
+        const pricingRef = doc(db, "adminSettings", "pricing");
+        const snap = await getDoc(pricingRef);
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.startTicketCollection !== undefined) setStartTicketCollection(data.startTicketCollection);
+          if (data.tickets && data.tickets.length > 0) {
+            const mappedTickets = data.tickets.map((t: any, index: number) => {
+              const style = TICKET_STYLES[index % TICKET_STYLES.length];
+              return {
+                days: t.durationDays,
+                price: t.price,
+                name: t.label,
+                ...style
+              };
+            });
+            setTicketPlans(mappedTickets);
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching pricing:", err);
+      } finally {
+        setFetchingConfig(false);
+      }
+    };
+
+    if (user) {
+      fetchConfig();
     }
   }, [loading, user, profile, router]);
 
-  if (loading || !user) {
+  if (loading || fetchingConfig || !user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-12 h-12 text-brand-primary animate-spin" />
@@ -48,7 +86,7 @@ export default function TicketPage() {
 
   const hasOwnTicket = profile?.ticketExpiry ? new Date(profile.ticketExpiry) > new Date() : false;
 
-  const handlePurchaseSuccess = async (reference: any, plan: typeof TICKET_PLANS[0]) => {
+  const handlePurchaseSuccess = async (reference: any, plan: any) => {
     try {
       toast.success("Payment successful! Finalizing your ticket...");
 
@@ -193,7 +231,7 @@ export default function TicketPage() {
         })()}
 
         <div className="px-10 md:px-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {TICKET_PLANS.map((plan) => (
+          {ticketPlans.map((plan) => (
             <PaystackTicketCard
               key={plan.days}
               plan={plan}

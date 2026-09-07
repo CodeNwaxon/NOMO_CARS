@@ -1,8 +1,41 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Phone, Mail, ArrowLeft, Shield, Clock, Users, MapPin } from "lucide-react";
+import { Phone, Mail, ArrowLeft, Shield, Clock, Users, MapPin, Loader2 } from "lucide-react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { DEFAULT_ABOUT_CONFIG } from "@/lib/defaultCMS";
 
 export default function AboutPage() {
+  const [ceoData, setCeoData] = useState({
+    image: "/ceo2.jpeg",
+    phone: "+234 703 463 2037",
+    email: "princenwachukwu308@yahoo.com",
+    message: "When we started Nomo Cars, we had a clear vision: to build a seamless, reliable, and highly efficient logistics network that connects businesses across Africa. Today, we are transforming how goods move.\n\nThe freight industry has historically struggled with supply chain bottlenecks, fragmented fleets, and lack of transparency. We built this platform to bridge the gap between heavy-duty transporters, businesses, and individuals who need reliable cargo movement.\n\nOur unique bidding system ensures competitive freight pricing, while our strict driver and vehicle verification guarantees the safety of your cargo. We are more than just a logistics company; we are your strategic partner in growth.\n\nThank you for trusting Nomo Cars to move your business. Together, we are delivering Africa's future."
+  });
+  const [aboutConfig, setAboutConfig] = useState(DEFAULT_ABOUT_CONFIG);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCeoData = async () => {
+      try {
+        const docRef = doc(db, "adminSettings", "about");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setCeoData(prev => ({ ...prev, ...docSnap.data() }));
+          setAboutConfig(prev => ({ ...prev, ...docSnap.data() }));
+        }
+      } catch (error) {
+        console.error("Error fetching CEO data:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchCeoData();
+  }, []);
+
   return (
     <div className="pb-18 min-h-screen bg-background relative overflow-hidden">
       {/* Background decoration */}
@@ -15,8 +48,8 @@ export default function AboutPage() {
           <h1 className="text-3xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary to-brand-primary mb-1 md:mb-4">
             About Nomo Cars
           </h1>
-          <p className="text-xs md:text-xl text-foreground/70 max-w-2xl">
-            Redefining the future of freight and logistics across Africa.
+          <p className="text-xs md:text-xl text-foreground/70 max-w-2xl whitespace-pre-wrap">
+            {aboutConfig.subHeader}
           </p>
         </div>
 
@@ -24,53 +57,48 @@ export default function AboutPage() {
         <section className="mb-12 md:mb-20 glass-panel rounded-xl md:rounded-3xl p-3 md:p-12 border border-white/10 dark:border-white/5 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-brand-primary/5 rounded-full blur-2xl pointer-events-none -mr-20 -mt-20"></div>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-center relative z-10">
-            <div className="md:col-span-5 flex flex-col items-center md:items-start">
-              <div className="relative w-60 h-65 md:w-72 md:h-72 mb-6 rounded-xl md:rounded-3xl overflow-hidden shadow-2xl border-4 border-white dark:border-slate-800">
-                <Image
-                  src="/ceo2.jpeg"
-                  alt="Nomo Cars CEO"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-              <h3 className="text-2xl font-bold dark:text-white">Prince O. Nwachukwu</h3>
-              <p className="text-brand-primary font-medium mb-4">CEO & Founder, Nomo Cars</p>
+          {loading ? (
+            <div className="flex justify-center items-center py-20 relative z-10">
+              <Loader2 className="w-10 h-10 animate-spin text-brand-primary" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-center relative z-10">
+              <div className="md:col-span-5 flex flex-col items-center md:items-start">
+                <div className="relative w-60 h-65 md:w-72 md:h-72 mb-6 rounded-xl md:rounded-3xl overflow-hidden shadow-2xl border-4 border-white dark:border-slate-800">
+                  <Image
+                    src={ceoData.image}
+                    alt="Nomo Cars CEO"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <h3 className="text-2xl font-bold dark:text-white">Prince O. Nwachukwu</h3>
+                <p className="text-brand-primary font-medium mb-4">CEO & Founder, Nomo Cars</p>
 
-              <div className="flex flex-col gap-2 w-full max-w-[300px]">
-                <a href="tel:+2347034632037" className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card-bg border border-card-border hover:border-brand-primary/50 hover:shadow-sm transition-all text-sm group">
-                  <div className="w-8 h-8 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary group-hover:bg-brand-primary group-hover:text-white transition-colors">
-                    <Phone className="w-4 h-4" />
-                  </div>
-                  <span className="font-medium">+234 703 463 2037</span>
-                </a>
-                <a href="mailto:princenwachukwu308@yahoo.com" className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card-bg border border-card-border hover:border-brand-secondary/50 hover:shadow-sm transition-all text-[13px] sm:text-sm group">
-                  <div className="w-8 h-8 rounded-full bg-brand-secondary/10 flex items-center justify-center text-brand-secondary group-hover:bg-brand-secondary group-hover:text-white transition-colors shrink-0">
-                    <Mail className="w-4 h-4" />
-                  </div>
-                  <span className="font-medium truncate">princenwachukwu308@yahoo.com</span>
-                </a>
+                <div className="flex flex-col gap-2 w-full max-w-[300px]">
+                  <a href={`tel:${ceoData.phone}`} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card-bg border border-card-border hover:border-brand-primary/50 hover:shadow-sm transition-all text-sm group">
+                    <div className="w-8 h-8 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary group-hover:bg-brand-primary group-hover:text-white transition-colors">
+                      <Phone className="w-4 h-4" />
+                    </div>
+                    <span className="font-medium">{ceoData.phone}</span>
+                  </a>
+                  <a href={`mailto:${ceoData.email}`} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card-bg border border-card-border hover:border-brand-secondary/50 hover:shadow-sm transition-all text-[13px] sm:text-sm group">
+                    <div className="w-8 h-8 rounded-full bg-brand-secondary/10 flex items-center justify-center text-brand-secondary group-hover:bg-brand-secondary group-hover:text-white transition-colors shrink-0">
+                      <Mail className="w-4 h-4" />
+                    </div>
+                    <span className="font-medium truncate">{ceoData.email}</span>
+                  </a>
+                </div>
+              </div>
+
+              <div className="md:col-span-7">
+                <h2 className="text-xl md:text-3xl font-bold mb-6 dark:text-white">Message from the CEO</h2>
+                <div className="space-y-4 text-foreground/80 leading-relaxed text-sm md:text-lg whitespace-pre-wrap">
+                  {ceoData.message}
+                </div>
               </div>
             </div>
-
-            <div className="md:col-span-7">
-              <h2 className="text-xl md:text-3xl font-bold mb-6 dark:text-white">Message from the CEO</h2>
-              <div className="space-y-4 text-foreground/80 leading-relaxed text-sm md:text-lg">
-                <p>
-                  "When we started Nomo Cars, we had a clear vision: to build a seamless, reliable, and highly efficient logistics network that connects businesses across Africa. Today, we are transforming how goods move."
-                </p>
-                <p>
-                  "The freight industry has historically struggled with supply chain bottlenecks, fragmented fleets, and lack of transparency. We built this platform to bridge the gap between heavy-duty transporters, businesses, and individuals who need reliable cargo movement."
-                </p>
-                <p>
-                  "Our unique bidding system ensures competitive freight pricing, while our strict driver and vehicle verification guarantees the safety of your cargo. We are more than just a logistics company; we are your strategic partner in growth."
-                </p>
-                <p className="font-medium italic dark:text-gray-300">
-                  "Thank you for trusting Nomo Cars to move your business. Together, we are delivering Africa's future."
-                </p>
-              </div>
-            </div>
-          </div>
+          )}
         </section>
 
         {/* Why Choose Us Section */}
@@ -82,9 +110,9 @@ export default function AboutPage() {
               <div className="w-14 h-14 bg-brand-primary/10 rounded-2xl flex items-center justify-center text-brand-primary mb-6">
                 <Shield className="w-7 h-7" />
               </div>
-              <h3 className="text-xl font-bold mb-3 dark:text-white">Safety First</h3>
-              <p className="text-foreground/70 text-sm leading-relaxed">
-                Every driver and vehicle undergoes rigorous vetting. We prioritize the security and integrity of your cargo above all else.
+              <h3 className="text-xl font-bold mb-3 dark:text-white">{aboutConfig.card1Title}</h3>
+              <p className="text-foreground/70 text-sm leading-relaxed whitespace-pre-wrap">
+                {aboutConfig.card1Text}
               </p>
             </div>
 
@@ -92,9 +120,9 @@ export default function AboutPage() {
               <div className="w-14 h-14 bg-brand-secondary/10 rounded-2xl flex items-center justify-center text-brand-secondary mb-6">
                 <Clock className="w-7 h-7" />
               </div>
-              <h3 className="text-xl font-bold mb-3 dark:text-white">Reliable & Timely</h3>
-              <p className="text-foreground/70 text-sm leading-relaxed">
-                Whether you're moving a small parcel or heavy haulage, our logistics network ensures your goods arrive exactly on time.
+              <h3 className="text-xl font-bold mb-3 dark:text-white">{aboutConfig.card2Title}</h3>
+              <p className="text-foreground/70 text-sm leading-relaxed whitespace-pre-wrap">
+                {aboutConfig.card2Text}
               </p>
             </div>
 
@@ -102,9 +130,9 @@ export default function AboutPage() {
               <div className="w-14 h-14 bg-yellow-500/10 rounded-2xl flex items-center justify-center text-yellow-500 mb-6">
                 <Users className="w-7 h-7" />
               </div>
-              <h3 className="text-xl font-bold mb-3 dark:text-white">Fair Bidding</h3>
-              <p className="text-foreground/70 text-sm leading-relaxed">
-                Transporters and clients negotiate freight rates transparently. Say goodbye to hidden fees and unpredictable logistics costs.
+              <h3 className="text-xl font-bold mb-3 dark:text-white">{aboutConfig.card3Title}</h3>
+              <p className="text-foreground/70 text-sm leading-relaxed whitespace-pre-wrap">
+                {aboutConfig.card3Text}
               </p>
             </div>
 
@@ -112,9 +140,9 @@ export default function AboutPage() {
               <div className="w-14 h-14 bg-green-500/10 rounded-2xl flex items-center justify-center text-green-500 mb-6">
                 <MapPin className="w-7 h-7" />
               </div>
-              <h3 className="text-xl font-bold mb-3 dark:text-white">Anywhere You Go</h3>
-              <p className="text-foreground/70 text-sm leading-relaxed">
-                From major ports to remote warehouses, Nomo Cars connects you to a fleet ready to deliver anywhere across the continent.
+              <h3 className="text-xl font-bold mb-3 dark:text-white">{aboutConfig.card4Title}</h3>
+              <p className="text-foreground/70 text-sm leading-relaxed whitespace-pre-wrap">
+                {aboutConfig.card4Text}
               </p>
             </div>
           </div>
