@@ -4,7 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader2, BarChart3, AlertTriangle, Settings, Users, CreditCard, LayoutDashboard, Megaphone } from "lucide-react";
-import { doc, onSnapshot } from "firebase/firestore";
+import { doc, onSnapshot, collection, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Link from "next/link";
 
@@ -43,38 +43,64 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (loading || !user) return;
 
-    // Listen to adminSettings/notifications to get seen arrays
+    let unsubDrivers: (() => void) | undefined;
+    let unsubVehicles: (() => void) | undefined;
+    let unsubR: (() => void) | undefined;
+    let unsubH: (() => void) | undefined;
+
+    // 1. Listen to adminSettings/notifications for seen arrays
     const unsubNotifs = onSnapshot(doc(db, "adminSettings", "notifications"), (docSnap) => {
       const data = docSnap.exists() ? docSnap.data() : {};
-      const seenDrivers = data.seenDriverApprovals || [];
-      const seenVehicles = data.seenVehicleApprovals || [];
-      const seenReports = data.seenReports || [];
+      const seenDrivers: string[] = data.seenDriverApprovals || [];
+      const seenVehicles: string[] = data.seenVehicleApprovals || [];
+      const seenReports: string[] = data.seenReports || [];
+      const seenHelpMessages: string[] = data.seenHelpMessages || [];
 
-      // Fetch unapproved drivers (role: driver, isApproved: false)
-      import("firebase/firestore").then(({ collection, query, where, getDocs }) => {
-        const driversQ = query(collection(db, "users"), where("role", "==", "driver"), where("isApproved", "==", false));
-        getDocs(driversQ).then(snap => {
-          const newCount = snap.docs.filter(d => !seenDrivers.includes(d.id)).length;
-          setDriverApprovalsCount(newCount);
-        });
+      // 2. Listen to unapproved drivers
+      if (unsubDrivers) unsubDrivers();
+      const driversQ = query(collection(db, "users"), where("role", "==", "driver"), where("isApproved", "==", false));
+      unsubDrivers = onSnapshot(driversQ, (snap) => {
+        const newCount = snap.docs.filter(d => !seenDrivers.includes(d.id)).length;
+        setDriverApprovalsCount(newCount);
+      });
 
-        // Fetch unapproved vehicles
-        const vehiclesQ = query(collection(db, "vehicles"), where("isApproved", "==", false));
-        getDocs(vehiclesQ).then(snap => {
-          const newCount = snap.docs.filter(d => !seenVehicles.includes(d.id)).length;
-          setVehicleApprovalsCount(newCount);
-        });
+      // 3. Listen to unapproved vehicles
+      if (unsubVehicles) unsubVehicles();
+      const vehiclesQ = query(collection(db, "vehicles"), where("isApproved", "==", false));
+      unsubVehicles = onSnapshot(vehiclesQ, (snap) => {
+        const newCount = snap.docs.filter(d => !seenVehicles.includes(d.id)).length;
+        setVehicleApprovalsCount(newCount);
+      });
 
-        // Fetch reports (all reports)
-        const reportsQ = query(collection(db, "reports"));
-        getDocs(reportsQ).then(snap => {
-          const newCount = snap.docs.filter(d => !seenReports.includes(d.id)).length;
-          setReportsCount(newCount);
-        });
+      // 4. Listen to reports & help messages
+      if (unsubR) unsubR();
+      if (unsubH) unsubH();
+
+      let pendingReportsCount = 0;
+      let pendingHelpCount = 0;
+
+      const updateBadge = () => {
+        setReportsCount(pendingReportsCount + pendingHelpCount);
+      };
+
+      unsubR = onSnapshot(query(collection(db, "reports")), (snap) => {
+        pendingReportsCount = snap.docs.filter(d => !seenReports.includes(d.id)).length;
+        updateBadge();
+      });
+
+      unsubH = onSnapshot(query(collection(db, "contact_messages")), (snap) => {
+        pendingHelpCount = snap.docs.filter(d => !seenHelpMessages.includes(d.id)).length;
+        updateBadge();
       });
     });
 
-    return () => unsubNotifs();
+    return () => {
+      unsubNotifs();
+      if (unsubDrivers) unsubDrivers();
+      if (unsubVehicles) unsubVehicles();
+      if (unsubR) unsubR();
+      if (unsubH) unsubH();
+    };
   }, [user, loading]);
 
   if (authLoading || loading) {

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { X, AlertTriangle, Send, Loader2 } from "lucide-react";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, arrayUnion } from "firebase/firestore";
+import { doc, getDoc, setDoc, arrayUnion, arrayRemove } from "firebase/firestore";
 import { useAuth } from "@/context/AuthContext";
 import toast from "react-hot-toast";
 
@@ -90,6 +90,16 @@ export default function ReportUserOverlay({ reportedUserId, reportedUserRole, on
         reportedUserPhone: reportedUserData?.phone || "",
         incidents: arrayUnion(newIncident)
       }, { merge: true });
+
+      // Un-mark this report as seen so admins get notified again
+      try {
+        const notifRef = doc(db, "adminSettings", "notifications");
+        await setDoc(notifRef, {
+          seenReports: arrayRemove(reportedUserId)
+        }, { merge: true });
+      } catch (e) {
+        console.error("Failed to update admin notification state", e);
+      }
 
       toast.success("Report submitted successfully. We will review it shortly.");
       onClose();
