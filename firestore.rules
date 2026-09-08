@@ -105,6 +105,18 @@ service cloud.firestore {
       allow read: if false;
     }
 
+    // Reviews collection
+    match /reviews/{reviewId} {
+      // Anyone can read reviews
+      allow read: if true;
+      
+      // Authenticated users can create a review if the userId matches their auth uid
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      
+      // Only the user who wrote the review can update or delete it
+      allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
     // Admin Settings collection
     match /adminSettings/{docId} {
       allow read: if true;

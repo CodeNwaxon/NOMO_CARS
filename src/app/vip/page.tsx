@@ -156,8 +156,8 @@ export default function VIPPage() {
               <Crown className="w-8 h-8 md:w-10 md:h-10 text-amber-500" />
               Upgrade to VIP
             </h1>
-            <p className="text-sm md:text-base text-foreground/70 mt-1">
-              Boost your visibility and get exclusive benefits for 180 days.
+            <p className="text-xs md:text-base text-foreground/70 mt-1">
+              Boost your visibility and get exclusive benefits.
             </p>
           </div>
         </div>

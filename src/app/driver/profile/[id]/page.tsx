@@ -26,39 +26,40 @@ export default function DriverProfilePage() {
   const [loading, setLoading] = useState(true);
   const [isFavorited, setIsFavorited] = useState(false);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
-  const [viewingServicesFor, setViewingServicesFor] = useState<{id: string, name: string} | null>(null);
+  const [viewingServicesFor, setViewingServicesFor] = useState<{ id: string, name: string } | null>(null);
   const [showReportOverlay, setShowReportOverlay] = useState(false);
-  const [viewerState, setViewerState] = useState<{isOpen: boolean; images: string[]; initialIndex: number; singleMode: boolean}>({isOpen: false, images: [], initialIndex: 0, singleMode: false});
+  const [viewerState, setViewerState] = useState<{ isOpen: boolean; images: string[]; initialIndex: number; singleMode: boolean }>({ isOpen: false, images: [], initialIndex: 0, singleMode: false });
   const [imageViewerLoadingId, setImageViewerLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchDriverAndVehicles = async () => {
       try {
-        const docRef = doc(db, "users", driverId);
-        const docSnap = await getDoc(docRef);
-        
-        if (docSnap.exists()) {
-          setDriver(docSnap.data());
-          
-          const res = await fetch(`/api/vehicles?driverId=${encodeURIComponent(driverId)}`);
-          if (res.ok) {
-            const json = await res.json();
-            const fetchedVehicles = json.vehicles || [];
-            const vData = fetchedVehicles.filter((v: any) => !v.isSuspendedByLimit);
-            setVehicles(vData);
-          } else {
-            console.error("Failed to fetch vehicles from API");
+        const dRes = await fetch(`/api/driver?id=${encodeURIComponent(driverId)}`);
+        if (dRes.ok) {
+          const dJson = await dRes.json();
+          if (dJson.success && dJson.driver) {
+            setDriver(dJson.driver);
           }
-
-          // We remove the favorite check from here because user auth might not be resolved yet
         }
+
+        const res = await fetch(`/api/vehicles?driverId=${encodeURIComponent(driverId)}`);
+        if (res.ok) {
+          const json = await res.json();
+          const fetchedVehicles = json.vehicles || [];
+          const vData = fetchedVehicles.filter((v: any) => !v.isSuspendedByLimit);
+          setVehicles(vData);
+        } else {
+          console.error("Failed to fetch vehicles from API");
+        }
+
+        // We remove the favorite check from here because user auth might not be resolved yet
       } catch (err) {
         console.error("Error fetching driver profile:", err);
       } finally {
         setLoading(false);
       }
     };
-    
+
     if (driverId) {
       fetchDriverAndVehicles();
     }
@@ -77,7 +78,7 @@ export default function DriverProfilePage() {
         }
       }
     };
-    
+
     fetchFavoriteStatus();
   }, [user, driverId]);
 
@@ -135,7 +136,7 @@ export default function DriverProfilePage() {
       }
       return;
     }
-    
+
     try {
       setIsTogglingFavorite(true);
       const favRef = doc(db, "users", user.uid, "favorites", driverId);
@@ -177,7 +178,7 @@ export default function DriverProfilePage() {
             </button>
             <h1 className="text-2xl md:text-3xl font-bold">Driver Profile</h1>
           </div>
-          
+
           {user && !isOwnProfile && (
             <button
               onClick={() => setShowReportOverlay(true)}
@@ -190,7 +191,7 @@ export default function DriverProfilePage() {
           )}
         </div>
 
-        <div className="glass-panel rounded-3xl p-5 md:p-8 mb-8 flex flex-col md:flex-row gap-4 md:gap-8 items-center md:items-start text-center md:text-left">
+        <div className="mx-4 glass-panel rounded-3xl p-5 md:p-8 mb-8 flex flex-col md:flex-row gap-4 md:gap-8 items-center md:items-start text-center md:text-left">
           <div className="relative w-24 h-24 md:w-48 md:h-48 flex-shrink-0">
             {getVIPBadge(driver.vipStars) && (
               <div className={`absolute -top-2 -right-2 z-10 px-2 py-1 rounded-full text-[10px] md:text-xs font-bold uppercase tracking-wider shadow-lg ${getVIPBadge(driver.vipStars)?.colorClass}`}>
@@ -207,7 +208,7 @@ export default function DriverProfilePage() {
               )}
             </div>
           </div>
-          
+
           <div className="flex-1">
             <h2 className="text-xl md:text-4xl font-bold mb-1 md:mb-2 flex flex-wrap items-center justify-center md:justify-start gap-2 md:gap-3">
               {driver.username || driver.firstName}
@@ -220,7 +221,7 @@ export default function DriverProfilePage() {
                 </span>
               )}
             </h2>
-            
+
             <div className="flex items-center justify-center md:justify-start gap-1 bg-card-border/50 px-3 py-1 md:py-1.5 rounded-full mb-3 md:mb-4 w-max mx-auto md:mx-0">
               {renderStars(driver.rating || 5.0)}
               <span className="ml-2 font-bold text-sm">{(driver.rating || 5.0).toFixed(1)}</span>
@@ -232,28 +233,28 @@ export default function DriverProfilePage() {
                 <span>{driver.operatingCity || "City not set"}, {driver.operatingState || "State not set"}</span>
               </div>
             </div>
-            
+
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 md:gap-3 mt-4">
               {hasActiveTicket ? (
                 <>
-                  <a 
+                  <a
                     href={`tel:${driver.phone}`}
                     className="inline-flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-6 md:py-3 text-sm md:text-base bg-brand-primary text-white font-bold rounded-xl shadow-lg hover:bg-brand-primary/90 transition-all hover:scale-105"
                     title="Call Driver"
                   >
-                    <Phone className="w-5 h-5" /> 
+                    <Phone className="w-5 h-5" />
                     <span className="hidden md:inline">Call Driver</span>
                   </a>
-                  
+
                   {driver.whatsappEnabled && driver.phone && (
-                    <a 
+                    <a
                       href={`https://wa.me/${driver.phone.startsWith('0') ? '234' + driver.phone.substring(1) : driver.phone.replace('+', '')}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-6 md:py-3 text-sm md:text-base bg-[#25D366] text-white font-bold rounded-xl shadow-lg hover:bg-[#128C7E] transition-all hover:scale-105"
                       title="WhatsApp"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.347-.272.272-1.04 1.016-1.04 2.479 0 1.463 1.065 2.876 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.347-.272.272-1.04 1.016-1.04 2.479 0 1.463 1.065 2.876 1.213 3.074.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z" /></svg>
                       <span className="hidden md:inline">WhatsApp</span>
                     </a>
                   )}
@@ -269,11 +270,10 @@ export default function DriverProfilePage() {
                 <button
                   onClick={toggleFavorite}
                   disabled={isTogglingFavorite}
-                  className={`inline-flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-4 md:py-3 rounded-xl border transition-all ${
-                    isFavorited 
-                      ? "bg-rose-50 border-rose-200 text-rose-500 dark:bg-rose-500/10 dark:border-rose-500/20" 
-                      : "bg-card-bg border-card-border hover:bg-card-border"
-                  }`}
+                  className={`inline-flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-4 md:py-3 rounded-xl border transition-all ${isFavorited
+                    ? "bg-rose-50 border-rose-200 text-rose-500 dark:bg-rose-500/10 dark:border-rose-500/20"
+                    : "bg-card-bg border-card-border hover:bg-card-border"
+                    }`}
                 >
                   <Heart className={`w-4 h-4 md:w-5 md:h-5 ${isFavorited ? "fill-current" : ""}`} />
                   <span className="font-bold text-sm md:text-base">{driver.favoriteCount || 0}</span>
@@ -286,13 +286,13 @@ export default function DriverProfilePage() {
         <h3 className="text-xl md:text-2xl font-bold mb-6 flex items-center gap-2">
           <Car className="text-brand-secondary" /> Driver&apos;s Vehicles
         </h3>
-        
+
         {vehicles.length === 0 ? (
-          <div className="glass-panel p-8 text-center rounded-2xl">
+          <div className="mx-4 glass-panel p-8 text-center rounded-2xl">
             <p className="text-foreground/60">This driver doesn&apos;t have any approved vehicles yet.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="mx-4 grid grid-cols-1 md:grid-cols-2 gap-6">
             {vehicles.map(v => (
               <div key={v.id} className="glass-panel rounded-2xl overflow-hidden group hover:shadow-xl hover:shadow-brand-secondary/10 transition-all duration-300 flex flex-col">
                 <div className="h-40 md:h-48 w-full bg-card-border relative overflow-hidden">
@@ -348,8 +348,8 @@ export default function DriverProfilePage() {
                     <button className="flex-1 py-3 text-[10px] md:text-sm bg-brand-secondary/10 hover:bg-brand-secondary text-brand-secondary hover:text-white font-medium rounded-xl transition-colors">
                       Request Ride
                     </button>
-                    <button 
-                      onClick={() => setViewingServicesFor({id: v.id, name: `${v.details.make} ${v.details.model}`})}
+                    <button
+                      onClick={() => setViewingServicesFor({ id: v.id, name: `${v.details.make} ${v.details.model}` })}
                       className="flex-1 py-3 text-[10px] md:text-sm bg-brand-primary/10 hover:bg-brand-primary text-brand-primary hover:text-white font-medium rounded-xl transition-colors"
                     >
                       Services
@@ -363,10 +363,10 @@ export default function DriverProfilePage() {
       </div>
 
       {user && !isOwnProfile && (
-        <ChatButton 
-          driverId={driverId} 
-          driverName={driver.firstName || driver.username || "Driver"} 
-          driverImage={driver.displayImage || ""} 
+        <ChatButton
+          driverId={driverId}
+          driverName={driver.firstName || driver.username || "Driver"}
+          driverImage={driver.displayImage || ""}
           driverTicketExpiry={driver.ticketExpiry}
           driverVipStars={driver.vipStars}
           autoOpen={autoOpenChat}
@@ -383,7 +383,7 @@ export default function DriverProfilePage() {
       )}
 
       {showReportOverlay && user && (
-        <ReportUserOverlay 
+        <ReportUserOverlay
           reportedUserId={driverId}
           reportedUserRole="driver"
           onClose={() => setShowReportOverlay(false)}

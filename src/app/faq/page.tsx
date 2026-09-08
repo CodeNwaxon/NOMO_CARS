@@ -65,7 +65,7 @@ export default function FAQPage() {
               </button>
               
               <div 
-                className={`px-6 overflow-hidden transition-all duration-300 ease-in-out ${openIndex === index ? 'max-h-[800px] pb-5 opacity-100' : 'max-h-0 opacity-0'}`}
+                className={`px-6 overflow-hidden md:transition-all md:duration-300 md:ease-in-out ${openIndex === index ? 'max-h-[800px] pb-5 opacity-100' : 'max-h-0 opacity-0'}`}
               >
                 <div className="text-sm md:text-base text-foreground/70 leading-relaxed border-t border-border/50 pt-4 mt-2">
                   {faq.answer}

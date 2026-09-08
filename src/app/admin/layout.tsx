@@ -22,7 +22,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (authLoading) return;
     if (!user) {
-      router.push("/auth");
+      router.push("/");
       return;
     }
 
@@ -73,6 +73,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setHasAccess(hasSpecificAccess);
 
   }, [pathname, allowedRoutes, loading, authLoading, isCEO]);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
 
   if (authLoading || loading) {
     return (

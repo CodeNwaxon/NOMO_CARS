@@ -37,7 +37,7 @@ export default function CategoryVehicles() {
   const [viewingVehicle, setViewingVehicle] = useState<any | null>(null);
   const [hiringDriver, setHiringDriver] = useState<{ driverId: string; vehicleName: string } | null>(null);
   const [showBidsModal, setShowBidsModal] = useState(false);
-  const [viewerState, setViewerState] = useState<{isOpen: boolean; images: string[]; initialIndex: number; singleMode: boolean}>({isOpen: false, images: [], initialIndex: 0, singleMode: false});
+  const [viewerState, setViewerState] = useState<{ isOpen: boolean; images: string[]; initialIndex: number; singleMode: boolean }>({ isOpen: false, images: [], initialIndex: 0, singleMode: false });
   const [imageViewerLoadingId, setImageViewerLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -50,66 +50,17 @@ export default function CategoryVehicles() {
 
     const fetchCategoryVehicles = async () => {
       try {
-        // Fetch pricing config to check startTicketCollection
-        const pricingRef = doc(db, "adminSettings", "pricing");
-        const pricingSnap = await getDoc(pricingRef);
-        let dynamicStartTicketCollection = true;
-        if (pricingSnap.exists()) {
-          const pData = pricingSnap.data();
-          if (pData.startTicketCollection !== undefined) {
-            dynamicStartTicketCollection = pData.startTicketCollection;
-          }
-        }
-
         const res = await fetch(`/api/vehicles?category=${encodeURIComponent(category)}`);
         if (!res.ok) throw new Error("Failed to fetch vehicles");
         const json = await res.json();
         const fetchedVehicles: any[] = json.vehicles || [];
-
-        // Fetch driver profiles to get operating city and state
-        const driverIds = [...new Set(fetchedVehicles.map(v => v.driverId).filter(Boolean))];
-        const driversMap: Record<string, any> = {};
-
-        await Promise.all(driverIds.map(async (id) => {
-          const driverDoc = await getDoc(doc(db, "users", id as string));
-          if (driverDoc.exists()) {
-            driversMap[id as string] = driverDoc.data();
-          }
-        }));
-
-        // Fetch vehicle services to get destinations
-        const vehicleIds = fetchedVehicles.map(v => v.id);
-        const servicesMap: Record<string, any[]> = {};
-        
-        if (vehicleIds.length > 0) {
-          const chunkArray = (arr: any[], size: number) => Array.from({ length: Math.ceil(arr.length / size) }, (v, i) => arr.slice(i * size, i * size + size));
-          const idChunks = chunkArray(vehicleIds, 10);
-          
-          await Promise.all(idChunks.map(async (chunk) => {
-            const sq = query(collection(db, "vehicleServices"), where("vehicleId", "in", chunk));
-            const sSnap = await getDocs(sq);
-            sSnap.forEach(serviceDoc => {
-               const data = serviceDoc.data();
-               if (!servicesMap[data.vehicleId]) servicesMap[data.vehicleId] = [];
-               servicesMap[data.vehicleId].push(data);
-            });
-          }));
-        }
+        const dynamicStartTicketCollection = json.dynamicStartTicketCollection ?? true;
 
         const vehiclesWithDrivers = fetchedVehicles
           .filter(v => {
             // Only show vehicles from drivers with an active ticket and who are not disabled or suspended
-            const driverData = driversMap[v.driverId];
-            return !v.isSuspendedByLimit && !driverData?.isDisabled && hasValidTicket(driverData?.ticketExpiry, dynamicStartTicketCollection);
-          })
-          .map(v => ({
-            ...v,
-            driverCity: driversMap[v.driverId]?.operatingCity || "",
-            driverState: driversMap[v.driverId]?.operatingState || "",
-            driverVipStars: driversMap[v.driverId]?.vipStars || 0,
-            driverName: driversMap[v.driverId]?.username || driversMap[v.driverId]?.firstName || "Unknown",
-            services: servicesMap[v.id] || [],
-          }));
+            return !v.isSuspendedByLimit && !v.driverIsDisabled && hasValidTicket(v.driverTicketExpiry, dynamicStartTicketCollection);
+          });
 
         setVehicles(vehiclesWithDrivers);
       } catch (error) {
@@ -142,13 +93,13 @@ export default function CategoryVehicles() {
               <h1 className="text-xl md:text-3xl font-bold capitalize text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary to-brand-primary">
                 {getPluralCategory(category)} Available
               </h1>
-              <p className="text-xs md:text-md text-foreground/70">Find and book approved your <span className="font-bold">{category}</span> transport.</p>
+              <p className="text-xs md:text-md text-foreground/70">Find and book available <span className="font-bold">{category}</span> transport.</p>
             </div>
           </div>
 
           {/* Search and Action Buttons */}
           <div className="flex flex-col-reverse xl:flex-row gap-3 md:gap-4 w-full xl:w-auto xl:items-center">
-            
+
             {/* Search Inputs */}
             <div className="flex flex-row gap-2 md:gap-4 w-full xl:w-[32rem]">
               <div className="relative flex-grow">
@@ -180,32 +131,32 @@ export default function CategoryVehicles() {
             {/* Action Buttons */}
             <div className="flex flex-row gap-2 md:gap-4 w-full xl:w-auto justify-start">
               {!isDriver && (
-                <button 
-                  onClick={() => setShowBidsModal(true)}
+                <Link
+                  href="/passenger/create-bid"
                   className="flex items-center justify-center gap-1.5 md:gap-2 px-4 py-2 md:px-6 md:py-2 bg-brand-primary text-white rounded-xl font-medium text-xs sm:text-sm md:text-base hover:bg-brand-primary/90 transition-all shadow-lg hover:shadow-brand-primary/30 hover:-translate-y-0.5 border border-brand-primary/50"
                 >
                   <PlusCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" />
                   <span>Create Bid</span>
-                </button>
+                </Link>
               )}
               {isDriver && !profile?.isDisabled && (
                 <>
                   {profile?.isApproved && (
-                    <button 
-                      onClick={() => setShowBidsModal(true)}
+                    <Link
+                      href="/driver/bid-for-jobs"
                       className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-6 md:py-2 bg-brand-secondary text-white rounded-xl font-medium text-xs sm:text-sm md:text-base hover:bg-brand-secondary/90 transition-all shadow-lg hover:shadow-brand-secondary/30 hover:-translate-y-0.5"
                     >
                       <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" />
                       <span>Bid for jobs</span>
-                    </button>
+                    </Link>
                   )}
-                  <button 
-                    onClick={() => setShowBidsModal(true)}
+                  <Link
+                    href="/passenger/create-bid"
                     className={`${profile?.isApproved ? 'flex-1 sm:flex-none' : ''} flex items-center justify-center gap-1.5 md:gap-2 px-4 py-2 md:px-6 md:py-2 bg-brand-primary text-white rounded-xl font-medium text-xs sm:text-sm md:text-base hover:bg-brand-primary/90 transition-all shadow-lg hover:shadow-brand-primary/30 hover:-translate-y-0.5 border border-brand-primary/50`}
                   >
                     <PlusCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" />
                     <span>Create Bid</span>
-                  </button>
+                  </Link>
                 </>
               )}
             </div>
@@ -216,17 +167,17 @@ export default function CategoryVehicles() {
           const filteredVehicles = vehicles.filter((v) => {
             const locQuery = locationQuery.toLowerCase();
             const destQuery = destinationQuery.toLowerCase();
-            
+
             // Check location match against driver city/state or any service start point
-            const locMatches = locQuery === "" || 
-              (v.driverCity || "").toLowerCase().includes(locQuery) || 
+            const locMatches = locQuery === "" ||
+              (v.driverCity || "").toLowerCase().includes(locQuery) ||
               (v.driverState || "").toLowerCase().includes(locQuery) ||
               (v.services || []).some((s: any) => (s.startPoint || "").toLowerCase().includes(locQuery));
-              
+
             // Check destination match against any service destination
-            const destMatches = destQuery === "" || 
+            const destMatches = destQuery === "" ||
               (v.services || []).some((s: any) => (s.destination || "").toLowerCase().includes(destQuery));
-              
+
             return locMatches && destMatches;
           }).sort((a, b) => (b.driverVipStars || 0) - (a.driverVipStars || 0));
 
@@ -288,12 +239,12 @@ export default function CategoryVehicles() {
                                 <Car className="w-8 h-8 md:w-12 md:h-12" />
                               </div>
                             )}
-                            
+
                             {/* Badges */}
                             <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-black/60 backdrop-blur-md px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold shadow-sm text-white border border-white/10">
                               {v.details.payload ? `${v.details.payload} Tons` : v.details.seats ? `${v.details.seats} Seats` : v.details.capacity ? `${v.details.capacity} Cap.` : "Standard"}
                             </div>
-                            
+
                             {getVIPBadge(v.driverVipStars) && (
                               <div className={`absolute top-2 left-2 md:top-4 md:left-4 z-10 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-md ${getVIPBadge(v.driverVipStars)?.colorClass}`}>
                                 {getVIPBadge(v.driverVipStars)?.tag} Driver
@@ -333,13 +284,13 @@ export default function CategoryVehicles() {
                             <div className="text-[10px] md:text-sm text-foreground/60 mb-2 flex flex-wrap gap-x-2 gap-y-1 items-center leading-tight">
                               <span>{v.details.year}</span> <span className="opacity-50">•</span> <span>{v.details.color || "Standard Color"}</span> <span className="opacity-50">•</span> <span>AC: {v.details.ac ? "Yes" : "No"}</span>
                             </div>
-                            
+
                             <Link href={`/driver/profile/${v.driverId}`} className="text-[10px] md:text-sm text-brand-primary font-semibold hover:underline mb-4 inline-block truncate">
                               Driver's Profile
                             </Link>
 
                             <div className="mt-auto flex gap-2 w-full border-t border-card-border pt-3 md:pt-4">
-                              <button 
+                              <button
                                 onClick={() => setHiringDriver({ driverId: v.driverId, vehicleName: `${v.details.make} ${v.details.model}` })}
                                 className="flex-2 py-2 md:py-3 text-[10px] md:text-sm bg-brand-primary hover:bg-brand-primary/90 text-white font-bold rounded-lg md:rounded-xl transition-colors flex-grow shadow-lg shadow-brand-primary/20"
                               >

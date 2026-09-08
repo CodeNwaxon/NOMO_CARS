@@ -69,7 +69,7 @@ export default function PaystackVIPCard({ plan, profile, user, onSuccess, onClos
         
         <div className="mb-4 flex items-baseline gap-1">
           <span className={`text-2xl md:text-3xl font-bold ${plan.isPremium ? 'text-white' : ''}`}>₦{plan.price.toLocaleString()}</span>
-          <span className={`text-xs ${plan.isPremium ? 'text-slate-400' : 'text-foreground/50'}`}>/ 180 days</span>
+          <span className={`text-xs ${plan.isPremium ? 'text-slate-400' : 'text-foreground/50'}`}>/ {plan.durationDays} days</span>
         </div>
 
         <div className="space-y-2 mb-6">

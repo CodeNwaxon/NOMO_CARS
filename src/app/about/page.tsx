@@ -3,12 +3,15 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Phone, Mail, ArrowLeft, Shield, Clock, Users, MapPin, Loader2 } from "lucide-react";
-import { doc, getDoc } from "firebase/firestore";
+import { Phone, Mail, ArrowLeft, Shield, Clock, Users, MapPin, Loader2, Star, Trash2 } from "lucide-react";
+import { doc, getDoc, collection, getDocs, addDoc, deleteDoc, query, orderBy, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { DEFAULT_ABOUT_CONFIG } from "@/lib/defaultCMS";
+import { useAuth } from "@/context/AuthContext";
+import toast from "react-hot-toast";
 
 export default function AboutPage() {
+  const { user, profile } = useAuth();
   const [ceoData, setCeoData] = useState({
     name: "Prince O. Nwachukwu",
     image: "/ceo2.jpeg",
@@ -18,6 +21,75 @@ export default function AboutPage() {
   });
   const [aboutConfig, setAboutConfig] = useState(DEFAULT_ABOUT_CONFIG);
   const [loading, setLoading] = useState(true);
+
+  // Reviews state
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(true);
+  const [newReviewRating, setNewReviewRating] = useState(5);
+  const [newReviewComment, setNewReviewComment] = useState("");
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+
+  const fetchReviews = async () => {
+    try {
+      const q = query(collection(db, "reviews"), orderBy("createdAt", "desc"));
+      const snap = await getDocs(q);
+      const fetchedReviews = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setReviews(fetchedReviews);
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+    } finally {
+      setLoadingReviews(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchReviews();
+  }, []);
+
+  const handleAddReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !profile) return;
+    if (!newReviewComment.trim()) {
+      toast.error("Please enter a review comment.");
+      return;
+    }
+
+    setIsSubmittingReview(true);
+    try {
+      const reviewData = {
+        userId: user.uid,
+        userName: profile.username || profile.firstName || "Anonymous User",
+        userImage: profile.displayImage || null,
+        rating: newReviewRating,
+        comment: newReviewComment,
+        createdAt: serverTimestamp()
+      };
+      await addDoc(collection(db, "reviews"), reviewData);
+      toast.success("Review submitted successfully!");
+      setNewReviewComment("");
+      setNewReviewRating(5);
+      fetchReviews();
+    } catch (error) {
+      console.error("Error adding review:", error);
+      toast.error("Failed to submit review.");
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
+  const handleDeleteReview = async (reviewId: string) => {
+    if (!confirm("Are you sure you want to delete your review?")) return;
+    try {
+      await deleteDoc(doc(db, "reviews", reviewId));
+      toast.success("Review deleted successfully!");
+      fetchReviews();
+    } catch (error) {
+      console.error("Error deleting review:", error);
+      toast.error("Failed to delete review.");
+    }
+  };
+
+  const userReview = user ? reviews.find(r => r.userId === user.uid) : null;
 
   useEffect(() => {
     const fetchCeoData = async () => {
@@ -70,6 +142,7 @@ export default function AboutPage() {
                     src={ceoData.image}
                     alt="Nomo Cars CEO"
                     fill
+                    sizes="(max-width: 768px) 240px, 288px"
                     className="object-cover"
                   />
                 </div>
@@ -165,6 +238,133 @@ export default function AboutPage() {
             >
               Our Policies
             </Link>
+          </div>
+        </section>
+
+        {/* Reviews Section */}
+        <section className="max-w-6xl mx-auto mt-20">
+          <div className="text-center mb-10">
+            <h2 className="text-2xl md:text-4xl font-bold dark:text-white mb-1">What Our Users Say</h2>
+            <p className="text-xs md:text-base text-foreground/70">Read reviews from people who have used Nomo Cars</p>
+          </div>
+
+          <div className="flex flex-col gap-4 md:gap-10">
+            {/* Review List */}
+            <div>
+              {loadingReviews ? (
+                <div className="flex justify-center py-10">
+                  <Loader2 className="w-8 h-8 animate-spin text-brand-primary" />
+                </div>
+              ) : reviews.length > 0 ? (
+                <div className="flex flex-row gap-2 overflow-x-auto pb-3 snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:overflow-visible md:pb-0 scrollbar-hide">
+                  {reviews.map((review) => (
+                    <div key={review.id} className="glass-panel p-2 md:p-5 rounded-md md:rounded-xl border border-card-border hover:border-brand-primary/20 transition-colors min-w-[47%] max-w-[47%] flex-shrink-0 snap-start md:min-w-0 md:max-w-none">
+                      <div className="flex justify-between items-start mb-1.5 md:mb-3">
+                        <div className="flex items-center gap-1.5 md:gap-3">
+                          <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-card-border overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-brand-primary uppercase text-[8px] md:text-base">
+                            {review.userImage ? (
+                              <img src={review.userImage} alt={review.userName} className="w-full h-full object-cover" />
+                            ) : (
+                              review.userName?.charAt(0) || "U"
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="font-bold text-[9px] md:text-sm dark:text-white leading-tight truncate max-w-[80px] md:max-w-none">{review.userName}</h4>
+                            <div className="flex items-center gap-0.5">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`w-2 h-2 md:w-3 md:h-3 ${star <= review.rating ? "text-yellow-500 fill-yellow-500" : "text-gray-300 dark:text-gray-600 fill-gray-300 dark:fill-gray-600"}`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                        {user && user.uid === review.userId && (
+                          <button
+                            onClick={() => handleDeleteReview(review.id)}
+                            className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 p-1 md:p-1.5 rounded-lg transition-colors"
+                            title="Delete your review"
+                          >
+                            <Trash2 className="w-3 h-3 md:w-4 md:h-4" />
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-[9px] md:text-sm text-foreground/80 leading-snug md:leading-relaxed break-words line-clamp-4 md:line-clamp-none">{review.comment}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 glass-panel rounded-2xl border border-dashed border-card-border">
+                  <Star className="w-12 h-12 text-foreground/20 mx-auto mb-3" />
+                  <p className="text-foreground/60">No reviews yet. Be the first to share your experience!</p>
+                </div>
+              )}
+            </div>
+
+            {/* Review Form */}
+            <div>
+              <div className="glass-panel p-4 rounded-md md:rounded-xl sticky top-2">
+                <h3 className="text-xl font-bold mb-4 dark:text-white">Leave a Review</h3>
+
+                {!user ? (
+                  <div className="bg-brand-primary/10 rounded-md md:rounded-xl p-4 text-center border border-brand-primary/20">
+                    <p className="text-sm mb-4">Please log in to share your review.</p>
+                    <Link href="/" className="px-6 py-2 bg-brand-primary text-white text-sm font-medium rounded-lg hover:bg-brand-primary/90 transition-colors inline-block">
+                      Sign In
+                    </Link>
+                  </div>
+                ) : userReview ? (
+                  <div className="bg-green-500/10 rounded-xl p-4 text-center border border-green-500/20">
+                    <p className="text-sm text-green-700 dark:text-green-400 font-medium mb-3">You have already submitted a review.</p>
+                    <button
+                      onClick={() => handleDeleteReview(userReview.id)}
+                      className="text-xs text-red-500 hover:text-red-600 underline font-medium"
+                    >
+                      Delete my review to write a new one
+                    </button>
+                  </div>
+                ) : (
+                  <form onSubmit={handleAddReview} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2 text-foreground/80">Rating</label>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setNewReviewRating(star)}
+                            className="focus:outline-none transition-transform hover:scale-110"
+                          >
+                            <Star
+                              className={`w-5 h-5 ${star <= newReviewRating ? "text-yellow-500 fill-yellow-500" : "text-gray-300 dark:text-gray-600 fill-gray-300 dark:fill-gray-600"}`}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2 text-foreground/80">Your Review</label>
+                      <textarea
+                        value={newReviewComment}
+                        onChange={(e) => setNewReviewComment(e.target.value)}
+                        placeholder="Tell us about your experience..."
+                        className="w-full px-4 py-3 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all rounded-xl resize-none h-32 text-sm"
+
+                      ></textarea>
+                    </div>
+                    <button
+                      type="submit"
+                      disabled={isSubmittingReview || !newReviewComment.trim()}
+                      className="w-full py-2 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-primary/90 transition-colors shadow-lg shadow-brand-primary/20 disabled:opacity-50 flex justify-center items-center gap-2"
+                    >
+                      {isSubmittingReview && <Loader2 className="w-4 h-4 animate-spin" />}
+                      Submit Review
+                    </button>
+                  </form>
+                )}
+              </div>
+            </div>
           </div>
         </section>
       </div>

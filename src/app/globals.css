@@ -92,3 +92,28 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-brand-secondary);
 }
+
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+  }
+  
+  /* Buttons above py-2 */
+  button.py-3, button.py-4, a.py-3, a.py-4, .py-3 > button, .py-4 > button {
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+}
+
+/* Hide scrollbar but keep scroll functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+

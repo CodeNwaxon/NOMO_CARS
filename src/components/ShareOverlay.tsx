@@ -128,7 +128,7 @@ export default function ShareOverlay({ onClose, referralLink, points }: ShareOve
                   <span className={`text-3xl font-black ${nextStarTextClass}`}>
                     {isMaxedOut ? "MAX" : progressToNextStar}
                   </span>
-                  {!isMaxedOut && <span className="text-foreground/40 font-bold">/ 20</span>}
+                  {!isMaxedOut && <span className="text-foreground/40 font-bold">/ {pointsPerStar}</span>}
                 </div>
               </div>
               <div className="text-right">

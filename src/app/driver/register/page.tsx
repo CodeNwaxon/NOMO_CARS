@@ -100,7 +100,7 @@ export default function DriverRegistration() {
         first = parts[0];
       } else if (parts.length === 2) {
         first = parts[0];
-        middle = parts[1];
+        last = parts[1];
       } else if (parts.length >= 3) {
         first = parts[0];
         middle = parts.slice(1, -1).join(" ");

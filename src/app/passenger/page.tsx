@@ -26,7 +26,7 @@ import { db } from "@/lib/firebase";
 import { getVIPBadge, hasValidTicket } from "@/lib/constants";
 
 const categories = [
-  { name: "Dispatch Rider", id: "dispatch-rider", icon: Bike, color: "text-orange-500", bg: "bg-orange-500/10", hoverBorder: "hover:border-orange-500/50", hoverShadow: "hover:shadow-orange-500/20" },
+  { name: "Dispatch Rider", id: "motorbike", icon: Bike, color: "text-orange-500", bg: "bg-orange-500/10", hoverBorder: "hover:border-orange-500/50", hoverShadow: "hover:shadow-orange-500/20" },
   { name: "Keke (Tricycle)", id: "keke", icon: Navigation, color: "text-green-500", bg: "bg-green-500/10", hoverBorder: "hover:border-green-500/50", hoverShadow: "hover:shadow-green-500/20" },
   { name: "Car", id: "car", icon: Car, color: "text-blue-500", bg: "bg-blue-500/10", hoverBorder: "hover:border-blue-500/50", hoverShadow: "hover:shadow-blue-500/20" },
   { name: "Bus", id: "bus", icon: Bus, color: "text-indigo-500", bg: "bg-indigo-500/10", hoverBorder: "hover:border-indigo-500/50", hoverShadow: "hover:shadow-indigo-500/20" },
@@ -94,63 +94,33 @@ export default function PassengerCategories() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
+
   const fetchSearchResults = async (loadMore = false) => {
     if (!searchQuery.trim()) return;
 
     setIsSearching(true);
     try {
       const qLower = searchQuery.toLowerCase();
-
-      let baseQuery = query(
-        collection(db, "users"),
-        where("role", "==", "driver"),
-        limit(40)
-      );
-
-      // We will perform a client-side filter for simplicity since Firestore doesn't easily support case-insensitive substring search across multiple fields without extensions.
-      // But to avoid loading all drivers, we just load in batches. Note: This means pagination combined with client-side filtering can be tricky if we don't fetch enough.
-      // A robust full-text search requires a 3rd party like Algolia. We will fetch 40 drivers per query.
-
-      if (loadMore && lastVisibleDoc) {
-        baseQuery = query(
-          collection(db, "users"),
-          where("role", "==", "driver"),
-          startAfter(lastVisibleDoc),
-          limit(40)
-        );
+      
+      // Calculate offset based on current results if loading more
+      const currentOffset = loadMore ? searchResults.length : 0;
+      
+      const res = await fetch(`/api/drivers/search?q=${encodeURIComponent(qLower)}&offset=${currentOffset}&limit=40`);
+      
+      if (!res.ok) {
+        throw new Error("Failed to search drivers");
       }
-
-      const querySnapshot = await getDocs(baseQuery);
-
-      const results: any[] = [];
-      querySnapshot.forEach((doc) => {
-        const data = doc.data();
-        
-        // Skip disabled drivers or drivers without a valid ticket
-        if (data.isDisabled || !hasValidTicket(data.ticketExpiry)) {
-          return;
-        }
-
-        const searchStr = `${data.username || ""} ${data.firstName || ""} ${data.lastName || ""} ${data.operatingState || ""} ${data.operatingCity || ""}`.toLowerCase();
-
-        if (searchStr.includes(qLower)) {
-          results.push({ id: doc.id, ...data });
-        }
-      });
-
-      results.sort((a, b) => (b.vipStars || 0) - (a.vipStars || 0));
+      
+      const json = await res.json();
+      const results = json.drivers || [];
 
       if (loadMore) {
-        setSearchResults(prev => {
-          const combined = [...prev, ...results];
-          return combined.sort((a, b) => (b.vipStars || 0) - (a.vipStars || 0));
-        });
+        setSearchResults(prev => [...prev, ...results]);
       } else {
         setSearchResults(results);
       }
 
-      setLastVisibleDoc(querySnapshot.docs[querySnapshot.docs.length - 1] || null);
-      setHasMoreSearch(querySnapshot.docs.length === 40);
+      setHasMoreSearch(json.hasMore);
 
     } catch (error) {
       console.error("Error searching drivers:", error);
@@ -160,17 +130,27 @@ export default function PassengerCategories() {
   };
 
   return (
-    <div className="min-h-screen py-8 md:py-16 px-3 md:px-6 relative overflow-hidden">
+    <div className="min-h-screen pt-5 pb-12 md:py-16 px-3 md:px-6 relative overflow-hidden">
       {/* Background decorations */}
       <div className="absolute top-0 right-0 w-[40rem] h-[40rem] bg-brand-secondary/10 rounded-full blur-3xl -z-10 animate-pulse-slow pointer-events-none"></div>
 
       <div className="max-w-6xl mx-auto z-10 relative">
-        <div className="text-center mb-6 md:mb-8 relative flex flex-col items-center">
-          <h1 className="text-2xl md:text-5xl font-bold mb-4 md:mb-6 text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary to-brand-primary">
-            Choose Your Ride
-          </h1>
+        <div className="text-center md:text-center mb-6 md:mb-8 relative flex flex-col items-center">
+          <div className="flex flex-row justify-between items-center w-full mb-4 md:mb-6 px-2 md:px-0 md:justify-center">
+            <h1 className="text-xl md:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-brand-secondary to-brand-primary text-left md:text-center">
+              Choose Your Ride
+            </h1>
 
-          <div className="w-full max-w-2xl px-4 mx-auto mb-6">
+            <button
+              onClick={() => setShowContactsModal(true)}
+              className="md:absolute md:right-0 md:top-2 flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-brand-primary text-white rounded-xl font-medium text-xs md:text-sm hover:bg-brand-primary/90 transition-all shadow-lg hover:shadow-brand-primary/30 hover:-translate-y-0.5 border border-brand-primary/50"
+            >
+              <Users className="w-3.5 h-3.5 md:w-4 md:h-4" />
+              <span>My Contacts</span>
+            </button>
+          </div>
+
+          <div className="w-full max-w-2xl px-4 mx-auto mb-4">
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-foreground/50" />
@@ -189,31 +169,13 @@ export default function PassengerCategories() {
               )}
             </div>
           </div>
-
-          <div className="flex justify-between items-center w-full mt-4 md:mt-0 px-2 md:px-0 md:absolute md:inset-x-0 md:top-2 pointer-events-none">
-            <button
-              onClick={() => setShowHowToBidModal(true)}
-              className="pointer-events-auto flex items-center gap-1.5 md:gap-2 px-2 py-1.5 md:px-4 md:py-2 bg-transparent text-black dark:text-blue-400 font-bold text-xs md:text-sm hover:underline transition-all"
-            >
-              <Info className="w-3.5 h-3.5 md:w-4 md:h-4" />
-              <span className="hidden sm:inline">Learn how to create / find bids</span>
-              <span className="sm:hidden">Create / find bids</span>
-            </button>
-            <button
-              onClick={() => setShowContactsModal(true)}
-              className="pointer-events-auto flex items-center gap-1.5 md:gap-2 px-3 py-1.5 md:px-4 md:py-2 bg-brand-primary text-white rounded-xl font-medium text-xs md:text-sm hover:bg-brand-primary/90 transition-all shadow-lg hover:shadow-brand-primary/30 hover:-translate-y-0.5 border border-brand-primary/50"
-            >
-              <Users className="w-3.5 h-3.5 md:w-4 md:h-4" />
-              <span>My Contacts</span>
-            </button>
-          </div>
         </div>
 
         {searchQuery.trim() ? (
           // Search Results View
           <div className="px-1 md:px-0">
             {searchResults.length > 0 ? (
-              <div className="mb-12">
+              <div className="mb-6">
                 <h2 className="text-xl md:text-2xl font-bold mb-6 flex items-center gap-2">
                   <User className="text-brand-primary" /> Driver Profiles Found
                 </h2>
@@ -436,7 +398,7 @@ export default function PassengerCategories() {
                   <li>If you delete your own bid, or if it expires without a driver being chosen, the bid limit is <strong>not</strong> returned to you.</li>
                 </ul>
               </div>
-              
+
               <div className="bg-foreground/5 p-4 rounded-xl">
                 <h3 className="font-bold text-foreground mb-2">For Drivers: Bidding on Jobs</h3>
                 <p>Find jobs by clicking <strong>"Bid for Job"</strong> on your driver dashboard, or by using the <strong>"Bid for jobs"</strong> button directly on any vehicle category page.</p>

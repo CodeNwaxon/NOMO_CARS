@@ -589,7 +589,7 @@ export default function SiteSettingsPage() {
                       <select
                         value={social.platform}
                         onChange={(e) => updateSocial(idx, "platform", e.target.value)}
-                        className="p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none text-sm w-32"
+                        className="p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none text-sm w-[35%] md:w-32 flex-shrink-0"
                       >
                         <option value="facebook">Facebook</option>
                         <option value="x">X (Twitter)</option>
@@ -601,11 +601,11 @@ export default function SiteSettingsPage() {
                         type="text"
                         value={social.url}
                         onChange={(e) => updateSocial(idx, "url", e.target.value)}
-                        className="flex-1 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none text-sm"
+                        className="flex-1 w-full min-w-0 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none text-sm"
                         placeholder="https://..."
                       />
-                      <button onClick={() => removeSocial(idx)} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
-                        <Trash2 className="w-4 h-4" />
+                      <button onClick={() => removeSocial(idx)} className="p-2 text-gray-400 hover:text-red-500 transition-colors flex-shrink-0">
+                        <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
                       </button>
                     </div>
                   ))}
