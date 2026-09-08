@@ -41,6 +41,7 @@ export default function ManageAdminsPage() {
 
   // CEO Contact Info State
   const [contactInfo, setContactInfo] = useState({
+    name: "",
     image: "",
     phone: "",
     email: "",
@@ -85,6 +86,7 @@ export default function ManageAdminsPage() {
       if (aboutSnap.exists()) {
         const data = aboutSnap.data();
         setContactInfo({
+          name: data.name || "",
           image: data.image || "",
           phone: data.phone || "",
           email: data.email || "",
@@ -520,6 +522,17 @@ export default function ManageAdminsPage() {
               
               <div className="space-y-5">
                 
+                <div>
+                  <label className="block text-sm font-bold mb-1">CEO Name</label>
+                  <input 
+                    type="text" 
+                    value={contactInfo.name}
+                    onChange={(e) => setContactInfo({...contactInfo, name: e.target.value})}
+                    placeholder="e.g. Prince O. Nwachukwu"
+                    className="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary focus:outline-none transition-all"
+                  />
+                </div>
+
                 {/* Image Upload/URL */}
                 <div>
                   <label className="block text-sm font-bold mb-3">CEO Image</label>

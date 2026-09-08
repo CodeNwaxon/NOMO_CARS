@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import { db, storage } from "@/lib/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref } from "firebase/storage";
+import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import {
   Settings, Loader2, ArrowLeft, Image as ImageIcon, Save, X, Plus, Trash2, Shield, Lock, FileText, CheckCircle, Smartphone, Mail, MapPin, Search
 } from "lucide-react";
@@ -52,13 +53,6 @@ export default function SiteSettingsPage() {
   // Password Verification Modal State
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [password, setPassword] = useState("");
-
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{
-    type: "faq" | "policy" | "bulletin" | "social" | null;
-    pIdx?: number;
-    bIdx?: number;
-  }>({ type: null });
-  const [deletePassword, setDeletePassword] = useState("");
 
   const logoInputRef = useRef<HTMLInputElement>(null);
   const driverImageInputRef = useRef<HTMLInputElement>(null);
@@ -131,9 +125,7 @@ export default function SiteSettingsPage() {
     const file = e.target.files[0];
     const toastId = toast.loading("Uploading image...");
     try {
-      const storageRef = ref(storage, `site-assets/${Date.now()}_${file.name}`);
-      const snapshot = await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(snapshot.ref);
+      const url = await uploadImageToCloudinary(file);
       setSiteConfig((prev) => ({ ...prev, [field]: url }));
       toast.success("Image uploaded successfully", { id: toastId });
     } catch (err) {
@@ -187,28 +179,7 @@ export default function SiteSettingsPage() {
     }
   };
 
-  const handleDeleteConfirm = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (deletePassword !== "prince123") {
-      toast.error("Incorrect master password");
-      return;
-    }
-    
-    if (deleteConfirmation.type === "faq" && deleteConfirmation.pIdx !== undefined) {
-      setFaqConfig(faqConfig.filter((_, i) => i !== deleteConfirmation.pIdx));
-    } else if (deleteConfirmation.type === "policy" && deleteConfirmation.pIdx !== undefined) {
-      setPolicyConfig(policyConfig.filter((_, i) => i !== deleteConfirmation.pIdx));
-    } else if (deleteConfirmation.type === "bulletin" && deleteConfirmation.pIdx !== undefined && deleteConfirmation.bIdx !== undefined) {
-      const newPol = [...policyConfig];
-      newPol[deleteConfirmation.pIdx].bulletins = newPol[deleteConfirmation.pIdx].bulletins.filter((_, i) => i !== deleteConfirmation.bIdx);
-      setPolicyConfig(newPol);
-    } else if (deleteConfirmation.type === "social" && deleteConfirmation.pIdx !== undefined) {
-      setSiteConfig({ ...siteConfig, socials: siteConfig.socials.filter((_, i) => i !== deleteConfirmation.pIdx) });
-    }
-    
-    setDeleteConfirmation({ type: null });
-    setDeletePassword("");
-  };
+
 
   const addFaq = () => setFaqConfig([...faqConfig, { question: "", answer: "" }]);
   const updateFaq = (idx: number, field: string, val: string) => {
@@ -216,8 +187,8 @@ export default function SiteSettingsPage() {
     newFaq[idx] = { ...newFaq[idx], [field]: val };
     setFaqConfig(newFaq);
   };
-  const handleRemoveFaqInitiate = (idx: number) => {
-    setDeleteConfirmation({ type: "faq", pIdx: idx });
+  const removeFaq = (idx: number) => {
+    setFaqConfig(faqConfig.filter((_, i) => i !== idx));
   };
 
   const addPolicy = () => setPolicyConfig([...policyConfig, { icon: "Shield", title: "", description: "", bulletins: [] }]);
@@ -226,8 +197,8 @@ export default function SiteSettingsPage() {
     newPol[idx] = { ...newPol[idx], [field]: val };
     setPolicyConfig(newPol);
   };
-  const handleRemovePolicyInitiate = (idx: number) => {
-    setDeleteConfirmation({ type: "policy", pIdx: idx });
+  const removePolicy = (idx: number) => {
+    setPolicyConfig(policyConfig.filter((_, i) => i !== idx));
   };
   const addBulletin = (policyIdx: number) => {
     const newPol = [...policyConfig];
@@ -239,8 +210,10 @@ export default function SiteSettingsPage() {
     newPol[policyIdx].bulletins[bullIdx] = val;
     setPolicyConfig(newPol);
   };
-  const handleRemoveBulletinInitiate = (policyIdx: number, bullIdx: number) => {
-    setDeleteConfirmation({ type: "bulletin", pIdx: policyIdx, bIdx: bullIdx });
+  const removeBulletin = (policyIdx: number, bullIdx: number) => {
+    const newPol = [...policyConfig];
+    newPol[policyIdx].bulletins = newPol[policyIdx].bulletins.filter((_, i) => i !== bullIdx);
+    setPolicyConfig(newPol);
   };
 
   const addSocial = () => setSiteConfig({ ...siteConfig, socials: [...siteConfig.socials, { platform: "facebook", url: "https://facebook.com/" }] });
@@ -266,8 +239,8 @@ export default function SiteSettingsPage() {
     }
     setSiteConfig({ ...siteConfig, socials: newSoc });
   };
-  const handleRemoveSocialInitiate = (idx: number) => {
-    setDeleteConfirmation({ type: "social", pIdx: idx });
+  const removeSocial = (idx: number) => {
+    setSiteConfig({ ...siteConfig, socials: siteConfig.socials.filter((_, i) => i !== idx) });
   };
 
   if (authLoading || loading) {
@@ -350,8 +323,8 @@ export default function SiteSettingsPage() {
                       <input type="file" hidden ref={logoInputRef} accept="image/*" onChange={(e) => handleFileUpload(e, "siteLogo")} />
                     </div>
                     {siteConfig.siteLogo && (
-                      <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-xl inline-block border border-gray-100 dark:border-gray-800">
-                        <img src={siteConfig.siteLogo} alt="Logo Preview" className="h-12 w-12 object-cover rounded-full bg-white border border-gray-200" />
+                      <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl inline-block border border-gray-200 dark:border-gray-700">
+                        <img src={siteConfig.siteLogo} alt="Logo Preview" className="h-12 md:h-16 object-contain" />
                       </div>
                     )}
                   </div>
@@ -482,7 +455,7 @@ export default function SiteSettingsPage() {
 
               {faqConfig.map((faq, idx) => (
                 <div key={idx} className="bg-gray-50 dark:bg-gray-900/50 p-3 md:p-5 rounded-2xl border border-gray-100 dark:border-gray-800 relative group">
-                  <button onClick={() => handleRemoveFaqInitiate(idx)} className="absolute top-4 right-4 p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors opacity-0 group-hover:opacity-100">
+                  <button onClick={() => removeFaq(idx)} className="absolute top-4 right-4 p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors opacity-0 group-hover:opacity-100">
                     <Trash2 className="w-4 h-4" />
                   </button>
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Question {idx + 1}</label>
@@ -515,7 +488,7 @@ export default function SiteSettingsPage() {
 
               {policyConfig.map((policy, pIdx) => (
                 <div key={pIdx} className="bg-gray-50 dark:bg-gray-900/50 p-3 md:p-5 rounded-lg md:rounded-2xl border border-gray-200 dark:border-gray-700 relative">
-                  <button onClick={() => handleRemovePolicyInitiate(pIdx)} className="absolute top-4 right-4 p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors">
+                  <button onClick={() => removePolicy(pIdx)} className="absolute top-4 right-4 p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors">
                     <Trash2 className="w-4 h-4" />
                   </button>
 
@@ -567,7 +540,7 @@ export default function SiteSettingsPage() {
                           className="flex-1 p-2 text-sm bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg outline-none focus:border-brand-primary"
                           placeholder="e.g. Users must be at least 18 years old..."
                         />
-                        <button onClick={() => handleRemoveBulletinInitiate(pIdx, bIdx)} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
+                        <button onClick={() => removeBulletin(pIdx, bIdx)} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
                           <X className="w-4 h-4" />
                         </button>
                       </div>
@@ -621,7 +594,7 @@ export default function SiteSettingsPage() {
                         className="flex-1 p-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg outline-none text-sm"
                         placeholder="https://..."
                       />
-                      <button onClick={() => handleRemoveSocialInitiate(idx)} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
+                      <button onClick={() => removeSocial(idx)} className="p-2 text-gray-400 hover:text-red-500 transition-colors">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>

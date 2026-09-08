@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs, orderBy, onSnapshot } from "firebase/firestore";
 
 export interface AppNotification {
   id: string;
@@ -10,12 +12,14 @@ export interface AppNotification {
   date: number;
   isRead: boolean;
   link?: string;
+  image?: string;
+  urlLabel?: string;
 }
 
 interface NotificationContextType {
   notifications: AppNotification[];
   unreadCount: number;
-  addNotification: (title: string, message: string, link?: string) => void;
+  addNotification: (title: string, message: string, link?: string, image?: string, urlLabel?: string) => void;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   deleteNotification: (id: string) => void;
@@ -33,7 +37,7 @@ const NotificationContext = createContext<NotificationContextType>({
 });
 
 export const NotificationProvider = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
   // Load from local storage when user changes
@@ -61,7 +65,69 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     }
   }, [notifications, user]);
 
-  const addNotification = (title: string, message: string, link?: string) => {
+  // Fetch New Broadcasts
+  useEffect(() => {
+    if (!user || !profile) return;
+
+    const lastChecked = localStorage.getItem(`lastBroadcastCheck_${user.uid}`) || "1970-01-01T00:00:00.000Z";
+    
+    const bQuery = query(
+      collection(db, "broadcasts"),
+      where("createdAt", ">", lastChecked),
+      orderBy("createdAt", "asc")
+    );
+
+    const unsubscribe = onSnapshot(bQuery, (snapshot) => {
+      if (snapshot.empty) {
+        localStorage.setItem(`lastBroadcastCheck_${user.uid}`, new Date().toISOString());
+        return;
+      }
+
+      const newNotifs: AppNotification[] = [];
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          const data = change.doc.data();
+          // Filter by audience
+          let targetMatch = false;
+          const r = profile.role || "";
+          if (data.audience === "All") targetMatch = true;
+          else if (data.audience === "Drivers" && r === "driver") targetMatch = true;
+          else if (data.audience === "Passengers" && r === "passenger") targetMatch = true;
+          else if (data.audience === "Admins" && r === "admin") targetMatch = true;
+
+          // Note: We removed the data.sentBy !== user.uid restriction so you can verify your own broadcasts
+          if (targetMatch) {
+            newNotifs.push({
+              id: change.doc.id,
+              title: data.title || "Broadcast",
+              message: data.message,
+              date: new Date(data.createdAt).getTime(),
+              isRead: false,
+              link: data.url,
+              image: data.image,
+              urlLabel: data.urlLabel
+            });
+          }
+        }
+      });
+
+      if (newNotifs.length > 0) {
+        setNotifications(prev => {
+          // Avoid duplicates
+          const existingIds = new Set(prev.map(n => n.id));
+          const uniqueNew = newNotifs.filter(n => !existingIds.has(n.id));
+          return [...uniqueNew.reverse(), ...prev];
+        });
+      }
+      localStorage.setItem(`lastBroadcastCheck_${user.uid}`, new Date().toISOString());
+    }, (err) => {
+      console.error("Error listening to broadcasts:", err);
+    });
+
+    return () => unsubscribe();
+  }, [user, profile]);
+
+  const addNotification = (title: string, message: string, link?: string, image?: string, urlLabel?: string) => {
     const newNotif: AppNotification = {
       id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
       title,
@@ -69,6 +135,8 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
       date: Date.now(),
       isRead: false,
       link,
+      image,
+      urlLabel,
     };
     setNotifications((prev) => [newNotif, ...prev]);
   };

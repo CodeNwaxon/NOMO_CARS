@@ -13,6 +13,7 @@ interface Stats {
   passengers: number;
   ticketRevenue: number;
   vipRevenue: number;
+  visitors: number;
 }
 
 interface VehicleCategoryStats {
@@ -34,7 +35,7 @@ export default function AdminPage() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<Stats>({ drivers: 0, passengers: 0, ticketRevenue: 0, vipRevenue: 0 });
+  const [stats, setStats] = useState<Stats>({ drivers: 0, passengers: 0, ticketRevenue: 0, vipRevenue: 0, visitors: 0 });
   const [vehicleStats, setVehicleStats] = useState<Record<string, VehicleCategoryStats>>({});
   const [admins, setAdmins] = useState<AdminStaff[]>([]);
 
@@ -73,11 +74,16 @@ export default function AdminPage() {
           else if (type.includes("vip") && data.amount) vRev += data.amount;
         });
 
+        // Fetch Visitors
+        const visitorsSnap = await getDocs(collection(db, "visitors"));
+        const vCount = visitorsSnap.size;
+
         setStats({
           drivers: dCount,
           passengers: pCount,
           ticketRevenue: tRev,
-          vipRevenue: vRev
+          vipRevenue: vRev,
+          visitors: vCount
         });
 
         // 3. Fetch Vehicles
@@ -162,8 +168,8 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-4 pb-20 px-3 md:px-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-3">
+      <div className="max-w-7xl mx-auto relative">
+        <div className="flex flex-col md:flex-row md:items-start justify-between mb-6 gap-3">
           <div>
             <Link href="/admin" className="text-gray-500 hover:text-brand-primary transition-colors flex items-center gap-2 mb-6 text-sm font-medium">
               <ArrowLeft className="w-4 h-4" /> Back to Dashboard
@@ -173,6 +179,17 @@ export default function AdminPage() {
               Platform Statistics
             </h1>
             <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-1">Platform statistics and administrative overview.</p>
+          </div>
+        </div>
+
+        {/* Absolute Positioned Unique Visitors */}
+        <div className="absolute top-0 right-0 md:right-2 flex bg-white dark:bg-slate-900 rouned md:rounded-xl p-1 md:p-2 shadow-sm border border-gray-100 dark:border-gray-800 items-center gap-1 md:gap-2 md:gap-4 scale-90 md:scale-100 origin-top-right">
+          <div className="p-1 md:p-2 bg-teal-50 dark:bg-teal-900/20 text-teal-600 dark:text-teal-400 rounded md:rounded-lg">
+            <Users className="w-4 h-4" />
+          </div>
+          <div className="flex gap-1 items-center">
+            <div className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Visitors:</div>
+            <div className="text-md md:text-xl font-bold text-gray-900 dark:text-white leading-none">{stats.visitors.toLocaleString()}000000</div>
           </div>
         </div>
 

@@ -163,6 +163,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
           localStorage.removeItem("referralCode");
         }
+
+        // Send Welcome Message Notification
+        try {
+          const newNotif = {
+            id: Date.now().toString() + Math.random().toString(36).substring(2, 9),
+            title: "Welcome to Nomo Cars!",
+            message: "Welcome aboard! We are thrilled to have you join our platform. Explore our services and let us know if you need any help.",
+            date: Date.now(),
+            isRead: false,
+          };
+          const stored = localStorage.getItem(`notifications_${result.user.uid}`);
+          const existingNotifs = stored ? JSON.parse(stored) : [];
+          localStorage.setItem(`notifications_${result.user.uid}`, JSON.stringify([newNotif, ...existingNotifs]));
+        } catch (e) {
+          console.error("Failed to inject welcome message", e);
+        }
+
       } else {
         const existingData = docSnap.data() as UserProfile;
         if (!existingData.email && result.user.email) {

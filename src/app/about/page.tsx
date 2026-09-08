@@ -10,6 +10,7 @@ import { DEFAULT_ABOUT_CONFIG } from "@/lib/defaultCMS";
 
 export default function AboutPage() {
   const [ceoData, setCeoData] = useState({
+    name: "Prince O. Nwachukwu",
     image: "/ceo2.jpeg",
     phone: "+234 703 463 2037",
     email: "princenwachukwu308@yahoo.com",
@@ -72,7 +73,7 @@ export default function AboutPage() {
                     className="object-cover"
                   />
                 </div>
-                <h3 className="text-2xl font-bold dark:text-white">Prince O. Nwachukwu</h3>
+                <h3 className="text-2xl font-bold dark:text-white">{ceoData.name}</h3>
                 <p className="text-brand-primary font-medium mb-4">CEO & Founder, Nomo Cars</p>
 
                 <div className="flex flex-col gap-2 w-full max-w-[300px]">

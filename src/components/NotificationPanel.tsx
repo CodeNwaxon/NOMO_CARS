@@ -81,15 +81,18 @@ export function NotificationPanel({ isOpen, onClose }: { isOpen: boolean; onClos
               return (
                 <div 
                   key={notif.id}
-                  onClick={() => !notif.isRead && markAsRead(notif.id)}
-                  className={`p-4 rounded-xl border transition-all relative group cursor-default ${
+                  onClick={() => {
+                    if (!notif.isRead) markAsRead(notif.id);
+                    setExpandedId(isExpanded ? null : notif.id);
+                  }}
+                  className={`p-4 rounded-xl border transition-all relative group cursor-pointer ${
                     notif.isRead 
                       ? "bg-background border-gray-100 dark:border-slate-800" 
                       : "bg-brand-primary/5 border-brand-primary/20 shadow-sm"
                   }`}
                 >
-                  <div className="flex justify-between items-start gap-4">
-                    <div className="flex-1">
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-0 md:gap-4">
+                    <div className="flex-1 pr-8 md:pr-0">
                       <div className="flex items-center gap-2 mb-1">
                         {!notif.isRead && <div className="w-2 h-2 rounded-full bg-brand-primary flex-shrink-0" />}
                         <h4 className={`font-bold text-sm ${notif.isRead ? "text-foreground/80" : "text-foreground"}`}>
@@ -104,13 +107,19 @@ export function NotificationPanel({ isOpen, onClose }: { isOpen: boolean; onClos
                         {notif.message}
                       </div>
                       
-                      {notif.message.length > 80 && (
+                      {(notif.message.length > 80 || notif.image) && (
                         <button
                           onClick={(e) => { e.stopPropagation(); setExpandedId(isExpanded ? null : notif.id); }}
                           className="mt-2 text-xs font-bold text-brand-primary hover:underline"
                         >
                           {isExpanded ? "View Less" : "View More"}
                         </button>
+                      )}
+                      
+                      {notif.image && isExpanded && (
+                        <div className="mt-3 mb-2 rounded-lg overflow-hidden border border-gray-100 dark:border-slate-800">
+                          <img src={notif.image} alt="Broadcast" className="w-full h-auto object-cover max-h-48" />
+                        </div>
                       )}
                       
                       {notif.link && (
@@ -123,14 +132,14 @@ export function NotificationPanel({ isOpen, onClose }: { isOpen: boolean; onClos
                           }}
                           className="mt-3 block w-full py-2 bg-brand-primary/10 hover:bg-brand-primary/20 text-brand-primary text-xs font-bold rounded-lg transition-colors text-center"
                         >
-                          {notif.link.includes('/receipt/') ? 'View Receipt' : 'View Details'}
+                          {notif.urlLabel || (notif.link.includes('/receipt/') ? 'View Receipt' : 'View Details')}
                         </button>
                       )}
                     </div>
                     
                     <button
                       onClick={(e) => { e.stopPropagation(); deleteNotification(notif.id); }}
-                      className="p-1.5 text-foreground/40 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors opacity-100 md:opacity-0 group-hover:opacity-100"
+                      className="absolute md:relative top-2 right-2 md:top-auto md:right-auto p-1.5 text-foreground/40 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors opacity-100 md:opacity-0 group-hover:opacity-100"
                       title="Delete"
                     >
                       <Trash2 className="w-4 h-4" />

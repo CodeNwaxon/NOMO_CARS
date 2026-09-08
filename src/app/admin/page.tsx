@@ -3,7 +3,7 @@
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Loader2, BarChart3, AlertTriangle, Settings, Users, CreditCard, LayoutDashboard } from "lucide-react";
+import { Loader2, BarChart3, AlertTriangle, Settings, Users, CreditCard, LayoutDashboard, Megaphone } from "lucide-react";
 import { doc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Link from "next/link";
@@ -149,6 +149,15 @@ export default function AdminDashboard() {
       badgeCount: reportsCount
     },
     {
+      id: "broadcast",
+      title: "Broadcasts",
+      description: "Send general messages, alerts, and automate welcome emails.",
+      icon: Megaphone,
+      href: "/admin/broadcast",
+      color: "bg-indigo-500",
+      requires: "/admin/broadcast"
+    },
+    {
       id: "site-settings",
       title: "Site Settings",
       description: "Update global CMS, FAQs, policies, and landing page content.",
@@ -165,7 +174,8 @@ export default function AdminDashboard() {
       href: "/admin/statistics",
       color: "bg-blue-500",
       requires: "/admin/statistics"
-    }
+    },
+
   ];
 
   const visibleCards = cards.filter(c => hasAccess(c.requires));
@@ -191,7 +201,7 @@ export default function AdminDashboard() {
                     {card.badgeCount} New
                   </div>
                 )}
-                
+
                 <div className={`w-12 h-12 ${card.color} rounded-lg flex items-center justify-center text-white mb-4 shadow-sm group-hover:scale-105 transition-transform duration-300`}>
                   <card.icon className="w-6 h-6" />
                 </div>
