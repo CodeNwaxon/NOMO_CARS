@@ -148,8 +148,8 @@ export default function SiteSettingsPage() {
 
   const handleSaveConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password !== "prince123") {
-      toast.error("Incorrect master password");
+    if (!password) {
+      toast.error("Master password is required");
       return;
     }
 
@@ -157,6 +157,16 @@ export default function SiteSettingsPage() {
     const toastId = toast.loading("Saving configuration to database...");
 
     try {
+      const ceoRef = doc(db, "adminSettings", "ceo");
+      const ceoSnap = await getDoc(ceoRef);
+      const currentPassword = ceoSnap.exists() ? ceoSnap.data().password : null;
+
+      if (password !== currentPassword) {
+        toast.error("Incorrect master password", { id: toastId });
+        setSaving(false);
+        return;
+      }
+
       await setDoc(doc(db, "adminSettings", "siteConfig"), siteConfig);
       await setDoc(doc(db, "adminSettings", "about"), aboutConfig);
       await setDoc(doc(db, "adminSettings", "faq"), { items: faqConfig });

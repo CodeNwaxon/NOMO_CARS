@@ -71,7 +71,7 @@ export default function ReportsPage() {
       // 1. Verify password dynamically
       const ceoRef = doc(db, "adminSettings", "ceo");
       const ceoSnap = await getDoc(ceoRef);
-      const currentPassword = ceoSnap.exists() ? ceoSnap.data().password : "prince123";
+      const currentPassword = ceoSnap.exists() ? ceoSnap.data().password : null;
 
       if (password !== currentPassword) {
         toast.error("Incorrect CEO password!");
@@ -123,7 +123,7 @@ export default function ReportsPage() {
     try {
       const ceoRef = doc(db, "adminSettings", "ceo");
       const ceoSnap = await getDoc(ceoRef);
-      const currentPassword = ceoSnap.exists() ? ceoSnap.data().password : "prince123";
+      const currentPassword = ceoSnap.exists() ? ceoSnap.data().password : null;
 
       if (password !== currentPassword) {
         toast.error("Incorrect CEO password!");
@@ -157,7 +157,7 @@ export default function ReportsPage() {
     try {
       const ceoRef = doc(db, "adminSettings", "ceo");
       const ceoSnap = await getDoc(ceoRef);
-      const currentPassword = ceoSnap.exists() ? ceoSnap.data().password : "prince123";
+      const currentPassword = ceoSnap.exists() ? ceoSnap.data().password : null;
 
       if (password !== currentPassword) {
         toast.error("Incorrect CEO password!");
