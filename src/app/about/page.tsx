@@ -28,6 +28,7 @@ export default function AboutPage() {
   const [newReviewRating, setNewReviewRating] = useState(5);
   const [newReviewComment, setNewReviewComment] = useState("");
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const fetchReviews = async () => {
     try {
@@ -77,15 +78,21 @@ export default function AboutPage() {
     }
   };
 
-  const handleDeleteReview = async (reviewId: string) => {
-    if (!confirm("Are you sure you want to delete your review?")) return;
+  const handleDeleteReview = (reviewId: string) => {
+    setDeleteConfirmId(reviewId);
+  };
+
+  const confirmDeleteReview = async () => {
+    if (!deleteConfirmId) return;
     try {
-      await deleteDoc(doc(db, "reviews", reviewId));
+      await deleteDoc(doc(db, "reviews", deleteConfirmId));
       toast.success("Review deleted successfully!");
       fetchReviews();
     } catch (error) {
       console.error("Error deleting review:", error);
       toast.error("Failed to delete review.");
+    } finally {
+      setDeleteConfirmId(null);
     }
   };
 
@@ -368,6 +375,35 @@ export default function AboutPage() {
           </div>
         </section>
       </div>
+
+      {/* Delete Review Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-6 md:p-8 max-w-sm w-full shadow-2xl text-center">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Trash2 className="w-8 h-8 text-red-500" />
+            </div>
+            <h3 className="text-lg font-bold mb-2 dark:text-white">Delete Review?</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+              Are you sure you want to delete your review? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="flex-1 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteReview}
+                className="flex-1 py-3 bg-red-500 text-white font-semibold rounded-xl hover:bg-red-600 transition-colors shadow-lg shadow-red-500/30"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
