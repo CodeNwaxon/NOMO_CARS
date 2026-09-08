@@ -15,7 +15,7 @@ interface VehicleViewModalProps {
 
 export default function VehicleViewModal({ vehicle, allVehicles, onClose, onViewServices, onHire }: VehicleViewModalProps) {
   // Setup images array
-  const images = vehicle.images ? Object.values(vehicle.images).filter(Boolean) as string[] : [];
+  const images = vehicle.images ? [vehicle.images.front, vehicle.images.back, vehicle.images.side, vehicle.images.interior].filter(Boolean) as string[] : [];
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   
   // Other vehicles (same category, not this vehicle), sorted by VIP stars descending

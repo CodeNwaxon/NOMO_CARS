@@ -183,14 +183,14 @@ export default function ManageDriversPage() {
         </div>
 
         {/* Search Input */}
-        <div className="relative">
+        <div className="relative md:max-w-md">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
             type="text"
             placeholder="Search by name, email, phone or city..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-all shadow-sm text-gray-900 dark:text-white"
+            className="w-full pl-12 pr-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-brand-primary focus:border-transparent outline-none transition-all shadow-sm text-gray-900 dark:text-white"
           />
         </div>
 

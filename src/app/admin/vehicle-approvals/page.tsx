@@ -182,7 +182,7 @@ export default function ManageVehiclesPage() {
         </div>
 
         {/* Search Input */}
-        <div className="relative">
+        <div className="relative md:max-w-md">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input
             type="text"
@@ -218,14 +218,14 @@ export default function ManageVehiclesPage() {
               .map(vehicle => (
                 <div key={vehicle.id} className="bg-white dark:bg-gray-800 rounded-2xl p-1 md:p-2 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col relative overflow-hidden">
                   <div className="w-full h-32 bg-gray-200 dark:bg-gray-700 rounded-xl overflow-hidden mb-3 relative group">
-                    {vehicle.images && Object.values(vehicle.images).length > 0 ? (
+                    {vehicle.images && Object.keys(vehicle.images).length > 0 ? (
                       <>
-                        <img src={Object.values(vehicle.images)[0] as string} alt="Vehicle" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                        <img src={vehicle.images.front || Object.values(vehicle.images)[0] as string} alt="Vehicle" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
                         <div className="absolute inset-0 bg-black/40 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <button
                             onClick={() => {
                               const allImages = [
-                                ...(vehicle.images ? Object.values(vehicle.images) as string[] : []),
+                                ...(vehicle.images ? [vehicle.images.front, vehicle.images.back, vehicle.images.side, vehicle.images.interior].filter(Boolean) as string[] : []),
                                 ...(vehicle.documents ? Object.values(vehicle.documents) as string[] : [])
                               ];
                               setViewerState({

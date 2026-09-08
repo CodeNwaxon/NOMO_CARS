@@ -36,8 +36,8 @@ service cloud.firestore {
 
     // Vehicles collection
     match /vehicles/{vehicleId} {
-      // Anyone can read vehicles (for the passenger view)
-      allow read: if true;
+      // Only owner or admin can read directly from client
+      allow read: if request.auth != null && (resource.data.driverId == request.auth.uid || isAdmin());
       
       // Only authenticated users can create a vehicle.
       // Additionally, the driverId must match the authenticated user's uid.

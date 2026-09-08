@@ -7,11 +7,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { collection, addDoc, setDoc, query, where, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
-import { Loader2, Plus, UploadCloud, ArrowLeft, Car, CarFront, Bike, Truck, Plane, Ship, Bus, Settings, Edit3, Trash2 } from "lucide-react";
+import { Loader2, Plus, UploadCloud, ArrowLeft, Car, CarFront, Bike, Truck, Plane, Ship, Bus, Settings, Edit3, Trash2, Eye, Info, X, Star, Check } from "lucide-react";
 import { toast } from "react-hot-toast";
 import ManageServicesModal from "./ManageServicesModal";
 import EditVehicleModal from "./EditVehicleModal";
+import ImageViewerOverlay from "@/components/ImageViewerOverlay";
 import { useVIPLimits } from "@/hooks/useVIPLimits";
+import Link from "next/link";
 
 const vehicleCategories = [
   { id: "motorbike", name: "Motorbike (Dispatch Rider)", icon: Bike, desc: "Two-wheeled vehicles" },
@@ -82,6 +84,9 @@ export default function VehiclesTab({ userId, vipStars = 0 }: { userId: string, 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [managingServicesFor, setManagingServicesFor] = useState<{ id: string, name: string } | null>(null);
   const [editingVehicle, setEditingVehicle] = useState<any | null>(null);
+  const [showVIPInfo, setShowVIPInfo] = useState(false);
+  const [viewerState, setViewerState] = useState<{isOpen: boolean; images: string[]; initialIndex: number; singleMode: boolean}>({isOpen: false, images: [], initialIndex: 0, singleMode: false});
+  const [imageViewerLoadingId, setImageViewerLoadingId] = useState<string | null>(null);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteCode, setDeleteCode] = useState("");
@@ -511,9 +516,14 @@ export default function VehiclesTab({ userId, vipStars = 0 }: { userId: string, 
           <h2 className="text-xl md:text-2xl font-bold">My Registered Vehicles</h2>
           <p className="text-foreground/60 text-xs md:text-sm mt-1">Manage your fleet and approvals. (Limit: {vehicles.length}/{maxCars})</p>
         </div>
-        {loadingLimits ? null : vehicles.length >= maxCars ? (
-          <div className="bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 px-4 py-2 rounded-xl text-sm font-bold shadow-sm">
-            Limit Reached ({maxCars}) - Upgrade VIP
+        {loadingLimits || loading ? null : vehicles.length >= maxCars ? (
+          <div className="flex items-center gap-2">
+            <Link href="/vip" className="bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 px-4 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-amber-500/20 transition-colors">
+              Limit Reached ({maxCars}) - Upgrade VIP
+            </Link>
+            <button onClick={() => setShowVIPInfo(true)} className="w-9 h-9 rounded-full bg-amber-500 text-white flex items-center justify-center hover:bg-amber-600 transition shadow-md flex-shrink-0" title="Why upgrade?">
+              <Info className="w-4 h-4" />
+            </button>
           </div>
         ) : (
           <button
@@ -538,8 +548,15 @@ export default function VehiclesTab({ userId, vipStars = 0 }: { userId: string, 
           <p className="text-foreground/60 text-xs md:text-base mb-8 max-w-md">
             You haven't registered any vehicles yet. Choose a category to get started.
           </p>
-          {loadingLimits ? null : vehicles.length >= maxCars ? (
-            <div className="bg-amber-500/10 text-amber-600 px-6 py-3 rounded-xl font-bold">Limit Reached</div>
+          {loadingLimits || loading ? null : vehicles.length >= maxCars ? (
+            <div className="flex items-center gap-3">
+              <Link href="/vip" className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 px-6 py-3 rounded-xl font-bold transition-colors">
+                Limit Reached - Upgrade VIP
+              </Link>
+              <button onClick={() => setShowVIPInfo(true)} className="w-12 h-12 rounded-full bg-amber-500 text-white flex items-center justify-center hover:bg-amber-600 transition shadow-md flex-shrink-0">
+                <Info className="w-6 h-6" />
+              </button>
+            </div>
           ) : (
             <button
               onClick={() => setStep("category")}
@@ -561,10 +578,10 @@ export default function VehiclesTab({ userId, vipStars = 0 }: { userId: string, 
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-foreground/30"><Car className="w-10 h-10" /></div>
                   )}
-                  <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
+                  <div className="absolute top-3 right-3 flex flex-col gap-2 items-end z-10">
                     {v.isSuspendedByLimit ? (
                       <span className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md bg-red-600 text-white">
-                        Suspended (Over Limit)
+                        Suspended
                       </span>
                     ) : (
                       <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider shadow-md ${v.isApproved ? "bg-green-500 text-white" : "bg-amber-500 text-white"}`}>
@@ -572,9 +589,36 @@ export default function VehiclesTab({ userId, vipStars = 0 }: { userId: string, 
                       </span>
                     )}
                   </div>
-                  <div className="absolute bottom-3 left-3 bg-slate-900/70 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold capitalize shadow-sm">
+                  <div className="absolute bottom-3 left-3 bg-slate-900/70 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold capitalize shadow-sm z-10">
                     {v.category}
                   </div>
+                  
+                  {/* View Full Image Button Overlay */}
+                  <button
+                    onClick={() => {
+                      setImageViewerLoadingId(v.id);
+                      setTimeout(() => {
+                        const allImages = [
+                          ...(v.images ? [v.images.front, v.images.back, v.images.side, v.images.interior].filter(Boolean) as string[] : []),
+                          ...(v.documents ? Object.values(v.documents) as string[] : []) // Driver can see their documents!
+                        ];
+                        setViewerState({
+                          isOpen: true,
+                          images: allImages.length > 0 ? allImages : [""],
+                          initialIndex: 0,
+                          singleMode: false
+                        });
+                        setImageViewerLoadingId(null);
+                      }, 800);
+                    }}
+                    className="absolute bottom-2 right-2 md:bottom-3 md:right-3 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white px-2 py-1 md:px-3 md:py-1.5 rounded-tl-xl md:rounded-full rounded-br-none md:rounded-br-full text-[9px] md:text-xs font-bold flex items-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all border-l border-t md:border border-white/10 z-10"
+                  >
+                    {imageViewerLoadingId === v.id ? (
+                      <><Loader2 className="w-2.5 h-2.5 md:w-3 md:h-3 animate-spin" /> Loading...</>
+                    ) : (
+                      <><Eye className="w-2.5 h-2.5 md:w-3 md:h-3" /> View Full Image</>
+                    )}
+                  </button>
                 </div>
 
                 <div className="p-5 relative">
@@ -615,8 +659,13 @@ export default function VehiclesTab({ userId, vipStars = 0 }: { userId: string, 
                   {/* Actions Area */}
                   <div className="mt-4 flex flex-col gap-2 border-t border-card-border/50 pt-4">
                     {v.isSuspendedByLimit ? (
-                      <div className="text-center text-xs text-red-500 font-bold mb-1">
-                        Upgrade VIP to unlock this vehicle
+                      <div className="flex items-center justify-center gap-2 mb-1">
+                        <Link href="/vip" className="text-center text-xs text-red-500 hover:text-red-600 font-bold hover:underline">
+                          Upgrade VIP to unlock this vehicle
+                        </Link>
+                        <button onClick={() => setShowVIPInfo(true)} className="w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition flex-shrink-0">
+                          <Info className="w-3 h-3" />
+                        </button>
                       </div>
                     ) : null}
                     
@@ -706,6 +755,57 @@ export default function VehiclesTab({ userId, vipStars = 0 }: { userId: string, 
           onClose={() => setEditingVehicle(null)}
           onSaved={fetchVehicles}
         />
+      )}
+
+      {/* ImageViewer Overlay */}
+      {viewerState.isOpen && (
+        <ImageViewerOverlay
+          images={viewerState.images}
+          initialIndex={viewerState.initialIndex}
+          singleMode={viewerState.singleMode}
+          onClose={() => setViewerState(prev => ({ ...prev, isOpen: false }))}
+        />
+      )}
+
+      {/* VIP Info Overlay */}
+      {showVIPInfo && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-3xl p-6 md:p-8 max-w-md w-full shadow-2xl relative animate-in zoom-in-95">
+            <button onClick={() => setShowVIPInfo(false)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+              <X className="w-6 h-6" />
+            </button>
+            <div className="w-16 h-16 bg-gradient-to-br from-amber-400 to-amber-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-amber-500/30">
+              <Star className="w-8 h-8 text-white fill-white" />
+            </div>
+            <h3 className="text-2xl font-black mb-2 text-slate-900 dark:text-white">Why Upgrade to VIP?</h3>
+            <p className="text-slate-600 dark:text-slate-400 mb-6 leading-relaxed text-sm">
+              Unlock the full potential of your driver account. Our VIP membership gives you exclusive benefits designed to maximize your earnings.
+            </p>
+            <ul className="space-y-4 mb-8">
+              <li className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                </div>
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Register multiple vehicles simultaneously</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                </div>
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Stand out with an exclusive VIP badge on your profile</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="w-6 h-6 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Check className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
+                </div>
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Instantly unlock suspended vehicles in your garage</span>
+              </li>
+            </ul>
+            <Link href="/vip" onClick={() => setShowVIPInfo(false)} className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white rounded-xl font-bold shadow-lg shadow-amber-500/25 flex items-center justify-center transition-all hover:scale-[1.02]">
+              View VIP Plans
+            </Link>
+          </div>
+        </div>
       )}
     </div>
   );

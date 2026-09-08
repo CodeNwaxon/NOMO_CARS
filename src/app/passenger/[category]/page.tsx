@@ -11,6 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 import PassengerServicesModal from "@/components/PassengerServicesModal";
 import VehicleViewModal from "@/components/VehicleViewModal";
 import HireContactOverlay from "@/components/HireContactOverlay";
+import ImageViewerOverlay from "@/components/ImageViewerOverlay";
 
 export default function CategoryVehicles() {
   const params = useParams();
@@ -34,8 +35,10 @@ export default function CategoryVehicles() {
   const [visibleCount, setVisibleCount] = useState(30);
   const [viewingServicesFor, setViewingServicesFor] = useState<{ id: string, name: string, driverId: string } | null>(null);
   const [viewingVehicle, setViewingVehicle] = useState<any | null>(null);
-  const [hiringDriverId, setHiringDriverId] = useState<string | null>(null);
+  const [hiringDriver, setHiringDriver] = useState<{ driverId: string; vehicleName: string } | null>(null);
   const [showBidsModal, setShowBidsModal] = useState(false);
+  const [viewerState, setViewerState] = useState<{isOpen: boolean; images: string[]; initialIndex: number; singleMode: boolean}>({isOpen: false, images: [], initialIndex: 0, singleMode: false});
+  const [imageViewerLoadingId, setImageViewerLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -58,16 +61,10 @@ export default function CategoryVehicles() {
           }
         }
 
-        const q = query(
-          collection(db, "vehicles"),
-          where("category", "==", category),
-          where("isApproved", "==", true)
-        );
-        const querySnapshot = await getDocs(q);
-        const fetchedVehicles: any[] = [];
-        querySnapshot.forEach((document) => {
-          fetchedVehicles.push({ id: document.id, ...document.data() });
-        });
+        const res = await fetch(`/api/vehicles?category=${encodeURIComponent(category)}`);
+        if (!res.ok) throw new Error("Failed to fetch vehicles");
+        const json = await res.json();
+        const fetchedVehicles: any[] = json.vehicles || [];
 
         // Fetch driver profiles to get operating city and state
         const driverIds = [...new Set(fetchedVehicles.map(v => v.driverId).filter(Boolean))];
@@ -293,7 +290,7 @@ export default function CategoryVehicles() {
                             )}
                             
                             {/* Badges */}
-                            <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-background/80 backdrop-blur-md px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold shadow-sm">
+                            <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-black/60 backdrop-blur-md px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold shadow-sm text-white border border-white/10">
                               {v.details.payload ? `${v.details.payload} Tons` : v.details.seats ? `${v.details.seats} Seats` : v.details.capacity ? `${v.details.capacity} Cap.` : "Standard"}
                             </div>
                             
@@ -303,28 +300,47 @@ export default function CategoryVehicles() {
                               </div>
                             )}
 
-                            {/* View Button Overlay on Image */}
+                            {/* View Full Image Button Overlay */}
                             <button
-                              onClick={() => setViewingVehicle(v)}
-                              className="absolute bottom-2 right-2 md:bottom-4 md:right-4 bg-black/60 backdrop-blur-md text-white px-3 py-1 rounded-full text-[10px] md:text-xs font-bold flex items-center gap-1 opacity-0 group-hover/img:opacity-100 transition-opacity"
+                              onClick={() => {
+                                setImageViewerLoadingId(v.id);
+                                setTimeout(() => {
+                                  const allImages = [
+                                    ...(v.images ? [v.images.front, v.images.back, v.images.side, v.images.interior].filter(Boolean) as string[] : []),
+                                    ...(v.documents ? Object.values(v.documents) as string[] : [])
+                                  ];
+                                  setViewerState({
+                                    isOpen: true,
+                                    images: allImages.length > 0 ? allImages : [""], // Provide fallback if no image
+                                    initialIndex: 0,
+                                    singleMode: false
+                                  });
+                                  setImageViewerLoadingId(null);
+                                }, 800); // Simulate network load
+                              }}
+                              className="absolute bottom-0 right-0 md:bottom-4 md:right-4 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white px-2 py-1 md:px-3 md:py-1.5 rounded-tl-xl md:rounded-full rounded-br-none md:rounded-br-full text-[9px] md:text-xs font-bold flex items-center gap-1 opacity-100 md:opacity-0 group-hover/img:opacity-100 transition-all border-l border-t md:border border-white/10"
                             >
-                              <Eye className="w-3 h-3 md:w-4 md:h-4" /> View
+                              {imageViewerLoadingId === v.id ? (
+                                <><Loader2 className="w-2.5 h-2.5 md:w-4 md:h-4 animate-spin" /> Loading...</>
+                              ) : (
+                                <><Eye className="w-2 h-2 md:w-3 md:h-3" /> View Full Image</>
+                              )}
                             </button>
                           </div>
 
-                          <div className="p-3 md:p-6 flex flex-col flex-grow">
+                          <div className="px-2 py-3 md:p-5 flex-1 flex flex-col">
                             <h3 className="text-sm md:text-xl font-bold mb-1 truncate">{v.details.make} {v.details.model}</h3>
-                            <p className="text-[10px] md:text-sm text-foreground/60 mb-1 truncate">
-                              {v.details.year} • {v.details.color || "Standard Color"} • AC: {v.details.ac ? "Yes" : "No"}
-                            </p>
+                            <div className="text-[10px] md:text-sm text-foreground/60 mb-2 flex flex-wrap gap-x-2 gap-y-1 items-center leading-tight">
+                              <span>{v.details.year}</span> <span className="opacity-50">•</span> <span>{v.details.color || "Standard Color"}</span> <span className="opacity-50">•</span> <span>AC: {v.details.ac ? "Yes" : "No"}</span>
+                            </div>
                             
-                            <Link href={`/driver/profile/${v.driverId}`} className="text-[10px] md:text-sm text-brand-primary font-semibold hover:underline mt-1 mb-4 inline-block truncate">
-                              View {v.driverName}'s Profile →
+                            <Link href={`/driver/profile/${v.driverId}`} className="text-[10px] md:text-sm text-brand-primary font-semibold hover:underline mb-4 inline-block truncate">
+                              Driver's Profile
                             </Link>
 
                             <div className="mt-auto flex gap-2 w-full border-t border-card-border pt-3 md:pt-4">
                               <button 
-                                onClick={() => setHiringDriverId(v.driverId)}
+                                onClick={() => setHiringDriver({ driverId: v.driverId, vehicleName: `${v.details.make} ${v.details.model}` })}
                                 className="flex-2 py-2 md:py-3 text-[10px] md:text-sm bg-brand-primary hover:bg-brand-primary/90 text-white font-bold rounded-lg md:rounded-xl transition-colors flex-grow shadow-lg shadow-brand-primary/20"
                               >
                                 Hire
@@ -379,16 +395,26 @@ export default function CategoryVehicles() {
             setViewingServicesFor({ id: vid, name: vname, driverId: did });
           }}
           onHire={(driverId) => {
-            // Keep view modal open or close it? Let's close it so the hire overlay is clear, or just open hire overlay on top
-            setHiringDriverId(driverId);
+            setHiringDriver({ driverId, vehicleName: `${viewingVehicle.details.make} ${viewingVehicle.details.model}` });
           }}
         />
       )}
 
-      {hiringDriverId && (
+      {hiringDriver && (
         <HireContactOverlay
-          driverId={hiringDriverId}
-          onClose={() => setHiringDriverId(null)}
+          driverId={hiringDriver.driverId}
+          vehicleName={hiringDriver.vehicleName}
+          onClose={() => setHiringDriver(null)}
+        />
+      )}
+
+      {/* ImageViewer Overlay */}
+      {viewerState.isOpen && (
+        <ImageViewerOverlay
+          images={viewerState.images}
+          initialIndex={viewerState.initialIndex}
+          singleMode={viewerState.singleMode}
+          onClose={() => setViewerState(prev => ({ ...prev, isOpen: false }))}
         />
       )}
 

@@ -64,10 +64,7 @@ export default function PassengerServicesModal({ vehicleId, vehicleName, driverI
           </div>
         </div>
 
-        {/* Contact Overlay */}
-        {showContactOverlay && (
-          <HireContactOverlay driverId={driverId} onClose={() => setShowContactOverlay(false)} />
-        )}
+
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
@@ -90,12 +87,12 @@ export default function PassengerServicesModal({ vehicleId, vehicleName, driverI
                     <div className="flex flex-col gap-1 mb-3">
                       <div className="flex items-center gap-2 text-brand-primary font-bold">
                         <MapPin className="w-4 h-4" />
-                        <span>{service.startPoint}</span>
+                        <span><span className="text-white/50 font-normal mr-1">From:</span>{service.startPoint}</span>
                       </div>
                       <div className="w-0.5 h-3 bg-white/20 ml-2"></div>
                       <div className="flex items-center gap-2 text-white font-bold">
                         <MapPin className="w-4 h-4 text-brand-secondary" />
-                        <span>{service.destination}</span>
+                        <span><span className="text-white/50 font-normal mr-1">To:</span>{service.destination}</span>
                       </div>
                     </div>
                     
@@ -134,6 +131,11 @@ export default function PassengerServicesModal({ vehicleId, vehicleName, driverI
           )}
         </div>
       </div>
+
+      {/* Contact Overlay */}
+      {showContactOverlay && (
+        <HireContactOverlay driverId={driverId} vehicleName={vehicleName} onClose={() => setShowContactOverlay(false)} />
+      )}
     </div>
   );
 }
