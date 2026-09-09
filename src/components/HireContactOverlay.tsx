@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { doc, getDoc } from "firebase/firestore";
+import { getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { X, Phone, MessageSquare, MessageCircle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -23,9 +23,12 @@ export default function HireContactOverlay({ driverId, vehicleName, onClose }: H
   useEffect(() => {
     const fetchDriver = async () => {
       try {
-        const docSnap = await getDoc(doc(db, "users", driverId));
-        if (docSnap.exists()) {
-          setDriverData(docSnap.data());
+        const res = await fetch(`/api/driver?id=${driverId}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.driver) {
+            setDriverData(json.driver);
+          }
         }
       } catch (err) {
         console.error("Error fetching driver contact info:", err);

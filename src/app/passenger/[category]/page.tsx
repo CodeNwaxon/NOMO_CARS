@@ -55,11 +55,12 @@ export default function CategoryVehicles() {
         const json = await res.json();
         const fetchedVehicles: any[] = json.vehicles || [];
         const dynamicStartTicketCollection = json.dynamicStartTicketCollection ?? true;
+        const dynamicTicketCollectionStartedAt = json.dynamicTicketCollectionStartedAt || null;
 
         const vehiclesWithDrivers = fetchedVehicles
           .filter(v => {
             // Only show vehicles from drivers with an active ticket and who are not disabled or suspended
-            return !v.isSuspendedByLimit && !v.driverIsDisabled && hasValidTicket(v.driverTicketExpiry, dynamicStartTicketCollection);
+            return !v.isSuspendedByLimit && !v.driverIsDisabled && hasValidTicket(v.driverTicketExpiry, dynamicStartTicketCollection, v.driverCreatedAt, dynamicTicketCollectionStartedAt);
           });
 
         setVehicles(vehiclesWithDrivers);

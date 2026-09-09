@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { doc, getDoc, setDoc, collection, query, orderBy, limit, getDocs } from "firebase/firestore";
+import { doc, getDoc, setDoc, collection, query, orderBy, limit, getDocs, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { Loader2, Save, CreditCard, Ticket, Settings2, Plus, Trash2, Lock, ArrowLeft, AlertCircle } from "lucide-react";
@@ -170,7 +170,21 @@ export default function ManagePurchasesPage() {
       setSaving(true);
       setShowPasswordModal(false);
 
-      await setDoc(doc(db, "adminSettings", "pricing"), pricing);
+      const pricingRef = doc(db, "adminSettings", "pricing");
+      const oldSnap = await getDoc(pricingRef);
+      const oldPricing = oldSnap.exists() ? oldSnap.data() : {};
+      
+      const updateData: any = { ...pricing };
+      
+      // If turning ON from OFF, set new timestamp
+      if (pricing.startTicketCollection && !oldPricing.startTicketCollection) {
+        updateData.ticketCollectionStartedAt = serverTimestamp();
+      } else if (oldPricing.ticketCollectionStartedAt) {
+        // preserve the old timestamp
+        updateData.ticketCollectionStartedAt = oldPricing.ticketCollectionStartedAt;
+      }
+
+      await setDoc(pricingRef, updateData);
       toast.success("Pricing configuration saved successfully!");
 
     } catch (error) {

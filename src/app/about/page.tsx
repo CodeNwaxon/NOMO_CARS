@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Phone, Mail, ArrowLeft, Shield, Clock, Users, MapPin, Loader2, Star, Trash2 } from "lucide-react";
+import { Phone, Mail, Shield, Clock, Users, MapPin, Loader2, Star, Trash2 } from "lucide-react";
 import { doc, getDoc, collection, getDocs, addDoc, deleteDoc, query, orderBy, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { DEFAULT_ABOUT_CONFIG } from "@/lib/defaultCMS";
@@ -265,7 +265,7 @@ export default function AboutPage() {
               ) : reviews.length > 0 ? (
                 <div className="flex flex-row gap-2 overflow-x-auto pb-3 snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-3 md:gap-4 md:overflow-visible md:pb-0 scrollbar-hide">
                   {reviews.map((review) => (
-                    <div key={review.id} className="glass-panel p-2 md:p-5 rounded-md md:rounded-xl border border-card-border hover:border-brand-primary/20 transition-colors min-w-[47%] max-w-[47%] flex-shrink-0 snap-start md:min-w-0 md:max-w-none">
+                    <div key={review.id} className="glass-panel p-2 md:p-5 rounded-md md:rounded-xl border border-card-border hover:border-brand-primary/20 transition-colors min-w-[47%] max-w-[47%] flex-shrink-0 snap-start md:min-w-0 md:max-w-none max-h-[140px] md:max-h-none overflow-hidden flex flex-col">
                       <div className="flex justify-between items-start mb-1.5 md:mb-3">
                         <div className="flex items-center gap-1.5 md:gap-3">
                           <div className="w-6 h-6 md:w-10 md:h-10 rounded-full bg-card-border overflow-hidden flex-shrink-0 flex items-center justify-center font-bold text-brand-primary uppercase text-[8px] md:text-base">
@@ -297,7 +297,9 @@ export default function AboutPage() {
                           </button>
                         )}
                       </div>
-                      <p className="text-[9px] md:text-sm text-foreground/80 leading-snug md:leading-relaxed break-words line-clamp-4 md:line-clamp-none">{review.comment}</p>
+                      <div className="overflow-y-auto flex-1 scrollbar-hide">
+                        <p className="text-[9px] md:text-sm text-foreground/80 leading-snug md:leading-relaxed break-words">{review.comment}</p>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -312,7 +314,7 @@ export default function AboutPage() {
             {/* Review Form */}
             <div>
               <div className="glass-panel p-4 rounded-md md:rounded-xl sticky top-2">
-                <h3 className="text-xl font-bold mb-4 dark:text-white">Leave a Review</h3>
+                <h3 className="text-lg md:text-xl font-bold mb-2 md:mb-4 dark:text-white">Leave a Review</h3>
 
                 {!user ? (
                   <div className="bg-brand-primary/10 rounded-md md:rounded-xl p-4 text-center border border-brand-primary/20">
@@ -332,9 +334,9 @@ export default function AboutPage() {
                     </button>
                   </div>
                 ) : (
-                  <form onSubmit={handleAddReview} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2 text-foreground/80">Rating</label>
+                  <form onSubmit={handleAddReview} className="space-y-3">
+                    <div className="flex gap-2 items-center">
+                      <label className="text-sm font-medium text-foreground/80">Rating:</label>
                       <div className="flex gap-1">
                         {[1, 2, 3, 4, 5].map((star) => (
                           <button
@@ -344,20 +346,19 @@ export default function AboutPage() {
                             className="focus:outline-none transition-transform hover:scale-110"
                           >
                             <Star
-                              className={`w-5 h-5 ${star <= newReviewRating ? "text-yellow-500 fill-yellow-500" : "text-gray-300 dark:text-gray-600 fill-gray-300 dark:fill-gray-600"}`}
+                              className={`w-4 h-4 md:w-5 md:h-5 ${star <= newReviewRating ? "text-yellow-500 fill-yellow-500" : "text-gray-300 dark:text-gray-600 fill-gray-300 dark:fill-gray-600"}`}
                             />
                           </button>
                         ))}
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-2 text-foreground/80">Your Review</label>
                       <textarea
                         value={newReviewComment}
                         onChange={(e) => setNewReviewComment(e.target.value)}
                         placeholder="Tell us about your experience..."
-                        className="w-full px-4 py-3 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all rounded-xl resize-none h-32 text-sm"
-
+                        className="w-full px-4 py-3 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all rounded-md md:rounded-xl resize-none md:h-24 h-14 text-sm"
+                        maxLength={250}
                       ></textarea>
                     </div>
                     <button

@@ -312,7 +312,7 @@ export default function ChatOverlay(props: ChatOverlayProps) {
     <div className="py-4 fixed inset-0 z-[150] flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="w-full h-[100dvh] md:w-[550px] md:h-[85vh] bg-white dark:bg-slate-950 md:rounded-2xl shadow-2xl flex flex-col overflow-hidden border-0 md:border md:border-gray-200 md:dark:border-slate-800">
         {/* Header */}
-        <div className="flex items-center gap-3 px-4 py-3 bg-blue-700 text-white flex-shrink-0">
+        <div className="flex items-center gap-3 px-3 py-3 bg-blue-700 text-white flex-shrink-0">
           <div className="relative">
             <div className="w-10 h-10 rounded-full overflow-hidden bg-white/20 flex-shrink-0">
               {chatPartnerImage ? (
@@ -336,12 +336,12 @@ export default function ChatOverlay(props: ChatOverlayProps) {
           </div>
 
           {/* Language Selector */}
-          <div className="flex items-center bg-white/10 rounded-lg px-2 py-1 flex-shrink-0 border border-white/20">
+          <div className="flex items-center bg-white/10 rounded-lg p-1 flex-shrink-0 border border-white/20">
             <Languages className="w-3.5 h-3.5 mr-1" />
             <select
               value={targetLang}
               onChange={(e) => setTargetLang(e.target.value)}
-              className="bg-transparent text-white text-[10px] font-bold outline-none cursor-pointer appearance-none pr-1"
+              className="bg-transparent text-white text-[10px] font-bold outline-none cursor-pointer appearance-none"
             >
               <option value="en" className="text-black">EN</option>
               <option value="ig" className="text-black">Igbo</option>

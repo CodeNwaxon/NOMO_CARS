@@ -16,7 +16,12 @@ export const ticketCollectionStartDate = "2026-09-04T00:00:00Z";
  * @param driverTicketExpiry The driver's ticket expiry date from their profile.
  * @returns true if the driver has a valid ticket, or if ticket collection is paused, or if within the free plan days.
  */
-export function hasValidTicket(driverTicketExpiry?: string | null, startTicketCollection: boolean = true): boolean {
+export function hasValidTicket(
+  driverTicketExpiry?: string | null, 
+  startTicketCollection: boolean = true, 
+  driverCreatedAt?: string | Date | null,
+  ticketCollectionStartedAt?: string | Date | null
+): boolean {
   if (!startTicketCollection) return true;
 
   // Check if they have an active ticket manually purchased
@@ -25,9 +30,14 @@ export function hasValidTicket(driverTicketExpiry?: string | null, startTicketCo
     if (expiryDate > new Date()) return true;
   }
 
-  // Check if we are still within the global free plan days
-  const startDate = new Date(ticketCollectionStartDate);
-  const freePeriodEnd = new Date(startDate.getTime() + freeTicketPlanDays * 24 * 60 * 60 * 1000);
+  // Calculate the personal free period using the driver's registration date
+  // Fall back to the global ticketCollectionStartDate for drivers who joined before we tracked driverCreatedAt
+  const defaultStart = ticketCollectionStartedAt ? new Date(ticketCollectionStartedAt) : new Date(ticketCollectionStartDate);
+  const driverStart = driverCreatedAt ? new Date(driverCreatedAt) : defaultStart;
+  
+  // The effective start date for their 90 days is whichever is later: when they joined, or when the button was turned on.
+  const effectiveStartDate = new Date(Math.max(driverStart.getTime(), defaultStart.getTime()));
+  const freePeriodEnd = new Date(effectiveStartDate.getTime() + freeTicketPlanDays * 24 * 60 * 60 * 1000);
 
   if (new Date() < freePeriodEnd) return true;
 

@@ -6,7 +6,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { Loader2, UploadCloud, Camera } from "lucide-react";
@@ -168,6 +168,7 @@ export default function DriverRegistration() {
         identityImage: imageUrl,
         role: "driver",
         isApproved: false,
+        driverCreatedAt: serverTimestamp(),
       });
 
       // 3. Refresh Profile and redirect

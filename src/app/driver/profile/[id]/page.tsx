@@ -362,7 +362,7 @@ export default function DriverProfilePage() {
         )}
       </div>
 
-      {user && !isOwnProfile && (
+      {!isOwnProfile && (
         <ChatButton
           driverId={driverId}
           driverName={driver.firstName || driver.username || "Driver"}
@@ -370,6 +370,8 @@ export default function DriverProfilePage() {
           driverTicketExpiry={driver.ticketExpiry}
           driverVipStars={driver.vipStars}
           autoOpen={autoOpenChat}
+          user={user}
+          signInWithGoogle={signInWithGoogle}
         />
       )}
 
