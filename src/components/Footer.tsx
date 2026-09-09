@@ -7,6 +7,8 @@ import { db } from "@/lib/firebase";
 import { DEFAULT_SITE_CONFIG } from "@/lib/defaultCMS";
 export function Footer() {
   const [siteConfig, setSiteConfig] = useState(DEFAULT_SITE_CONFIG);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
 
   useEffect(() => {
     const fetchSiteConfig = async () => {
@@ -18,7 +20,40 @@ export function Footer() {
       } catch (err) { }
     };
     fetchSiteConfig();
+
+    if (typeof window !== "undefined") {
+      if (localStorage.getItem("pwa_installed") === "true") {
+        setIsInstalled(true);
+      }
+      
+      const handleBeforeInstallPrompt = (e: any) => {
+        e.preventDefault();
+        setDeferredPrompt(e);
+      };
+      
+      window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.addEventListener("appinstalled", () => {
+        localStorage.setItem("pwa_installed", "true");
+        setIsInstalled(true);
+      });
+      
+      return () => {
+        window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      };
+    }
   }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) {
+      alert("App installation is not supported or the app is already installed.");
+      return;
+    }
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === "accepted") {
+      setDeferredPrompt(null);
+    }
+  };
 
   const getSocialIcon = (platform: string) => {
     switch (platform.toLowerCase()) {
@@ -72,8 +107,16 @@ export function Footer() {
         </div>
 
       </div>
-      <div className="text-center pb-8 pt-4 text-sm dark:text-gray-500 text-gray-500">
-        © {new Date().getFullYear()} {siteConfig.siteName}. All rights reserved.
+      <div className="flex flex-col items-center gap-2 pb-8 pt-4">
+        <button 
+          onClick={handleInstallClick}
+          className="text-sm font-bold text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors bg-blue-50 dark:bg-blue-900/20 px-4 py-1.5 rounded-full"
+        >
+          Install App
+        </button>
+        <div className="text-center text-sm dark:text-gray-500 text-gray-500">
+          © {new Date().getFullYear()} {siteConfig.siteName}. All rights reserved.
+        </div>
       </div>
     </footer>
   );

@@ -159,7 +159,7 @@ export default function DriverDashboard() {
         <div className="absolute top-0 right-0 w-96 h-96 bg-brand-primary/5 rounded-full blur-3xl -z-10 pointer-events-none"></div>
         
         {activeTab === "profile" && <ProfileTab profile={profile} userId={user.uid} onSignOut={() => setShowSignOutModal(true)} />}
-        {activeTab === "vehicles" && <VehiclesTab userId={user.uid} vipStars={profile.vipStars || 0} />}
+        {activeTab === "vehicles" && <VehiclesTab userId={user.uid} vipStars={profile.vipStars || 0} ticketExpiry={profile.ticketExpiry} />}
         {activeTab === "messages" && <MessagesTab userId={user.uid} />}
       </main>
 

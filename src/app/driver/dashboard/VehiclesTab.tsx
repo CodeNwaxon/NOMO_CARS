@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { collection, addDoc, setDoc, query, where, getDocs, deleteDoc, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
-import { Loader2, Plus, UploadCloud, ArrowLeft, Car, CarFront, Bike, Truck, Plane, Ship, Bus, Settings, Edit3, Trash2, Eye, Info, X, Star, Check } from "lucide-react";
+import { Loader2, Plus, UploadCloud, ArrowLeft, Car, CarFront, Bike, Truck, Plane, Ship, Bus, Settings, Edit3, Trash2, Eye, Info, X, Star, Check, Share2 } from "lucide-react";
 import { toast } from "react-hot-toast";
 import ManageServicesModal from "./ManageServicesModal";
 import EditVehicleModal from "./EditVehicleModal";
@@ -72,9 +72,39 @@ const getFieldConfig = (category: string) => {
   };
 };
 
-export default function VehiclesTab({ userId, vipStars = 0 }: { userId: string, vipStars?: number }) {
+export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry }: { userId: string, vipStars?: number, ticketExpiry?: string }) {
   const { limits, loadingLimits } = useVIPLimits(vipStars);
   const maxCars = limits.maxCars;
+
+  const hasShareBenefit = () => {
+    if (!ticketExpiry) return false;
+    const expiryDate = new Date(ticketExpiry);
+    const now = new Date();
+    const diffTime = expiryDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays >= 7;
+  };
+
+  const handleShare = async (vehicle: any) => {
+    const websiteLink = window.location.origin;
+    const shareUrl = `${websiteLink}/driver/profile/${userId}?vehicle=${vehicle.id}`;
+    const shareData = {
+      title: `Check out my ${vehicle.details.make} ${vehicle.details.model} on Nomo Cars!`,
+      text: `Looking for transport? Check out my ${vehicle.details.make} ${vehicle.details.model} on Nomo Cars.`,
+      url: shareUrl,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        console.error("Error sharing:", err);
+      }
+    } else {
+      navigator.clipboard.writeText(shareUrl);
+      toast.success("Link copied to clipboard!");
+    }
+  };
 
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -690,6 +720,15 @@ export default function VehiclesTab({ userId, vipStars = 0 }: { userId: string, 
                       >
                         <Trash2 className="w-4 h-4" /> Delete
                       </button>
+                      {hasShareBenefit() && !v.isSuspendedByLimit && (
+                        <button
+                          onClick={() => handleShare(v)}
+                          title="Share Vehicle"
+                          className="px-3 py-2 bg-blue-500/10 text-blue-500 font-bold rounded-lg hover:bg-blue-500 hover:text-white transition-colors flex items-center justify-center"
+                        >
+                          <Share2 className="w-4 h-4" />
+                        </button>
+                      )}
                     </div>
                   </div>
 

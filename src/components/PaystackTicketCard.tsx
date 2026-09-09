@@ -64,6 +64,12 @@ export default function PaystackTicketCard({ plan, user, profile, onSuccess, onC
             <Check className={`w-4 h-4 mt-1 flex-shrink-0 ${plan.isPremium ? 'text-amber-500' : 'text-brand-primary'}`} />
             <span className="text-sm text-foreground/80">Priority passenger matching</span>
           </div>
+          {plan.days >= 14 && (
+            <div className="flex items-start gap-2">
+              <Check className={`w-4 h-4 mt-1 flex-shrink-0 ${plan.isPremium ? 'text-amber-500' : 'text-brand-primary'}`} />
+              <span className="text-sm text-foreground/80">Share & promote your vehicles to attract more customers</span>
+            </div>
+          )}
         </div>
       </div>
 

@@ -53,14 +53,14 @@ export default function TicketPage() {
         if (data.tickets && data.tickets.length > 0) {
           let maxPrice = 0;
           data.tickets.forEach((t: any) => { if (t.price > maxPrice) maxPrice = t.price; });
-          
+
           // Sort by duration so cards appear in order of days
           const sortedTickets = [...data.tickets].sort((a: any, b: any) => a.durationDays - b.durationDays);
 
           const mappedTickets = sortedTickets.map((t: any, index: number) => {
             const isPremium = t.price === maxPrice && t.price > 0;
             const baseStyle = TICKET_STYLES[index % TICKET_STYLES.length];
-            
+
             return {
               days: t.durationDays,
               price: t.price,
@@ -195,13 +195,13 @@ export default function TicketPage() {
           return (
             <>
               {!startTicketCollection && (
-                <div className="mb-8 p-4 md:p-6 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center gap-4">
+                <div className="mb-8 p-3 md:p-6 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0">
                     <Check className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
                     <h3 className="font-bold text-blue-800 dark:text-blue-300">Ticket Collection Paused</h3>
-                    <p className="text-sm text-blue-700/80 dark:text-blue-400/80">
+                    <p className="text-xs md:text-sm text-blue-700/80 dark:text-blue-400/80">
                       You do not currently need a ticket to operate on Nomo Cars.
                     </p>
                   </div>

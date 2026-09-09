@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Info, PlusCircle } from "lucide-react";
+import { ArrowLeft, Info, PlusCircle, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function CreateBidPage() {
   const router = useRouter();
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
   return (
     <div className="min-h-screen p-6 md:p-12 relative overflow-hidden">
@@ -23,26 +24,51 @@ export default function CreateBidPage() {
           </div>
 
           <h1 className="text-3xl font-bold mb-4">Create Job Request (Bid)</h1>
-          <p className="text-foreground/70 mb-8">
+          <p className="text-foreground/70 mb-2">
             Create a job request to allow drivers to bid on your transport needs.
           </p>
 
-          <div className="bg-foreground/5 p-6 rounded-2xl mb-8 border border-card-border">
-            <h3 className="font-bold flex items-center gap-2 mb-4">
-              <Info className="w-5 h-5 text-brand-primary" /> How Bidding Works
+          <button 
+            onClick={() => setShowInfoModal(true)}
+            className="text-blue-500 font-bold text-sm mb-8 hover:underline block"
+          >
+            Learn how to create bids
+          </button>
+
+          <div className="text-center py-12 border-2 border-dashed border-card-border rounded-xl">
+            <p className="text-foreground/50 font-medium">You have no created bids</p>
+          </div>
+        </div>
+      </div>
+
+      {showInfoModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-card-bg dark:bg-slate-900 border border-card-border shadow-2xl rounded-2xl w-full max-w-md animate-in zoom-in-95 duration-200 p-6 relative">
+            <button 
+              onClick={() => setShowInfoModal(false)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="font-bold text-xl flex items-center gap-2 mb-4 text-slate-900 dark:text-white">
+              <Info className="w-6 h-6 text-brand-primary" /> How Bidding Works
             </h3>
-            <ul className="list-disc pl-5 space-y-2 text-sm text-foreground/80">
+            <ul className="list-disc pl-5 space-y-3 text-sm text-slate-600 dark:text-slate-300">
               <li>Your VIP tier determines how many requests you can create. Non-VIP users get 1 free request per month.</li>
               <li>Requests remain active for two weeks before automatically expiring.</li>
               <li>If you delete your own bid, or if it expires without a driver being chosen, the bid limit is not returned to you.</li>
             </ul>
-          </div>
-
-          <div className="text-center py-12 border-2 border-dashed border-card-border rounded-xl">
-            <p className="text-foreground/50">Bid creation form coming soon.</p>
+            <div className="mt-6 flex justify-end">
+              <button 
+                onClick={() => setShowInfoModal(false)}
+                className="px-6 py-2 bg-brand-primary text-white font-bold rounded-xl hover:bg-brand-primary/90 transition-colors"
+              >
+                Got it
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -268,18 +268,11 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
       if (ownTicketMsLeft > 0) hasOwnTicket = true;
     }
 
-    if (!startTicketCollection) {
-      return {
-        text: "Collection Paused",
-        className: "bg-blue-500/10 text-blue-600 dark:text-blue-400 hover:bg-blue-500 hover:text-white"
-      };
-    }
-
     // Check global free plan
     const startDate = new Date(ticketCollectionStartDate);
     const freePeriodEnd = new Date(startDate.getTime() + freeTicketPlanDays * 24 * 60 * 60 * 1000);
     const globalFreeMsLeft = freePeriodEnd.getTime() - now.getTime();
-    const hasGlobalFree = globalFreeMsLeft > 0;
+    const hasGlobalFree = startTicketCollection && globalFreeMsLeft > 0;
 
     // If the user has their own ticket, it always overwrites the free plan
     if (hasOwnTicket) {
