@@ -81,10 +81,10 @@ export function Navbar() {
           ) : (
             <div className="flex justify-start items-center gap-1 py-2">
               {siteConfig.siteLogo && (
-                <img src={siteConfig.siteLogo} alt="Site Logo" className="w-8 h-8 rounded-full object-cover shadow-sm bg-white border border-gray-200 dark:border-gray-700" />
+                <img src={siteConfig.siteLogo} alt="Logo" className="w-8 h-8 rounded-full object-cover" />
               )}
               <span
-                className="text-[9px] md:text-sm dark:text-white text-gray-900 font-bold italic whitespace-nowrap"
+                className="text-[9px] md:text-sm dark:text-white text-blue-500 font-bold italic whitespace-nowrap"
                 style={{ fontFamily: 'cursive' }}
               >
                 {siteConfig.siteName}

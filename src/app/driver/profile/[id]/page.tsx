@@ -12,6 +12,7 @@ import { getVIPBadge } from "@/lib/constants";
 import PassengerServicesModal from "@/components/PassengerServicesModal";
 import ReportUserOverlay from "@/components/ReportUserOverlay";
 import ImageViewerOverlay from "@/components/ImageViewerOverlay";
+import HireContactOverlay from "@/components/HireContactOverlay";
 
 export default function DriverProfilePage() {
   const params = useParams();
@@ -27,6 +28,7 @@ export default function DriverProfilePage() {
   const [isFavorited, setIsFavorited] = useState(false);
   const [isTogglingFavorite, setIsTogglingFavorite] = useState(false);
   const [viewingServicesFor, setViewingServicesFor] = useState<{ id: string, name: string } | null>(null);
+  const [showContactOverlayFor, setShowContactOverlayFor] = useState<{ id: string, name: string } | null>(null);
   const [showReportOverlay, setShowReportOverlay] = useState(false);
   const [viewerState, setViewerState] = useState<{ isOpen: boolean; images: string[]; initialIndex: number; singleMode: boolean }>({ isOpen: false, images: [], initialIndex: 0, singleMode: false });
   const [imageViewerLoadingId, setImageViewerLoadingId] = useState<string | null>(null);
@@ -345,7 +347,10 @@ export default function DriverProfilePage() {
                   </div>
 
                   <div className="mt-auto flex gap-2">
-                    <button className="flex-1 py-3 text-[10px] md:text-sm bg-brand-secondary/10 hover:bg-brand-secondary text-brand-secondary hover:text-white font-medium rounded-xl transition-colors">
+                    <button 
+                      onClick={() => setShowContactOverlayFor({ id: v.id, name: `${v.details.make} ${v.details.model}` })}
+                      className="flex-1 py-3 text-[10px] md:text-sm bg-brand-secondary/10 hover:bg-brand-secondary text-brand-secondary hover:text-white font-medium rounded-xl transition-colors"
+                    >
                       Request Ride
                     </button>
                     <button
@@ -381,6 +386,14 @@ export default function DriverProfilePage() {
           vehicleName={viewingServicesFor.name}
           driverId={driverId}
           onClose={() => setViewingServicesFor(null)}
+        />
+      )}
+
+      {showContactOverlayFor && (
+        <HireContactOverlay
+          driverId={driverId}
+          vehicleName={showContactOverlayFor.name}
+          onClose={() => setShowContactOverlayFor(null)}
         />
       )}
 

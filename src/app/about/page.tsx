@@ -143,32 +143,39 @@ export default function AboutPage() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-12 gap-10 items-center relative z-10">
-              <div className="md:col-span-5 flex flex-col items-center md:items-start">
-                <div className="relative w-60 h-65 md:w-72 md:h-72 mb-6 rounded-xl md:rounded-3xl overflow-hidden shadow-2xl border-4 border-white dark:border-slate-800">
-                  <Image
-                    src={ceoData.image}
-                    alt="Nomo Cars CEO"
-                    fill
-                    sizes="(max-width: 768px) 240px, 288px"
-                    className="object-cover"
-                  />
-                </div>
-                <h3 className="text-2xl font-bold dark:text-white">{ceoData.name}</h3>
-                <p className="text-brand-primary font-medium mb-4">CEO & Founder, Nomo Cars</p>
+              <div className="hidden md:flex md:col-span-5 flex-col items-center">
+                <div className="glass-panel w-full  rounded-2xl p-6 flex flex-col items-center text-center md:items-start md:text-left border border-white/20 shadow-xl relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-brand-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
-                <div className="flex flex-col gap-2 w-full max-w-[300px]">
-                  <a href={`tel:${ceoData.phone}`} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card-bg border border-card-border hover:border-brand-primary/50 hover:shadow-sm transition-all text-sm group">
-                    <div className="w-8 h-8 rounded-full bg-brand-primary/10 flex items-center justify-center text-brand-primary group-hover:bg-brand-primary group-hover:text-white transition-colors">
-                      <Phone className="w-4 h-4" />
-                    </div>
-                    <span className="font-medium">{ceoData.phone}</span>
-                  </a>
-                  <a href={`mailto:${ceoData.email}`} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-card-bg border border-card-border hover:border-brand-secondary/50 hover:shadow-sm transition-all text-[13px] sm:text-sm group">
-                    <div className="w-8 h-8 rounded-full bg-brand-secondary/10 flex items-center justify-center text-brand-secondary group-hover:bg-brand-secondary group-hover:text-white transition-colors shrink-0">
-                      <Mail className="w-4 h-4" />
-                    </div>
-                    <span className="font-medium truncate">{ceoData.email}</span>
-                  </a>
+                  <div className="relative w-55 h-70 md:w-56 mb-5 rounded-2xl overflow-hidden shadow-lg border-2 border-white/50 dark:border-slate-700/50 mx-auto md:mx-0">
+                    <Image
+                      src={ceoData.image}
+                      alt="Nomo Cars CEO"
+                      fill
+                      sizes="(max-width: 768px) 160px, 224px"
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+
+                  <h3 className="text-xl md:text-2xl font-bold dark:text-white tracking-tight w-full">{ceoData.name}</h3>
+                  <p className="text-brand-primary text-sm md:text-base font-semibold mb-6 w-full">
+                    CEO & Founder, Nomo Cars
+                  </p>
+
+                  <div className="flex flex-col gap-3 w-full">
+                    <a href={`tel:${ceoData.phone}`} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-background/50 hover:bg-brand-primary hover:text-white border border-card-border hover:border-brand-primary shadow-sm transition-all text-sm group/phone">
+                      <div className="w-8 h-8 rounded-full bg-brand-primary/10 group-hover/phone:bg-white/20 flex items-center justify-center text-brand-primary group-hover/phone:text-white transition-colors shrink-0">
+                        <Phone className="w-4 h-4" />
+                      </div>
+                      <span className="font-semibold">{ceoData.phone}</span>
+                    </a>
+                    <a href={`mailto:${ceoData.email}`} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-background/50 hover:bg-brand-secondary hover:text-white border border-card-border hover:border-brand-secondary shadow-sm transition-all text-[13px] sm:text-sm group/mail">
+                      <div className="w-8 h-8 rounded-full bg-brand-secondary/10 group-hover/mail:bg-white/20 flex items-center justify-center text-brand-secondary group-hover/mail:text-white transition-colors shrink-0">
+                        <Mail className="w-4 h-4" />
+                      </div>
+                      <span className="font-semibold truncate">{ceoData.email}</span>
+                    </a>
+                  </div>
                 </div>
               </div>
 
@@ -176,6 +183,42 @@ export default function AboutPage() {
                 <h2 className="text-xl md:text-3xl font-bold mb-6 dark:text-white">Message from the CEO</h2>
                 <div className="space-y-4 text-foreground/80 leading-relaxed text-sm md:text-lg whitespace-pre-wrap">
                   {ceoData.message}
+                </div>
+              </div>
+
+              <div className="md:hidden md:col-span-5 flex flex-col items-center md:items-start">
+                <div className="glass-panel w-full max-w-[320px] rounded-2xl p-6 flex flex-col items-center text-center md:items-start md:text-left border border-white/20 shadow-xl relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-brand-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+
+                  <div className="relative w-40 h-40 md:w-56 md:h-56 mb-5 rounded-2xl overflow-hidden shadow-lg border-2 border-white/50 dark:border-slate-700/50 mx-auto md:mx-0">
+                    <Image
+                      src={ceoData.image}
+                      alt="Nomo Cars CEO"
+                      fill
+                      sizes="(max-width: 768px) 160px, 224px"
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  </div>
+
+                  <h3 className="text-xl md:text-2xl font-bold dark:text-white tracking-tight w-full">{ceoData.name}</h3>
+                  <p className="text-brand-primary text-sm md:text-base font-semibold mb-6 w-full">
+                    CEO & Founder, Nomo Cars
+                  </p>
+
+                  <div className="flex flex-col gap-3 w-full">
+                    <a href={`tel:${ceoData.phone}`} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-background/50 hover:bg-brand-primary hover:text-white border border-card-border hover:border-brand-primary shadow-sm transition-all text-sm group/phone">
+                      <div className="w-8 h-8 rounded-full bg-brand-primary/10 group-hover/phone:bg-white/20 flex items-center justify-center text-brand-primary group-hover/phone:text-white transition-colors shrink-0">
+                        <Phone className="w-4 h-4" />
+                      </div>
+                      <span className="font-semibold">{ceoData.phone}</span>
+                    </a>
+                    <a href={`mailto:${ceoData.email}`} className="flex items-center gap-3 px-4 py-3 rounded-xl bg-background/50 hover:bg-brand-secondary hover:text-white border border-card-border hover:border-brand-secondary shadow-sm transition-all text-[13px] sm:text-sm group/mail">
+                      <div className="w-8 h-8 rounded-full bg-brand-secondary/10 group-hover/mail:bg-white/20 flex items-center justify-center text-brand-secondary group-hover/mail:text-white transition-colors shrink-0">
+                        <Mail className="w-4 h-4" />
+                      </div>
+                      <span className="font-semibold truncate">{ceoData.email}</span>
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>

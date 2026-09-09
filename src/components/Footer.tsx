@@ -38,9 +38,9 @@ export function Footer() {
 
         {/* Left: Write up */}
         <div className="text-center md:text-left order-1 md:order-1">
-          <h3 className="uppercase md:text-xl font-bold mb-2 dark:text-white text-gray-900 flex items-center justify-center md:justify-start gap-2">
+          <h3 className="uppercase md:text-xl font-bold mb-2 dark:text-white text-blue-500 flex items-center justify-center md:justify-start gap-2">
             {siteConfig.siteLogo && (
-              <img src={siteConfig.siteLogo} alt="Logo" className="w-6 h-6 rounded-full object-cover" />
+              <img src={siteConfig.siteLogo} alt="Logo" className="w-8 h-8 rounded-full object-cover" />
             )}
             {siteConfig.siteName} Cars
           </h3>
