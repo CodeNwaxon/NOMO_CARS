@@ -13,7 +13,7 @@ import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { toast } from "react-hot-toast";
 import { checkUsernameUnique } from "@/lib/userUtils";
 import ShareOverlay from "@/components/ShareOverlay";
-import { websiteLink, getVIPBadge, freeTicketPlanDays, ticketCollectionStartDate } from "@/lib/constants";
+import { websiteLink, getVIPBadge, freeTicketPlanDays } from "@/lib/constants";
 
 const CATEGORIES = [
   { id: "car", name: "Car", icon: Car, bg: "bg-blue-500/10", color: "text-blue-500", hoverShadow: "hover:shadow-blue-500/20", hoverBorder: "hover:border-blue-500/50" },
@@ -70,17 +70,31 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const [startTicketCollection, setStartTicketCollection] = useState(true);
+  const [ticketCollectionStartedAt, setTicketCollectionStartedAt] = useState<string | null>(null);
+  const [ticketConfigLoaded, setTicketConfigLoaded] = useState(false);
 
   useEffect(() => {
     const fetchConfig = async () => {
       try {
         const pricingRef = doc(db, "adminSettings", "pricing");
         const snap = await getDoc(pricingRef);
-        if (snap.exists() && snap.data().startTicketCollection !== undefined) {
-          setStartTicketCollection(snap.data().startTicketCollection);
+        if (snap.exists()) {
+          const data = snap.data();
+          if (data.startTicketCollection !== undefined) {
+            setStartTicketCollection(data.startTicketCollection);
+          }
+          if (data.ticketCollectionStartedAt) {
+            setTicketCollectionStartedAt(
+              data.ticketCollectionStartedAt.toDate 
+                ? data.ticketCollectionStartedAt.toDate().toISOString() 
+                : data.ticketCollectionStartedAt
+            );
+          }
         }
       } catch (err) {
         console.error("Error fetching pricing config:", err);
+      } finally {
+        setTicketConfigLoaded(true);
       }
     };
     fetchConfig();
@@ -269,8 +283,17 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
     }
 
     // Check global free plan
-    const startDate = new Date(ticketCollectionStartDate);
-    const freePeriodEnd = new Date(startDate.getTime() + freeTicketPlanDays * 24 * 60 * 60 * 1000);
+    const defaultStart = ticketCollectionStartedAt ? new Date(ticketCollectionStartedAt) : new Date();
+    
+    let driverCreatedAtStr = null;
+    if (profile?.createdAt) {
+      driverCreatedAtStr = profile.createdAt.toDate ? profile.createdAt.toDate().toISOString() : profile.createdAt;
+    }
+    const driverStart = driverCreatedAtStr ? new Date(driverCreatedAtStr) : defaultStart;
+    
+    // The effective start date for their 90 days is whichever is later: when they joined, or when the button was turned on.
+    const effectiveStartDate = new Date(Math.max(driverStart.getTime(), defaultStart.getTime()));
+    const freePeriodEnd = new Date(effectiveStartDate.getTime() + freeTicketPlanDays * 24 * 60 * 60 * 1000);
     const globalFreeMsLeft = freePeriodEnd.getTime() - now.getTime();
     const hasGlobalFree = startTicketCollection && globalFreeMsLeft > 0;
 
@@ -383,12 +406,16 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
                 Edit Profile
               </button>
 
-              <Link
-                href="/driver/ticket"
-                className={`w-full py-2 font-bold rounded-xl transition-colors flex justify-center items-center gap-2 ${ticketInfo.textSizeClass || "text-sm md:text-base"} ${ticketInfo.className}`}
-              >
-                {!ticketInfo.hideIcon && <Ticket className="w-4 h-4 md:w-5 md:h-5" />} {ticketInfo.text}
-              </Link>
+              {ticketConfigLoaded ? (
+                <Link
+                  href="/driver/ticket"
+                  className={`w-full py-2 font-bold rounded-xl transition-colors flex justify-center items-center gap-2 ${ticketInfo.textSizeClass || "text-sm md:text-base"} ${ticketInfo.className}`}
+                >
+                  {!ticketInfo.hideIcon && <Ticket className="w-4 h-4 md:w-5 md:h-5" />} {ticketInfo.text}
+                </Link>
+              ) : (
+                <div className="w-full py-2 rounded-xl bg-foreground/5 animate-pulse h-10" />
+              )}
 
               <div className="flex gap-2 w-full">
                 <button

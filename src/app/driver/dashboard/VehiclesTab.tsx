@@ -115,7 +115,7 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry }: { us
   const [managingServicesFor, setManagingServicesFor] = useState<{ id: string, name: string } | null>(null);
   const [editingVehicle, setEditingVehicle] = useState<any | null>(null);
   const [showVIPInfo, setShowVIPInfo] = useState(false);
-  const [viewerState, setViewerState] = useState<{isOpen: boolean; images: string[]; initialIndex: number; singleMode: boolean}>({isOpen: false, images: [], initialIndex: 0, singleMode: false});
+  const [viewerState, setViewerState] = useState<{ isOpen: boolean; images: string[]; initialIndex: number; singleMode: boolean }>({ isOpen: false, images: [], initialIndex: 0, singleMode: false });
   const [imageViewerLoadingId, setImageViewerLoadingId] = useState<string | null>(null);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -548,10 +548,10 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry }: { us
         </div>
         {loadingLimits || loading ? null : vehicles.length >= maxCars ? (
           <div className="flex items-center gap-2">
-            <Link href="/vip" className="bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 px-4 py-2 rounded-xl text-sm font-bold shadow-sm hover:bg-amber-500/20 transition-colors">
+            <Link href="/vip" className="text-xs md:text-sm bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 px-4 py-2 rounded-xl font-bold shadow-sm hover:bg-amber-500/20 transition-colors">
               Limit Reached ({maxCars}) - Upgrade VIP
             </Link>
-            <button onClick={() => setShowVIPInfo(true)} className="w-9 h-9 rounded-full bg-amber-500 text-white flex items-center justify-center hover:bg-amber-600 transition shadow-md flex-shrink-0" title="Why upgrade?">
+            <button onClick={() => setShowVIPInfo(true)} className="text-xs md:text-sm w-9 h-9 rounded-full bg-amber-500 text-white flex items-center justify-center hover:bg-amber-600 transition shadow-md flex-shrink-0" title="Why upgrade?">
               <Info className="w-4 h-4" />
             </button>
           </div>
@@ -560,7 +560,7 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry }: { us
             onClick={() => setStep("category")}
             className="text-sm md:text-base flex items-center gap-2 px-4 md:px-6 py-2 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-primary/90 transition-all shadow-lg shadow-brand-primary/30 hover:scale-105"
           >
-            <Plus className="w-5 h-5" /> Add New Vehicle
+            <Plus className="w-4 h-4" /> Add New Vehicle
           </button>
         )}
       </div>
@@ -622,7 +622,7 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry }: { us
                   <div className="absolute bottom-3 left-3 bg-slate-900/70 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-bold capitalize shadow-sm z-10">
                     {v.category}
                   </div>
-                  
+
                   {/* View Full Image Button Overlay */}
                   <button
                     onClick={() => {
@@ -698,7 +698,7 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry }: { us
                         </button>
                       </div>
                     ) : null}
-                    
+
                     <button
                       onClick={() => setManagingServicesFor({ id: v.id, name: `${v.details.make} ${v.details.model}` })}
                       disabled={v.isSuspendedByLimit}

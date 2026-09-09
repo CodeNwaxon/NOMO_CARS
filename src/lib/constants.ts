@@ -9,7 +9,6 @@ export const websiteLink = "https://nomocars.vercel.app";
 // Ticket Collection Policy Variables
 export const startTicketCollection = true;
 export const freeTicketPlanDays = 90;
-export const ticketCollectionStartDate = "2026-09-04T00:00:00Z";
 
 /**
  * Checks if a driver has a valid ticket or is within the free plan period.
@@ -17,8 +16,8 @@ export const ticketCollectionStartDate = "2026-09-04T00:00:00Z";
  * @returns true if the driver has a valid ticket, or if ticket collection is paused, or if within the free plan days.
  */
 export function hasValidTicket(
-  driverTicketExpiry?: string | null, 
-  startTicketCollection: boolean = true, 
+  driverTicketExpiry?: string | null,
+  startTicketCollection: boolean = true,
   driverCreatedAt?: string | Date | null,
   ticketCollectionStartedAt?: string | Date | null
 ): boolean {
@@ -31,10 +30,10 @@ export function hasValidTicket(
   }
 
   // Calculate the personal free period using the driver's registration date
-  // Fall back to the global ticketCollectionStartDate for drivers who joined before we tracked driverCreatedAt
-  const defaultStart = ticketCollectionStartedAt ? new Date(ticketCollectionStartedAt) : new Date(ticketCollectionStartDate);
+  // Fall back to now if somehow ticketCollectionStartedAt is missing
+  const defaultStart = ticketCollectionStartedAt ? new Date(ticketCollectionStartedAt) : new Date();
   const driverStart = driverCreatedAt ? new Date(driverCreatedAt) : defaultStart;
-  
+
   // The effective start date for their 90 days is whichever is later: when they joined, or when the button was turned on.
   const effectiveStartDate = new Date(Math.max(driverStart.getTime(), defaultStart.getTime()));
   const freePeriodEnd = new Date(effectiveStartDate.getTime() + freeTicketPlanDays * 24 * 60 * 60 * 1000);
@@ -46,7 +45,7 @@ export function hasValidTicket(
 
 export function getVIPBadge(stars: number) {
   if (!stars || stars < 1) return null;
-  
+
   // Provide basic styling for up to 5 tiers, then fallback
   const tags = ["Starter", "Popular", "Advanced", "Premium", "Ultimate"];
   const colors = [

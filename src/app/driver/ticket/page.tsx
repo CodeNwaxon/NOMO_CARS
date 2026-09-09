@@ -10,7 +10,7 @@ import { db } from "@/lib/firebase";
 import { toast } from "react-hot-toast";
 import { usePaystackPayment } from "react-paystack";
 import { verifyAndNotifyPayment } from "@/actions/payment";
-import { freeTicketPlanDays, ticketCollectionStartDate } from "@/lib/constants";
+import { freeTicketPlanDays } from "@/lib/constants";
 import { onSnapshot } from "firebase/firestore";
 
 const TICKET_STYLES = [
@@ -35,6 +35,7 @@ export default function TicketPage() {
   const [processingPlan, setProcessingPlan] = useState<number | null>(null);
   const [ticketPlans, setTicketPlans] = useState<any[]>([]);
   const [startTicketCollection, setStartTicketCollection] = useState(true);
+  const [ticketCollectionStartedAt, setTicketCollectionStartedAt] = useState<string | null>(null);
   const [fetchingConfig, setFetchingConfig] = useState(true);
 
   useEffect(() => {
@@ -50,6 +51,13 @@ export default function TicketPage() {
       if (snap.exists()) {
         const data = snap.data();
         if (data.startTicketCollection !== undefined) setStartTicketCollection(data.startTicketCollection);
+        if (data.ticketCollectionStartedAt) {
+          setTicketCollectionStartedAt(
+            data.ticketCollectionStartedAt.toDate 
+              ? data.ticketCollectionStartedAt.toDate().toISOString() 
+              : data.ticketCollectionStartedAt
+          );
+        }
         if (data.tickets && data.tickets.length > 0) {
           let maxPrice = 0;
           data.tickets.forEach((t: any) => { if (t.price > maxPrice) maxPrice = t.price; });
@@ -166,8 +174,15 @@ export default function TicketPage() {
           let hasGlobalFree = false;
           let globalFreeDaysLeft = 0;
           if (startTicketCollection) {
-            const startDate = new Date(ticketCollectionStartDate);
-            const freePeriodEnd = new Date(startDate.getTime() + freeTicketPlanDays * 24 * 60 * 60 * 1000);
+            const defaultStart = ticketCollectionStartedAt ? new Date(ticketCollectionStartedAt) : new Date();
+            let driverCreatedAtStr = null;
+            if (profile?.createdAt) {
+              driverCreatedAtStr = profile.createdAt.toDate ? profile.createdAt.toDate().toISOString() : profile.createdAt;
+            }
+            const driverStart = driverCreatedAtStr ? new Date(driverCreatedAtStr) : defaultStart;
+            
+            const effectiveStartDate = new Date(Math.max(driverStart.getTime(), defaultStart.getTime()));
+            const freePeriodEnd = new Date(effectiveStartDate.getTime() + freeTicketPlanDays * 24 * 60 * 60 * 1000);
             const globalFreeMsLeft = freePeriodEnd.getTime() - new Date().getTime();
             if (globalFreeMsLeft > 0) {
               hasGlobalFree = true;

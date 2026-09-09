@@ -30,6 +30,7 @@ interface UserProfile {
   ticketExpiry?: string;
   lastTicketPrice?: number;
   lastTicketDays?: number;
+  createdAt?: any;
 }
 
 interface AuthContextType {
