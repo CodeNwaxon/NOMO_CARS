@@ -4,6 +4,36 @@ import { sendEmail } from "@/lib/email";
 import { websiteLink } from "@/lib/constants";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 
+export async function createPendingPayment(payment: {
+  reference: string;
+  userId: string;
+  type: "ticket" | "vip";
+  amount: number;
+  planName: string;
+  planDays?: number;
+  planStars?: number;
+  planPrice: number;
+  userEmail?: string;
+}) {
+  try {
+    if (!payment.reference || !payment.userId || !payment.amount) {
+      throw new Error("Missing payment details");
+    }
+
+    const adminDb = getAdminDb();
+    await adminDb.collection("pending_transactions").doc(payment.reference).set({
+      ...payment,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+    }, { merge: true });
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Pending payment creation error:", error);
+    return { success: false, error: error.message || "Unable to prepare payment" };
+  }
+}
+
 export async function finalizePayment(reference: string, expectedUserId: string) {
   try {
     if (!reference || !expectedUserId) {
@@ -59,6 +89,10 @@ export async function finalizePayment(reference: string, expectedUserId: string)
         createdAt: new Date().toISOString(),
         userEmail: payment.customer?.email || "",
       });
+      await adminDb.collection("pending_transactions").doc(payment.reference).set({
+        status: "completed",
+        completedAt: new Date().toISOString(),
+      }, { merge: true });
     }
 
     return { success: true, reference: payment.reference };

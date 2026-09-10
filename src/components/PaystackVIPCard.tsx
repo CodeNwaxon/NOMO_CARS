@@ -2,6 +2,7 @@
 
 import { Check, Loader2, Star } from "lucide-react";
 import { usePaystackPayment } from "react-paystack";
+import { createPendingPayment } from "@/actions/payment";
 
 export default function PaystackVIPCard({ plan, profile, user, onSuccess, onClose, isProcessing, setProcessing }: any) {
   const config = {
@@ -21,9 +22,15 @@ export default function PaystackVIPCard({ plan, profile, user, onSuccess, onClos
 
   const initializePayment = usePaystackPayment(config);
 
-  const handlePurchase = () => {
+  const handlePurchase = async () => {
     if (isProcessing !== null) return;
     setProcessing(plan.stars);
+
+    const prepared = await createPendingPayment({ reference: config.reference, userId: user.uid, type: "vip", amount: plan.price, planName: plan.name, planStars: plan.stars, planPrice: plan.price, userEmail: user.email || undefined });
+    if (!prepared.success) {
+      setProcessing(null);
+      throw new Error(prepared.error);
+    }
     
     setTimeout(() => {
       initializePayment({

@@ -2,6 +2,7 @@
 
 import { Check, Loader2 } from "lucide-react";
 import { usePaystackPayment } from "react-paystack";
+import { createPendingPayment } from "@/actions/payment";
 
 export default function PaystackTicketCard({ plan, user, profile, onSuccess, onClose, isProcessing, setProcessing, hasOwnTicket }: any) {
   const config = {
@@ -21,9 +22,24 @@ export default function PaystackTicketCard({ plan, user, profile, onSuccess, onC
 
   const initializePayment = usePaystackPayment(config);
 
-  const handlePurchase = () => {
+  const handlePurchase = async () => {
     if (isProcessing !== null || hasOwnTicket) return;
     setProcessing(plan.days);
+
+    const prepared = await createPendingPayment({
+      reference: config.reference,
+      userId: user.uid,
+      type: "ticket",
+      amount: plan.price,
+      planName: plan.name,
+      planDays: plan.days,
+      planPrice: plan.price,
+      userEmail: user.email || undefined,
+    });
+    if (!prepared.success) {
+      setProcessing(null);
+      throw new Error(prepared.error);
+    }
     
     setTimeout(() => {
       initializePayment({

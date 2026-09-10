@@ -42,10 +42,12 @@ export async function POST(req: NextRequest) {
       const adminDb = getAdminDb();
       const userRef = adminDb.collection("users").doc(userId);
       const transactionRef = adminDb.collection("transactions").doc(data.reference);
+      const pendingRef = adminDb.collection("pending_transactions").doc(data.reference);
       const existingTransaction = await transactionRef.get();
 
       // Paystack retries webhook delivery. Never apply a ticket or VIP benefit twice.
       if (existingTransaction.exists) {
+        await pendingRef.set({ status: "completed", completedAt: new Date().toISOString() }, { merge: true });
         return NextResponse.json({ message: "Payment already processed" }, { status: 200 });
       }
 
@@ -101,6 +103,8 @@ export async function POST(req: NextRequest) {
         createdAt: new Date().toISOString(),
         userEmail: data.customer.email || "",
       }, { merge: true });
+
+      await pendingRef.set({ status: "completed", completedAt: new Date().toISOString() }, { merge: true });
 
       // Also trigger the email verification via server action
       // We pass the data we need. We might need the user's name and email from Firestore if not in metadata
