@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
+import { finalizePayment } from "@/actions/payment";
 import { Loader2, Printer, ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface Transaction {
@@ -47,7 +48,8 @@ export default function ReceiptPage() {
           setTransaction(data);
           setLoading(false);
         } else {
-          // Document not found. Might still be processing.
+          // Recover a successful payment if the webhook has not written yet.
+          await finalizePayment(id, user.uid);
           if (retryCount < maxRetries) {
             retryCount++;
             setTimeout(fetchReceipt, 1500);
@@ -58,8 +60,11 @@ export default function ReceiptPage() {
         }
       } catch (err: any) {
         console.error("Error fetching receipt:", err);
-        // If it's a permission error, it might be because resource is null (not created yet).
-        // Let's retry in case it gets created.
+        try {
+          await finalizePayment(id, user.uid);
+        } catch (finalizeError) {
+          console.error("Receipt finalization retry failed:", finalizeError);
+        }
         if (retryCount < maxRetries) {
           retryCount++;
           setTimeout(fetchReceipt, 1500);

@@ -41,6 +41,13 @@ export async function POST(req: NextRequest) {
 
       const adminDb = getAdminDb();
       const userRef = adminDb.collection("users").doc(userId);
+      const transactionRef = adminDb.collection("transactions").doc(data.reference);
+      const existingTransaction = await transactionRef.get();
+
+      // Paystack retries webhook delivery. Never apply a ticket or VIP benefit twice.
+      if (existingTransaction.exists) {
+        return NextResponse.json({ message: "Payment already processed" }, { status: 200 });
+      }
 
       if (metadata.planType === "vip") {
         const expiryDate = new Date();
@@ -84,7 +91,6 @@ export async function POST(req: NextRequest) {
       }
 
       // Log transaction
-      const transactionRef = adminDb.collection("transactions").doc(data.reference);
       await transactionRef.set({
         userId,
         amount: data.amount / 100,

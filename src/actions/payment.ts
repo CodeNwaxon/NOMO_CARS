@@ -6,6 +6,9 @@ import { getAdminDb } from "@/lib/firebaseAdmin";
 
 export async function finalizePayment(reference: string, expectedUserId: string) {
   try {
+    if (!reference || !expectedUserId) {
+      throw new Error("Missing payment reference or signed-in user");
+    }
     const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
     if (!paystackSecret) {
       throw new Error("PAYSTACK_SECRET_KEY is not configured");
@@ -22,7 +25,7 @@ export async function finalizePayment(reference: string, expectedUserId: string)
     if (!result.status || payment?.status !== "success") {
       throw new Error("Payment has not been confirmed by Paystack");
     }
-    if (metadata.userId !== expectedUserId) {
+    if (String(metadata.userId || "") !== expectedUserId) {
       throw new Error("Payment does not belong to the signed-in user");
     }
 

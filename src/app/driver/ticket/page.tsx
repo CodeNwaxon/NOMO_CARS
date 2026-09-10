@@ -119,24 +119,30 @@ export default function TicketPage() {
     try {
       toast.success("Payment successful! Finalizing your ticket...");
 
-      const finalized = await finalizePayment(reference.reference, user.uid);
+      const paymentReference = typeof reference === "string" ? reference : reference?.reference;
+      if (!paymentReference) {
+        throw new Error("Paystack did not return a transaction reference");
+      }
+
+      const finalized = await finalizePayment(paymentReference, user.uid);
       if (!finalized.success) {
-        throw new Error(finalized.error);
+        console.error("Immediate payment finalization failed; webhook retry remains available:", finalized.error);
+        toast("Payment received. Your receipt is still processing.", { icon: "i" });
       }
 
       // Keep the in-app notification alongside the verified receipt.
       addNotification(
         "Ticket Processing",
         `Your payment for the ${plan.name} was successful. Your ticket will be active momentarily.`,
-        `/receipt/${reference.reference}`
+        `/receipt/${paymentReference}`
       );
 
-      await refreshProfile();
-      router.push(`/receipt/${reference.reference}`);
+      if (finalized.success) await refreshProfile();
+      router.push(`/receipt/${paymentReference}`);
 
     } catch (error) {
       console.error("Error processing ticket success callback:", error);
-      toast.error("An error occurred while finalizing your ticket locally.");
+      toast.error("Paystack succeeded, but receipt processing needs a retry. Your payment was not marked failed.");
     } finally {
       setProcessingPlan(null);
     }
