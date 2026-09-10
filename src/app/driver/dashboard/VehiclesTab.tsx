@@ -79,7 +79,7 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
   const hasShareBenefit = () => {
     if (!ticketExpiry) return false;
     const expiryDate = new Date(ticketExpiry);
-    return expiryDate > new Date() && (lastTicketDays ?? 0) >= 14;
+    return expiryDate > new Date() && Number(lastTicketDays || 0) >= 14;
   };
 
   const handleShare = async (vehicle: any) => {
@@ -717,7 +717,7 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
                       >
                         <Trash2 className="w-4 h-4" /> Delete
                       </button>
-                      {hasShareBenefit() && v.isApproved && !v.isSuspendedByLimit && (
+                      {hasShareBenefit() && v.isApproved && (
                         <button
                           onClick={() => handleShare(v)}
                           title="Share Vehicle"

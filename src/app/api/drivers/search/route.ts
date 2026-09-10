@@ -130,7 +130,12 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error("Error searching drivers API:", error);
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to search drivers" },
+      {
+        success: false,
+        error: "Driver search service is unavailable",
+        code: error?.code || error?.name || "SEARCH_API_ERROR",
+        detail: process.env.NODE_ENV === "development" ? error.message : undefined,
+      },
       { status: 500 }
     );
   }
