@@ -4,9 +4,13 @@ import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
 
+type BeforeInstallPromptEvent = Event & {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+};
+
 export default function InstallPrompt() {
-  const [isInstallable, setIsInstallable] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [progress, setProgress] = useState(100);
   const pathname = usePathname();
@@ -17,59 +21,75 @@ export default function InstallPrompt() {
     if (typeof window === "undefined") return;
 
     if (pathname?.startsWith("/admin")) return;
-    if (localStorage.getItem("pwa_installed") === "true") return;
     if (sessionStorage.getItem("pwa_prompt_dismissed") === "true") return;
-
-    const handleBeforeInstallPrompt = (e: any) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-      setIsInstallable(true);
-    };
-
-    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-    window.addEventListener("appinstalled", () => {
-      localStorage.setItem("pwa_installed", "true");
-      setIsVisible(false);
-    });
 
     let showTimer: NodeJS.Timeout;
     let hideTimer: NodeJS.Timeout;
     let progressInterval: NodeJS.Timeout;
 
-    const schedulePrompt = () => {
-      showTimer = setTimeout(() => {
-        setIsVisible(true);
-        setProgress(100);
+    const showPrompt = () => {
+      clearTimeout(hideTimer);
+      clearInterval(progressInterval);
+      setIsVisible(true);
+      setProgress(100);
 
-        // Start progress bar and hide timeout (e.g. 10 seconds)
-        const displayDuration = 10000;
-        const updateInterval = 50;
-        const step = (updateInterval / displayDuration) * 100;
+      const displayDuration = 10000;
+      const updateInterval = 50;
+      const step = (updateInterval / displayDuration) * 100;
 
-        progressInterval = setInterval(() => {
-          setProgress((prev) => {
-            if (prev - step <= 0) {
-              clearInterval(progressInterval);
-              return 0;
-            }
-            return prev - step;
-          });
-        }, updateInterval);
+      progressInterval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev - step <= 0) {
+            clearInterval(progressInterval);
+            return 0;
+          }
+          return prev - step;
+        });
+      }, updateInterval);
 
-        hideTimer = setTimeout(() => {
-          setIsVisible(false);
-          clearInterval(progressInterval);
-          // Reschedule after hiding
-          schedulePrompt();
-        }, displayDuration);
-
-      }, sliderDelay); // 30 seconds interval
+      hideTimer = setTimeout(() => {
+        setIsVisible(false);
+        clearInterval(progressInterval);
+        schedulePrompt();
+      }, displayDuration);
     };
 
-    schedulePrompt();
+    const schedulePrompt = () => {
+      clearTimeout(showTimer);
+      showTimer = setTimeout(showPrompt, sliderDelay);
+    };
+
+    const handleBeforeInstallPrompt = (e: BeforeInstallPromptEvent) => {
+      e.preventDefault();
+      // A new event means the browser considers this web app installable again.
+      // This clears a stale marker left behind after the installed app was removed.
+      localStorage.removeItem("pwa_installed");
+      setDeferredPrompt(e);
+      showPrompt();
+    };
+
+    const handleAppInstalled = () => {
+      localStorage.setItem("pwa_installed", "true");
+      setDeferredPrompt(null);
+      setIsVisible(false);
+      clearTimeout(hideTimer);
+      clearInterval(progressInterval);
+    };
+
+    const beforeInstallPromptListener = (event: Event) => {
+      handleBeforeInstallPrompt(event as BeforeInstallPromptEvent);
+    };
+
+    window.addEventListener("beforeinstallprompt", beforeInstallPromptListener);
+    window.addEventListener("appinstalled", handleAppInstalled);
+
+    if (localStorage.getItem("pwa_installed") !== "true") {
+      schedulePrompt();
+    }
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener("beforeinstallprompt", beforeInstallPromptListener);
+      window.removeEventListener("appinstalled", handleAppInstalled);
       clearTimeout(showTimer);
       clearTimeout(hideTimer);
       clearInterval(progressInterval);

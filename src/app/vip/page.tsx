@@ -8,7 +8,7 @@ import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { toast } from "react-hot-toast";
 import { usePaystackPayment } from "react-paystack";
-import { verifyAndNotifyPayment } from "@/actions/payment";
+import { finalizePayment, verifyAndNotifyPayment } from "@/actions/payment";
 import { useNotifications } from "@/context/NotificationContext";
 import { websiteLink } from "@/lib/constants";
 import { onSnapshot } from "firebase/firestore";
@@ -111,19 +111,20 @@ export default function VIPPage() {
     try {
       toast.success(`Payment successful! Your VIP status is being activated...`);
 
-      // Notify the user locally so they see a response immediately.
-      // The backend webhook will handle the actual Firestore update securely.
+      const finalized = await finalizePayment(reference.reference, user.uid);
+      if (!finalized.success) {
+        throw new Error(finalized.error);
+      }
+
+      // Keep the in-app notification alongside the verified receipt.
       addNotification(
         "VIP Upgrading",
         `Your payment for ${plan.name} was successful. Your account will be upgraded momentarily.`,
         `/receipt/${reference.reference}`
       );
 
-      // Wait a moment for the webhook to process before refreshing
-      setTimeout(async () => {
-        await refreshProfile();
-        router.push(`/receipt/${reference.reference}`);
-      }, 2000);
+      await refreshProfile();
+      router.push(`/receipt/${reference.reference}`);
 
     } catch (error) {
       console.error("Error processing VIP success callback:", error);

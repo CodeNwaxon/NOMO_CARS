@@ -2,6 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminDb } from "@/lib/firebaseAdmin";
 import { hasValidTicket } from "@/lib/constants";
 
+function normalizeSearchText(value: unknown) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -9,7 +17,7 @@ export async function GET(request: NextRequest) {
     const offset = parseInt(searchParams.get("offset") || "0", 10);
     const limit = parseInt(searchParams.get("limit") || "40", 10);
 
-    const qLower = query.toLowerCase();
+    const qLower = normalizeSearchText(query);
     const adminDb = getAdminDb();
 
     // Check ticket collection setting
@@ -33,14 +41,32 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Fetch all drivers to perform a substring search (since Firestore doesn't support substring search directly)
-    // For large datasets, a 3rd party like Algolia is recommended.
-    const snapshot = await adminDb.collection("users").where("role", "==", "driver").get();
+    const searchTerms = qLower.split(" ").filter((term) => term.length >= 2);
+    if (searchTerms.length === 0) {
+      return NextResponse.json({ success: true, drivers: [], hasMore: false }, { status: 200 });
+    }
 
-    let matchedDrivers: any[] = [];
+    // Query indexed prefixes instead of scanning every user document.
+    const candidateSnapshots = await Promise.all(
+      searchTerms.map((term) => (
+        adminDb.collection("users").where("searchTokens", "array-contains", term).get()
+      ))
+    );
+    const candidates = new Map<string, Record<string, any>>();
+    candidateSnapshots.forEach((snapshot) => {
+      snapshot.forEach((driverDoc) => {
+        candidates.set(driverDoc.id, driverDoc.data());
+      });
+    });
 
-    snapshot.forEach((doc) => {
-      const data = doc.data();
+    const matchedDrivers: any[] = [];
+
+    candidates.forEach((sourceData, id) => {
+      const data = { ...sourceData };
+
+      if (data.role !== "driver") {
+        return;
+      }
 
       // Skip disabled drivers
       if (data.isDisabled) {
@@ -76,7 +102,7 @@ export async function GET(request: NextRequest) {
         return; // Skip if ticket is not valid
       }
 
-      const searchStr = `${data.username || ""} ${data.firstName || ""} ${data.lastName || ""} ${data.operatingState || ""} ${data.operatingCity || ""}`.toLowerCase();
+      const searchStr = normalizeSearchText(`${data.username || ""} ${data.firstName || ""} ${data.lastName || ""} ${data.operatingState || ""} ${data.operatingCity || ""}`);
 
       if (searchStr.includes(qLower)) {
         // Strip sensitive fields
@@ -85,7 +111,7 @@ export async function GET(request: NextRequest) {
         delete data.withdrawalPin;
         delete data.authProvider;
         
-        matchedDrivers.push({ id: doc.id, ...data });
+        matchedDrivers.push({ id, ...data });
       }
     });
 

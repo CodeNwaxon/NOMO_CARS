@@ -3,6 +3,66 @@
 import { sendEmail } from "@/lib/email";
 import { websiteLink } from "@/lib/constants";
 import { getAdminDb } from "@/lib/firebaseAdmin";
+
+export async function finalizePayment(reference: string, expectedUserId: string) {
+  try {
+    const paystackSecret = process.env.PAYSTACK_SECRET_KEY;
+    if (!paystackSecret) {
+      throw new Error("PAYSTACK_SECRET_KEY is not configured");
+    }
+
+    const response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
+      headers: { Authorization: `Bearer ${paystackSecret}` },
+      cache: "no-store",
+    });
+    const result = await response.json();
+    const payment = result.data;
+    const metadata = payment?.metadata || {};
+
+    if (!result.status || payment?.status !== "success") {
+      throw new Error("Payment has not been confirmed by Paystack");
+    }
+    if (metadata.userId !== expectedUserId) {
+      throw new Error("Payment does not belong to the signed-in user");
+    }
+
+    const adminDb = getAdminDb();
+    const userRef = adminDb.collection("users").doc(expectedUserId);
+    const transactionRef = adminDb.collection("transactions").doc(payment.reference);
+    const transactionSnapshot = await transactionRef.get();
+
+    if (!transactionSnapshot.exists) {
+      if (metadata.planType === "vip") {
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + 180);
+        await userRef.update({ vipStars: metadata.planStars, vipExpiry: expiryDate.toISOString() });
+      } else if (metadata.planType === "ticket") {
+        const expiryDate = new Date();
+        expiryDate.setDate(expiryDate.getDate() + Number(metadata.planDays));
+        await userRef.update({
+          ticketExpiry: expiryDate.toISOString(),
+          lastTicketPrice: metadata.planPrice,
+          lastTicketDays: Number(metadata.planDays),
+        });
+      }
+
+      await transactionRef.set({
+        userId: expectedUserId,
+        amount: payment.amount / 100,
+        type: metadata.planType || "unknown",
+        reference: payment.reference,
+        createdAt: new Date().toISOString(),
+        userEmail: payment.customer?.email || "",
+      });
+    }
+
+    return { success: true, reference: payment.reference };
+  } catch (error: any) {
+    console.error("Payment finalization error:", error);
+    return { success: false, error: error.message || "Unable to finalize payment" };
+  }
+}
+
 export async function verifyAndNotifyPayment(
   reference: string, 
   userEmail: string, 
@@ -115,6 +175,7 @@ export async function simulateWebhookForLocalhost(
       userId,
       amount: amountInKobo / 100,
       type: metadata.planType || "unknown",
+        planName: metadata.planName || metadata.planType || "Purchase",
       reference: reference,
       createdAt: new Date().toISOString(),
       userEmail: userEmail || "",

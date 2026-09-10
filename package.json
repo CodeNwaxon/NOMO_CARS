@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "backfill:driver-search": "node --env-file=.env.local scripts/backfill-driver-search.mjs"
   },
   "dependencies": {
     "@cloudinary/react": "^1.14.4",

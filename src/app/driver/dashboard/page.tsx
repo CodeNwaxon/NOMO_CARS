@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { LogOut, User as UserIcon, Car, MessageCircle, Loader2, AlertTriangle } from "lucide-react";
 import { useChat } from "@/context/ChatContext";
@@ -141,6 +142,9 @@ export default function DriverDashboard() {
               </span>
             )}
           </button>
+          <Link href="/purchase-history" className="flex-1 md:flex-initial md:w-full flex items-center justify-center md:justify-start px-3 py-2 rounded-lg text-sm font-medium text-foreground/80 hover:bg-card-bg/80 hover:text-foreground whitespace-nowrap">
+            Purchase History
+          </Link>
         </nav>
 
         <div className="hidden md:block mt-auto pt-6 border-t border-card-border">
@@ -159,7 +163,7 @@ export default function DriverDashboard() {
         <div className="absolute top-0 right-0 w-96 h-96 bg-brand-primary/5 rounded-full blur-3xl -z-10 pointer-events-none"></div>
         
         {activeTab === "profile" && <ProfileTab profile={profile} userId={user.uid} onSignOut={() => setShowSignOutModal(true)} />}
-        {activeTab === "vehicles" && <VehiclesTab userId={user.uid} vipStars={profile.vipStars || 0} ticketExpiry={profile.ticketExpiry} />}
+        {activeTab === "vehicles" && <VehiclesTab userId={user.uid} vipStars={profile.vipStars || 0} ticketExpiry={profile.ticketExpiry} lastTicketDays={profile.lastTicketDays} />}
         {activeTab === "messages" && <MessagesTab userId={user.uid} />}
       </main>
 

@@ -10,6 +10,7 @@ import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { Loader2, UploadCloud, Camera } from "lucide-react";
+import { buildDriverSearchTokens } from "@/lib/constants";
 
 const driverSchema = z.object({
   firstName: z.string().min(2, "First name is required"),
@@ -164,6 +165,7 @@ export default function DriverRegistration() {
       const docRef = doc(db, "users", user.uid);
       await updateDoc(docRef, {
         ...data,
+        searchTokens: buildDriverSearchTokens(data.firstName, data.middleName, data.lastName, data.operatingCity, data.operatingState),
         displayImage: finalPhotoURL,
         identityImage: imageUrl,
         role: "driver",

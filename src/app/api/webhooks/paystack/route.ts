@@ -89,6 +89,7 @@ export async function POST(req: NextRequest) {
         userId,
         amount: data.amount / 100,
         type: metadata.planType || "unknown", // 'ticket' or 'vip'
+        planName: metadata.planName || metadata.planType || "Purchase",
         reference: data.reference,
         createdAt: new Date().toISOString(),
         userEmail: data.customer.email || "",

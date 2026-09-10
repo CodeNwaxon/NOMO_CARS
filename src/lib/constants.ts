@@ -10,6 +10,23 @@ export const websiteLink = "https://nomocars.vercel.app";
 export const startTicketCollection = true;
 export const freeTicketPlanDays = 90;
 
+export function buildDriverSearchTokens(...values: unknown[]) {
+  const tokens = new Set<string>();
+  const searchText = values
+    .map((value) => String(value || ""))
+    .join(" ")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ");
+
+  for (const word of searchText.split(/\s+/).filter(Boolean)) {
+    for (let length = 2; length <= word.length; length++) {
+      tokens.add(word.slice(0, length));
+    }
+  }
+
+  return Array.from(tokens);
+}
+
 /**
  * Checks if a driver has a valid ticket or is within the free plan period.
  * @param driverTicketExpiry The driver's ticket expiry date from their profile.

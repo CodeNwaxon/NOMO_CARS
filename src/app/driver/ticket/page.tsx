@@ -9,7 +9,7 @@ import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { toast } from "react-hot-toast";
 import { usePaystackPayment } from "react-paystack";
-import { verifyAndNotifyPayment } from "@/actions/payment";
+import { finalizePayment, verifyAndNotifyPayment } from "@/actions/payment";
 import { freeTicketPlanDays } from "@/lib/constants";
 import { onSnapshot } from "firebase/firestore";
 
@@ -119,19 +119,20 @@ export default function TicketPage() {
     try {
       toast.success("Payment successful! Finalizing your ticket...");
 
-      // Notify the user locally so they see a response immediately.
-      // The backend webhook will handle the actual Firestore update securely.
+      const finalized = await finalizePayment(reference.reference, user.uid);
+      if (!finalized.success) {
+        throw new Error(finalized.error);
+      }
+
+      // Keep the in-app notification alongside the verified receipt.
       addNotification(
         "Ticket Processing",
         `Your payment for the ${plan.name} was successful. Your ticket will be active momentarily.`,
         `/receipt/${reference.reference}`
       );
 
-      // Wait a moment for the webhook to process before refreshing
-      setTimeout(async () => {
-        await refreshProfile();
-        router.push(`/receipt/${reference.reference}`);
-      }, 2000);
+      await refreshProfile();
+      router.push(`/receipt/${reference.reference}`);
 
     } catch (error) {
       console.error("Error processing ticket success callback:", error);

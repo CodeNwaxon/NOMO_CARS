@@ -124,7 +124,28 @@ export async function GET(request: Request) {
       }
     }
 
-    return NextResponse.json({ success: true, emailedCount });
+    // User history clearing only hides transactions. Remove records after 365 days.
+    const transactionCutoff = new Date(now - 365 * 24 * 60 * 60 * 1000).toISOString();
+    const oldTransactions = await adminDb.collection("transactions")
+      .where("createdAt", "<", transactionCutoff)
+      .get();
+    let deletedTransactionCount = 0;
+    let deleteBatch = adminDb.batch();
+    let deletesInBatch = 0;
+
+    for (const transaction of oldTransactions.docs) {
+      deleteBatch.delete(transaction.ref);
+      deletesInBatch += 1;
+      deletedTransactionCount += 1;
+      if (deletesInBatch === 500) {
+        await deleteBatch.commit();
+        deleteBatch = adminDb.batch();
+        deletesInBatch = 0;
+      }
+    }
+    if (deletesInBatch > 0) await deleteBatch.commit();
+
+    return NextResponse.json({ success: true, emailedCount, deletedTransactionCount });
   } catch (error) {
     console.error("Cron Error:", error);
     return new NextResponse("Internal Server Error", { status: 500 });

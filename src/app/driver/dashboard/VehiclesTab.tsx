@@ -72,17 +72,14 @@ const getFieldConfig = (category: string) => {
   };
 };
 
-export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry }: { userId: string, vipStars?: number, ticketExpiry?: string }) {
+export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTicketDays }: { userId: string, vipStars?: number, ticketExpiry?: string, lastTicketDays?: number }) {
   const { limits, loadingLimits } = useVIPLimits(vipStars);
   const maxCars = limits.maxCars;
 
   const hasShareBenefit = () => {
     if (!ticketExpiry) return false;
     const expiryDate = new Date(ticketExpiry);
-    const now = new Date();
-    const diffTime = expiryDate.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays >= 7;
+    return expiryDate > new Date() && (lastTicketDays ?? 0) >= 14;
   };
 
   const handleShare = async (vehicle: any) => {
@@ -720,7 +717,7 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry }: { us
                       >
                         <Trash2 className="w-4 h-4" /> Delete
                       </button>
-                      {hasShareBenefit() && !v.isSuspendedByLimit && (
+                      {hasShareBenefit() && v.isApproved && !v.isSuspendedByLimit && (
                         <button
                           onClick={() => handleShare(v)}
                           title="Share Vehicle"

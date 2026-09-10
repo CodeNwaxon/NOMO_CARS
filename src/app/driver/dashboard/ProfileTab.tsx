@@ -13,7 +13,7 @@ import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { toast } from "react-hot-toast";
 import { checkUsernameUnique } from "@/lib/userUtils";
 import ShareOverlay from "@/components/ShareOverlay";
-import { websiteLink, getVIPBadge, freeTicketPlanDays } from "@/lib/constants";
+import { websiteLink, getVIPBadge, freeTicketPlanDays, buildDriverSearchTokens } from "@/lib/constants";
 
 const CATEGORIES = [
   { id: "car", name: "Car", icon: Car, bg: "bg-blue-500/10", color: "text-blue-500", hoverShadow: "hover:shadow-blue-500/20", hoverBorder: "hover:border-blue-500/50" },
@@ -189,6 +189,7 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
         whatsappEnabled: formData.whatsappEnabled,
         operatingCity: formData.operatingCity,
         operatingState: formData.operatingState,
+        searchTokens: buildDriverSearchTokens(formData.firstName, formData.middleName, formData.lastName, formData.username, formData.operatingCity, formData.operatingState),
       });
 
       setFormData(prev => ({ ...prev, phone: formattedPhone, displayImage: finalImageUrl }));
