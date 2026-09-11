@@ -261,8 +261,8 @@ export default function CategoryVehicles() {
                             </div>
 
                             {getVIPBadge(v.driverVipStars) && (
-                              <div className={`absolute top-2 left-2 md:top-4 md:left-4 z-10 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-md ${getVIPBadge(v.driverVipStars)?.colorClass}`}>
-                                {getVIPBadge(v.driverVipStars)?.tag} Driver
+                              <div className={`absolute top-2 left-2 md:top-4 md:left-4 z-10 px-2 py-0.5 rounded-full text-[9px] md:text-[10px] font-bold uppercase tracking-wider shadow-md ${getVIPBadge(v.driverVipStars)?.colorClass}`}>
+                                {getVIPBadge(v.driverVipStars)?.tag}
                               </div>
                             )}
 

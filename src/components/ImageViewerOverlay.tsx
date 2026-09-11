@@ -75,14 +75,14 @@ export default function ImageViewerOverlay({ images, initialIndex = 0, singleMod
         <>
           <button 
             onClick={handlePrev}
-            className="flex absolute left-4 md:left-6 z-[110] p-2 md:p-3 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-sm transition-colors"
+            className="flex absolute left-2 md:left-6 z-[110] p-1.5 md:p-3 bg-black/50 md:bg-white/10 hover:bg-black/70 md:hover:bg-white/20 rounded-full text-white backdrop-blur-sm transition-colors"
           >
             <ChevronLeft className="w-6 h-6 md:w-8 md:h-8" />
           </button>
           
           <button 
             onClick={handleNext}
-            className="flex absolute right-4 md:right-6 z-[110] p-2 md:p-3 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-sm transition-colors"
+            className="flex absolute right-2 md:right-6 z-[110] p-1.5 md:p-3 bg-black/50 md:bg-white/10 hover:bg-black/70 md:hover:bg-white/20 rounded-full text-white backdrop-blur-sm transition-colors"
           >
             <ChevronRight className="w-6 h-6 md:w-8 md:h-8" />
           </button>

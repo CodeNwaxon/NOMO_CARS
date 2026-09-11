@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, Info, X, Loader2, Trash2, Clock3, Edit2, Star, Crown } from "lucide-react";
+import { ArrowLeft, Info, X, Loader2, Trash2, Clock3, Edit2, Star, Crown, Eye } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { addDoc, collection, deleteDoc, doc, getDocs, query, where, updateDoc, getDoc, increment } from "firebase/firestore";
@@ -9,6 +9,7 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useVIPLimits } from "@/hooks/useVIPLimits";
 import { useNotifications } from "@/context/NotificationContext";
+import ImageViewerOverlay from "@/components/ImageViewerOverlay";
 
 export default function CreateBidPage() {
   const router = useRouter();
@@ -17,12 +18,12 @@ export default function CreateBidPage() {
   const { addNotification } = useNotifications();
   const [showInfoModal, setShowInfoModal] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<"post" | "browse">("post");
+  const [activeTab, setActiveTab] = useState<"post" | "browse">("browse");
   const [requests, setRequests] = useState<any[]>([]);
   const [bidders, setBidders] = useState<any[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
   const [highlightId, setHighlightId] = useState<string | null>(null);
-  const [imageViewerUrl, setImageViewerUrl] = useState<string | null>(null);
+  const [viewerState, setViewerState] = useState({ isOpen: false, images: [""], initialIndex: 0, singleMode: false });
   const [imageViewerLoadingId, setImageViewerLoadingId] = useState<string | null>(null);
 
   const [requestDurationDays, setRequestDurationDays] = useState(14);
@@ -67,10 +68,8 @@ export default function CreateBidPage() {
         const searchParams = new URLSearchParams(window.location.search);
         if (searchParams.get("browse") === "1" || searchParams.get("tab") === "browse") {
           setActiveTab("browse");
-        } else if (searchParams.get("category")) {
+        } else if (!hasRequests) {
           setActiveTab("post");
-        } else if (hasRequests) {
-          setActiveTab("browse");
         }
       });
       const searchParams = new URLSearchParams(window.location.search);
@@ -133,12 +132,23 @@ export default function CreateBidPage() {
     const snapshot = await getDocs(collection(db, "requests", request.id, "bids"));
     const biddersData: any[] = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
 
-    // Fetch driver profiles to get latest jobsWon count
+    // Fetch driver profiles and vehicle data to ensure we have the latest images
     for (let bid of biddersData) {
       if (bid.driverId) {
         const driverSnap = await getDoc(doc(db, "users", bid.driverId));
         if (driverSnap.exists()) {
           bid.jobsWon = driverSnap.data().jobsWon || 0;
+        }
+      }
+      if (bid.vehicleId) {
+        const vehicleSnap = await getDoc(doc(db, "vehicles", bid.vehicleId));
+        if (vehicleSnap.exists()) {
+          const vData = vehicleSnap.data();
+          bid.vehicleImages = vData.images || null;
+          bid.vehicleDocuments = vData.documents || null;
+          if (vData.details) {
+            bid.vehicleDetails = vData.details;
+          }
         }
       }
     }
@@ -483,20 +493,31 @@ export default function CreateBidPage() {
                 {bidders.map((bid) => (
                   <div key={bid.id} className="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm relative overflow-hidden">
                     <div className="flex justify-between items-start mb-2">
-                      <div className="flex gap-3 items-start">
-                        {bid.vehicleDetails?.images?.front && (
-                          <div className="w-12 h-12 md:w-16 md:h-16 shrink-0 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 cursor-pointer border border-slate-200 dark:border-slate-700 relative group" onClick={() => {
+                      <div className="flex gap-3 items-start flex-1">
+                        {(bid.vehicleImages?.front || bid.vehicleDetails?.images?.front) && (
+                          <div className="w-16 h-16 md:w-20 md:h-20 shrink-0 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 cursor-pointer border border-slate-200 dark:border-slate-700 relative group" onClick={() => {
                             if (imageViewerLoadingId === bid.id) return;
                             setImageViewerLoadingId(bid.id);
                             setTimeout(() => {
-                              setImageViewerUrl(bid.vehicleDetails.images.front);
+                              const imgs = bid.vehicleImages || bid.vehicleDetails?.images || {};
+                              const docs = bid.vehicleDocuments || bid.vehicleDetails?.documents || {};
+                              const allImages = [
+                                ...[imgs.front, imgs.back, imgs.side, imgs.interior].filter(Boolean) as string[],
+                                ...Object.values(docs) as string[]
+                              ];
+                              setViewerState({
+                                isOpen: true,
+                                images: allImages.length > 0 ? allImages : [""],
+                                initialIndex: 0,
+                                singleMode: false
+                              });
                               setImageViewerLoadingId(null);
                             }, 500);
                           }}>
-                            <img src={bid.vehicleDetails.images.front} alt="Vehicle" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
-                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              {imageViewerLoadingId === bid.id ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <p className="text-[8px] font-bold text-white text-center">VIEW<br/>IMG</p>}
-                            </div>
+                            <img src={bid.vehicleImages?.front || bid.vehicleDetails?.images?.front} alt="Vehicle" className="w-full h-full object-cover transition-transform group-hover:scale-105" />
+                            <button className="absolute bottom-0 inset-x-0 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white py-0.5 text-[8px] font-bold flex items-center justify-center gap-1 opacity-100 md:opacity-0 group-hover:opacity-100 transition-all border-t border-white/10">
+                              {imageViewerLoadingId === bid.id ? <Loader2 className="w-2 h-2 animate-spin" /> : <Eye className="w-2 h-2" />} View Vehicle
+                            </button>
                           </div>
                         )}
                         <div>
@@ -524,7 +545,22 @@ export default function CreateBidPage() {
                         <p className="text-xs text-foreground/60">{bid.vehicleDetails?.make} {bid.vehicleDetails?.model}</p>
                       </div>
                       </div>
-                      <span className="font-bold text-brand-primary bg-brand-primary/10 px-2 py-1 rounded text-sm">₦{Number(bid.amount).toLocaleString()}</span>
+                      
+                      <div className="text-right shrink-0 ml-2">
+                        <p className="text-[9px] md:text-[10px] text-foreground/60 font-medium mb-0.5">Passenger budget</p>
+                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1.5">₦{Number(selectedRequest.budget).toLocaleString()}</p>
+                        
+                        {Number(bid.amount) !== Number(selectedRequest.budget) ? (
+                          <>
+                            <p className="text-[9px] md:text-[10px] text-brand-primary font-bold mb-0.5">Driver's Proposal:</p>
+                            <span className="inline-block font-bold text-brand-primary bg-brand-primary/10 px-2 py-1 rounded text-sm md:text-base border border-brand-primary/20">₦{Number(bid.amount).toLocaleString()}</span>
+                          </>
+                        ) : (
+                          <span className="inline-block text-[9px] md:text-[10px] font-bold text-green-600 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded border border-green-200 dark:border-green-800 mt-1">
+                            Budget Accepted
+                          </span>
+                        )}
+                      </div>
                     </div>
                     {bid.description && (
                       <div className="mt-3 p-3 bg-brand-primary/5 rounded-lg border border-brand-primary/10">
@@ -564,13 +600,13 @@ export default function CreateBidPage() {
         </div>
       )}
 
-      {imageViewerUrl && (
-        <div className="fixed inset-0 z-[120] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 md:p-8 cursor-zoom-out" onClick={() => setImageViewerUrl(null)}>
-          <button onClick={() => setImageViewerUrl(null)} className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer z-10">
-            <X className="w-6 h-6" />
-          </button>
-          <img src={imageViewerUrl} alt="Full screen" className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl cursor-default" onClick={(e) => e.stopPropagation()} />
-        </div>
+      {viewerState.isOpen && (
+        <ImageViewerOverlay
+          images={viewerState.images}
+          initialIndex={viewerState.initialIndex}
+          singleMode={viewerState.singleMode}
+          onClose={() => setViewerState(prev => ({ ...prev, isOpen: false }))}
+        />
       )}
     </div>
   );

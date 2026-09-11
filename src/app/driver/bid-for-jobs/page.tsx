@@ -81,6 +81,7 @@ export default function BidForJobsPage() {
           driverPhone: profile?.phone || "",
           vehicleId: vehicle.id,
           vehicleDetails: vehicle.details,
+          vehicleImages: vehicle.images || null,
           amount: numericAmount,
           createdAt: Date.now(),
           status: "pending",
@@ -218,14 +219,18 @@ export default function BidForJobsPage() {
                     </span>
                   )}
                 </div>
-                <div className="text-right">
-                  <span className={`text-[11px] md:text-base font-bold ${driverBid && driverBid.amount !== Number(request.budget) ? 'text-slate-400 line-through' : 'text-slate-900 dark:text-white'}`}>₦{Number(request.budget).toLocaleString()}</span>
+                <div className="text-right shrink-0 ml-2">
+                  <p className="text-[9px] md:text-[10px] text-foreground/60 font-medium mb-0.5">Passenger budget</p>
+                  <p className="text-[11px] md:text-base font-bold text-slate-800 dark:text-slate-200 mb-1.5">₦{Number(request.budget).toLocaleString()}</p>
+                  
                   {driverBid && driverBid.amount !== Number(request.budget) && (
-                    <div className="text-brand-primary font-black text-xs md:text-lg leading-tight -mt-0.5">
-                      ₦{Number(driverBid.amount).toLocaleString()}
-                    </div>
+                    <>
+                      <p className="text-[9px] md:text-[10px] text-brand-primary font-bold mb-0.5">Your Proposal:</p>
+                      <span className="inline-block font-bold text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded text-xs md:text-sm border border-brand-primary/20">
+                        ₦{Number(driverBid.amount).toLocaleString()}
+                      </span>
+                    </>
                   )}
-                  <p className="text-[7px] md:text-[9px] text-foreground/50 leading-none mt-0.5">Passenger budget</p>
                 </div>
               </div>
 
