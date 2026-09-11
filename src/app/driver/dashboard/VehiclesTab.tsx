@@ -6,7 +6,7 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { collection, addDoc, setDoc, query, where, getDocs, deleteDoc, doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { uploadImageToCloudinary } from "@/lib/cloudinary";
+import { uploadImageToCloudinary, deleteImagesFromCloudinary } from "@/lib/cloudinary";
 import { Loader2, Plus, UploadCloud, ArrowLeft, Car, CarFront, Bike, Truck, Plane, Ship, Bus, Settings, Edit3, Trash2, Eye, Info, X, Star, Check, Share2, XCircle } from "lucide-react";
 import { toast } from "react-hot-toast";
 import ManageServicesModal from "./ManageServicesModal";
@@ -152,6 +152,29 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
 
     try {
       setIsDeleting(true);
+
+      const vehicle = vehicles.find((v) => v.id === vehicleToDelete);
+      if (vehicle) {
+        const urlsToDelete: string[] = [];
+        if (vehicle.images) {
+          Object.values(vehicle.images).forEach((url) => {
+            if (typeof url === "string" && url.includes("cloudinary.com")) {
+              urlsToDelete.push(url);
+            }
+          });
+        }
+        if (vehicle.documents) {
+          Object.values(vehicle.documents).forEach((url) => {
+            if (typeof url === "string" && url.includes("cloudinary.com")) {
+              urlsToDelete.push(url);
+            }
+          });
+        }
+        if (urlsToDelete.length > 0) {
+          await deleteImagesFromCloudinary(urlsToDelete);
+        }
+      }
+
       await deleteDoc(doc(db, "vehicles", vehicleToDelete));
       toast.success("Vehicle deleted successfully");
       fetchVehicles();
