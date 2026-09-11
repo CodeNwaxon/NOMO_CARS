@@ -1,10 +1,13 @@
 "use client";
 
-import { Check, Loader2 } from "lucide-react";
+import { useState } from "react";
+import { Check, Loader2, X } from "lucide-react";
 import { usePaystackPayment } from "react-paystack";
 import { createPendingPayment } from "@/actions/payment";
 
 export default function PaystackTicketCard({ plan, user, profile, onSuccess, onClose, isProcessing, setProcessing, hasOwnTicket }: any) {
+  const [showConfirm, setShowConfirm] = useState(false);
+
   const config = {
     reference: "ticket_" + new Date().getTime().toString(),
     email: user?.email || "driver@nomocars.com",
@@ -24,6 +27,7 @@ export default function PaystackTicketCard({ plan, user, profile, onSuccess, onC
 
   const handlePurchase = async () => {
     if (isProcessing !== null || hasOwnTicket) return;
+    setShowConfirm(false);
     setProcessing(plan.days);
 
     const prepared = await createPendingPayment({
@@ -91,7 +95,7 @@ export default function PaystackTicketCard({ plan, user, profile, onSuccess, onC
 
       <div className="p-6 pt-0 mt-auto">
         <button
-          onClick={handlePurchase}
+          onClick={() => setShowConfirm(true)}
           disabled={isProcessing !== null || hasOwnTicket}
           className={`w-full py-3 rounded-xl font-bold text-sm flex justify-center items-center gap-2 transition-all shadow-lg ${
             hasOwnTicket
@@ -112,6 +116,41 @@ export default function PaystackTicketCard({ plan, user, profile, onSuccess, onC
           )}
         </button>
       </div>
+
+      {/* Confirmation Modal */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl relative text-left text-slate-900 dark:text-white">
+            <button
+              onClick={() => setShowConfirm(false)}
+              className="absolute top-4 right-4 text-foreground/50 hover:text-foreground transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-bold mb-2">Confirm Ticket Purchase</h3>
+            <p className="text-sm text-foreground/70 mb-4">
+              You are about to purchase the <b className={plan.isPremium ? 'text-amber-500' : 'text-brand-primary'}>{plan.name}</b> for <b className="text-foreground">₦{plan.price.toLocaleString()}</b>.
+            </p>
+            <div className="bg-card-border/30 p-3 rounded-lg mb-6 text-xs text-foreground/80">
+              This ticket will be active for {plan.days} days from the moment of purchase. Please note that payments are final.
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirm(false)}
+                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-slate-800 dark:hover:bg-slate-700 font-semibold rounded-xl transition-colors text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePurchase}
+                className={`flex-1 py-2.5 font-semibold rounded-xl text-white transition-colors text-sm ${plan.isPremium ? 'bg-amber-500 hover:bg-amber-600' : 'bg-brand-primary hover:bg-brand-primary/90'}`}
+              >
+                Confirm & Pay
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
