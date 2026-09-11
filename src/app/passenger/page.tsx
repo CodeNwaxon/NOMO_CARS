@@ -51,6 +51,22 @@ export default function PassengerCategories() {
   const [hasMoreSearch, setHasMoreSearch] = useState(false);
 
 
+  const [requestDurationDays, setRequestDurationDays] = useState(14);
+
+  useEffect(() => {
+    const fetchAdminSettings = async () => {
+      try {
+        const pricingSnap = await getDoc(doc(db, "adminSettings", "pricing"));
+        if (pricingSnap.exists() && pricingSnap.data().requestDurationDays !== undefined) {
+          setRequestDurationDays(Number(pricingSnap.data().requestDurationDays));
+        }
+      } catch (err) {
+        console.error("Error fetching admin settings:", err);
+      }
+    };
+    fetchAdminSettings();
+  }, []);
+
   useEffect(() => {
     const fetchFavorites = async () => {
       if (!user) return;
@@ -400,7 +416,7 @@ export default function PassengerCategories() {
                 <p>When you need a ride or service, you can post a job request for drivers to bid on. Use the <strong>"Create Bid"</strong> button directly on any vehicle category page to post your request.</p>
                 <ul className="list-disc pl-5 space-y-1 mt-2">
                   <li>Your VIP tier determines how many requests you can create (Non-VIP users get <strong>1 free request</strong> per month). Limits reset monthly.</li>
-                  <li>Requests remain active for <strong>two weeks</strong> before automatically expiring.</li>
+                  <li>Requests remain active for <strong>{requestDurationDays} {requestDurationDays === 1 ? 'day' : 'days'}</strong> before automatically expiring.</li>
                   <li>If you delete your own bid, or if it expires without a driver being chosen, the bid limit is <strong>not</strong> returned to you.</li>
                 </ul>
               </div>

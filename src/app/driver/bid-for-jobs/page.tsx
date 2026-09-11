@@ -20,7 +20,10 @@ export default function BidForJobsPage() {
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
   const [selectedVehicle, setSelectedVehicle] = useState("");
   const [amount, setAmount] = useState("");
+  const [bidDescription, setBidDescription] = useState("");
+  const [showDescriptionInput, setShowDescriptionInput] = useState(false);
   const [bidCount, setBidCount] = useState(0);
+  const [appliedRequests, setAppliedRequests] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showBidConfirm, setShowBidConfirm] = useState(false);
@@ -36,7 +39,7 @@ export default function BidForJobsPage() {
       getDocs(query(collection(db, "vehicles"), where("driverId", "==", user.uid))),
       getDoc(doc(db, "adminSettings", "pricing"))
     ]);
-    setRequestDurationDays(Number(pricingSnap.data()?.requestDurationDays || 14));
+    setRequestDurationDays(Number(pricingSnap.data()?.requestDurationDays ?? 14));
     const now = Date.now();
     setRequests(requestSnap.docs.map((item: any): any => ({ id: item.id, ...item.data() })).filter((item: any) => {
       if (item.passengerId === user.uid) return false;
@@ -46,10 +49,13 @@ export default function BidForJobsPage() {
       return true;
     }));
     setVehicles(vehicleSnap.docs.map((item: any): any => ({ id: item.id, ...item.data() })).filter((item: any) => item.isApproved));
+    const applied = new Set<string>();
     const bidCounts = await Promise.all(requestSnap.docs.map(async (requestDoc: any): Promise<number> => {
       const bid = await getDocs(query(collection(db, "requests", requestDoc.id, "bids"), where("driverId", "==", user.uid)));
+      if (!bid.empty) applied.add(requestDoc.id);
       return bid.empty ? 0 : 1;
     }));
+    setAppliedRequests(applied);
     setBidCount(bidCounts.reduce<number>((total: number, count: number) => total + Number(count), 0));
     setLoading(false);
   };
@@ -69,7 +75,21 @@ export default function BidForJobsPage() {
         if (!requestSnapshot.exists() || requestSnapshot.data().status !== "open") throw new Error("This request is no longer available.");
         if (bidSnapshot.exists()) throw new Error("You have already bid on this request.");
         const numericAmount = Number(String(amount).replace(/,/g, ''));
-        transaction.set(bidRef, { driverId: user.uid, driverName: profile?.username || profile?.firstName || "Driver", driverPhone: profile?.phone || "", vehicleId: vehicle.id, vehicleDetails: vehicle.details, amount: numericAmount, createdAt: Date.now(), status: "pending" });
+        const bidData: any = {
+          driverId: user.uid,
+          driverName: profile?.username || profile?.firstName || "Driver",
+          driverPhone: profile?.phone || "",
+          vehicleId: vehicle.id,
+          vehicleDetails: vehicle.details,
+          amount: numericAmount,
+          createdAt: Date.now(),
+          status: "pending",
+          driverVipStars: profile?.vipStars || 0
+        };
+        if (bidDescription.trim()) {
+          bidData.description = bidDescription.trim();
+        }
+        transaction.set(bidRef, bidData);
         transaction.update(requestRef, { bidCount: Number(requestSnapshot.data().bidCount || 0) + 1 });
       });
 
@@ -119,25 +139,25 @@ export default function BidForJobsPage() {
             Browse active passenger requests and place your bids to win the job.
           </p>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-8">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40 w-4 h-4" />
-              <input 
-                type="text" 
-                placeholder="Pickup location (e.g., Ikeja, Lagos)" 
+          <div className="flex flex-row gap-2 md:gap-4 mb-6">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground/40 w-3.5 h-3.5 md:w-4 md:h-4 md:left-3" />
+              <input
+                type="text"
+                placeholder="Pickup (e.g. Ikeja)"
                 value={locationQuery}
                 onChange={(e) => setLocationQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-1 focus:ring-brand-primary focus:border-brand-primary transition-all shadow-sm"
+                className="w-full pl-8 pr-3 py-2 md:pl-9 md:pr-4 md:py-2 text-[10px] md:text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg md:rounded-xl focus:outline-none focus:ring-1 focus:ring-brand-primary focus:border-brand-primary transition-all shadow-sm"
               />
             </div>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground/40 w-4 h-4" />
-              <input 
-                type="text" 
-                placeholder="Destination (e.g., Abuja)" 
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-foreground/40 w-3.5 h-3.5 md:w-4 md:h-4 md:left-3" />
+              <input
+                type="text"
+                placeholder="Dropoff (e.g. Abuja)"
                 value={destinationQuery}
                 onChange={(e) => setDestinationQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-1 focus:ring-brand-primary focus:border-brand-primary transition-all shadow-sm"
+                className="w-full pl-8 pr-3 py-2 md:pl-9 md:pr-4 md:py-2 text-[10px] md:text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg md:rounded-xl focus:outline-none focus:ring-1 focus:ring-brand-primary focus:border-brand-primary transition-all shadow-sm"
               />
             </div>
           </div>
@@ -153,7 +173,7 @@ export default function BidForJobsPage() {
             const matchesLoc = lQ === "" || cCity.includes(lQ) || cState.includes(lQ);
             const matchesDest = dQ === "" || dCity.includes(dQ) || dState.includes(dQ);
             return matchesLoc && matchesDest;
-          }).length === 0 ? <div className="text-center py-16 bg-card-bg/50 border-2 border-dashed border-card-border rounded-2xl"><div className="w-16 h-16 bg-card-border rounded-full flex items-center justify-center mx-auto mb-4"><Search className="w-8 h-8 text-foreground/30" /></div><p className="text-foreground/50 font-medium text-lg">No active jobs found</p><p className="text-xs text-foreground/40 mt-1 max-w-xs mx-auto">Try adjusting your location filters or check back later for new requests.</p></div> : <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">{requests.filter(request => {
+          }).length === 0 ? <div className="text-center py-16 bg-card-bg/50 border-2 border-dashed border-card-border rounded-2xl"><div className="w-16 h-16 bg-card-border rounded-full flex items-center justify-center mx-auto mb-4"><Search className="w-8 h-8 text-foreground/30" /></div><p className="text-foreground/50 font-medium text-lg">No active jobs found</p><p className="text-xs text-foreground/40 mt-1 max-w-xs mx-auto">Try adjusting your location filters or check back later for new requests.</p></div> : <div className="grid grid-cols-2 gap-2 md:gap-6">{requests.filter(request => {
             const lQ = locationQuery.toLowerCase();
             const dQ = destinationQuery.toLowerCase();
             const cCity = (request.currentCity || "").toLowerCase();
@@ -163,41 +183,60 @@ export default function BidForJobsPage() {
             const matchesLoc = lQ === "" || cCity.includes(lQ) || cState.includes(lQ);
             const matchesDest = dQ === "" || dCity.includes(dQ) || dState.includes(dQ);
             return matchesLoc && matchesDest;
-          }).map((request) => <button key={request.id} disabled={request.status !== "open" || bidCount >= limits.dailyBids} onClick={() => { setSelectedRequest(request); setAmount(Number(request.budget).toLocaleString()); setSelectedVehicle(""); }} className={`text-left rounded-xl md:rounded-2xl p-4 md:p-5 transition-all duration-300 relative overflow-hidden group ${request.status !== "open" || bidCount >= limits.dailyBids ? "bg-card-bg border border-card-border opacity-60 grayscale cursor-not-allowed" : "bg-gradient-to-br from-brand-secondary/10 to-brand-primary/5 border border-brand-secondary/50 shadow-lg shadow-brand-secondary/20 hover:bg-brand-secondary/5 hover:border-brand-secondary hover:shadow-2xl hover:shadow-brand-secondary/40 hover:-translate-y-1.5"}`}>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-brand-secondary/15 rounded-full blur-2xl -mr-10 -mt-10 group-hover:bg-brand-secondary/30 transition-colors duration-300"></div>
-            <div className="flex justify-between items-start mb-4 relative z-10">
-              <div>
-                <span className="inline-block px-2.5 py-1 bg-white/60 dark:bg-black/40 backdrop-blur-md rounded-lg text-[10px] font-bold uppercase tracking-wider text-brand-secondary mb-2 border border-brand-secondary/10">{request.category}</span>
-              </div>
-              <div className="text-right">
-                <span className="text-sm md:text-base font-bold text-slate-900 dark:text-white">₦{Number(request.budget).toLocaleString()}</span>
-                <p className="text-[9px] text-foreground/50">Passenger budget</p>
-              </div>
-            </div>
-            
-            <div className="relative z-10 my-2">
-              <p className="text-sm font-normal text-slate-800 dark:text-slate-200 capitalize">
-                {request.currentCity}{request.currentState ? `, ${request.currentState}` : ''} 
-                {request.destinationCity && (
-                  <>
-                    <span className="text-brand-secondary mx-2 font-black">to</span> 
-                    {request.destinationCity}{request.destinationState ? `, ${request.destinationState}` : ''}
-                  </>
-                )}
-              </p>
-            </div>
-            
-            <div className="mt-3 pt-3 border-t border-brand-secondary/10 flex items-center justify-between relative z-10">
-              <p className="text-[10px] md:text-xs font-medium flex items-center gap-1.5 text-brand-secondary bg-white/50 dark:bg-black/30 px-2 py-1 rounded-md backdrop-blur-sm">
-                <Clock3 className="w-3.5 h-3.5" />
-                {request.status === "assigned" ? "Driver selected" : `${Math.max(0, Math.ceil((Number(request.expiresAt) - Date.now()) / 86400000))} days left to bid`}
-              </p>
-              <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
-                <ArrowLeft className="w-4 h-4 text-brand-secondary rotate-180" />
-              </div>
-            </div>
-          </button>)}</div>}
+          }).map((request) => {
+            const isApplied = appliedRequests.has(request.id);
+            const isAssigned = request.status === "assigned";
+            const isWinner = isAssigned && request.selectedDriverId === user?.uid;
 
+            return <button key={request.id} disabled={isApplied || isAssigned || request.status !== "open" || bidCount >= limits.dailyBids} onClick={() => { setSelectedRequest(request); setAmount(Number(request.budget).toLocaleString()); setSelectedVehicle(""); setBidDescription(""); setShowDescriptionInput(false); }} className={`text-left rounded-xl md:rounded-2xl p-2.5 md:p-5 transition-all duration-300 relative overflow-hidden group ${isWinner ? "bg-green-50 dark:bg-green-900/20 border border-green-500/50 cursor-default" : isAssigned ? "bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-slate-700 opacity-60 grayscale-[60%] cursor-not-allowed" : isApplied ? "bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 opacity-70 grayscale-[30%] cursor-not-allowed" : request.status !== "open" || bidCount >= limits.dailyBids ? "bg-card-bg border border-card-border opacity-60 grayscale cursor-not-allowed" : "bg-gradient-to-br from-brand-secondary/10 to-brand-primary/5 border border-brand-secondary/50 shadow-lg shadow-brand-secondary/20 hover:bg-brand-secondary/5 hover:border-brand-secondary hover:shadow-2xl hover:shadow-brand-secondary/40 hover:-translate-y-1.5"}`}>
+              {isWinner ? (
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-2 md:border-4 border-green-500 text-green-500 text-lg md:text-3xl font-black px-3 py-1 md:px-6 md:py-2 rounded-lg md:rounded-xl opacity-40 transform -rotate-12 z-20 pointer-events-none select-none tracking-widest uppercase shadow-sm">
+                  WON
+                </div>
+              ) : isAssigned ? (
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-2 md:border-4 border-red-500 text-red-500 text-sm md:text-2xl font-black px-2 py-0.5 md:px-4 md:py-1 rounded-lg md:rounded-xl opacity-30 transform -rotate-12 z-20 pointer-events-none select-none tracking-widest uppercase flex items-center justify-center whitespace-nowrap">
+                  TAKEN
+                </div>
+              ) : isApplied ? (
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-2 md:border-4 border-brand-primary text-brand-primary text-sm md:text-2xl font-black px-2 py-0.5 md:px-4 md:py-1 rounded-lg md:rounded-xl opacity-20 transform -rotate-12 z-20 pointer-events-none select-none tracking-widest uppercase flex items-center justify-center whitespace-nowrap">
+                  Applied
+                </div>
+              ) : null}
+              <div className="absolute top-0 right-0 w-16 h-16 md:w-32 md:h-32 bg-brand-secondary/15 rounded-full blur-xl md:blur-2xl -mr-6 -mt-6 md:-mr-10 md:-mt-10 group-hover:bg-brand-secondary/30 transition-colors duration-300"></div>
+              <div className="flex justify-between items-start mb-2 md:mb-4 relative z-10">
+                <div>
+                  <span className="inline-block px-1.5 py-0.5 md:px-2.5 md:py-1 bg-white/60 dark:bg-black/40 backdrop-blur-md rounded md:rounded-lg text-[8px] md:text-[10px] font-bold uppercase tracking-wider text-brand-secondary mb-1 md:mb-2 border border-brand-secondary/10">{request.category}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[11px] md:text-base font-bold text-slate-900 dark:text-white">₦{Number(request.budget).toLocaleString()}</span>
+                  <p className="text-[7px] md:text-[9px] text-foreground/50 leading-none mt-0.5">Passenger budget</p>
+                </div>
+              </div>
+
+              <div className="relative z-10 my-1 md:my-2">
+                <p className="text-[10px] md:text-sm font-normal text-slate-800 dark:text-slate-200 leading-tight">
+                  <span className="capitalize">{request.currentCity}{request.currentState ? `, ${request.currentState}` : ''}</span>
+                  {request.destinationCity && (
+                    <span className="block mt-0.5 md:inline md:mt-0">
+                      <span className="text-brand-secondary mx-1 md:mx-2 font-black lowercase">to</span>
+                      <span className="capitalize">{request.destinationCity}{request.destinationState ? `, ${request.destinationState}` : ''}</span>
+                    </span>
+                  )}
+                </p>
+              </div>
+
+              <div className="mt-2 pt-2 md:mt-3 md:pt-3 border-t border-brand-secondary/10 flex items-center justify-between relative z-10">
+                <p className="text-[8px] md:text-[10px] font-medium flex items-center gap-1 md:gap-1.5 text-brand-secondary bg-white/50 dark:bg-black/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded backdrop-blur-sm">
+                  <Clock3 className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" />
+                  {request.status === "assigned" ? "Driver selected" : `${Math.max(0, Math.ceil((Number(request.expiresAt) - Date.now()) / 86400000))} days left`}
+                </p>
+                <div className="flex w-5 h-5 md:w-8 md:h-8 rounded-full bg-white dark:bg-slate-800 items-center justify-center shadow-sm opacity-100 transition-transform transform translate-x-0 group-hover:translate-x-1">
+                  <ArrowLeft className="w-2.5 h-2.5 md:w-4 md:h-4 text-brand-secondary rotate-180" />
+                </div>
+              </div>
+            </button>;
+          })}
+          </div>}
         </div>
       </div>
 
@@ -210,12 +249,12 @@ export default function BidForJobsPage() {
             <div className="mb-6 pr-8">
               <h2 className="font-extrabold text-2xl text-slate-900 dark:text-white capitalize mb-1">Bid for {selectedRequest.category}</h2>
               <p className="text-sm text-slate-500 font-medium flex items-center gap-1.5 flex-wrap capitalize">
-                <span className="text-brand-primary">{selectedRequest.currentCity}{selectedRequest.currentState ? `, ${selectedRequest.currentState}` : ''}</span> 
-                <ArrowLeft className="w-3 h-3 rotate-180 text-slate-400" /> 
+                <span className="text-brand-primary">{selectedRequest.currentCity}{selectedRequest.currentState ? `, ${selectedRequest.currentState}` : ''}</span>
+                <ArrowLeft className="w-3 h-3 rotate-180 text-slate-400" />
                 <span className="text-brand-secondary">{selectedRequest.destinationCity ? `${selectedRequest.destinationCity}${selectedRequest.destinationState ? `, ${selectedRequest.destinationState}` : ''}` : "Any Destination"}</span>
               </p>
             </div>
-            
+
             <div className="mb-6">
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-3">Select your {selectedRequest.category}</label>
               {(() => {
@@ -233,18 +272,26 @@ export default function BidForJobsPage() {
                 }
                 return (
                   <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
-                    {matchingVehicles.map((vehicle) => (
-                      <button 
+                    {matchingVehicles.map((vehicle) => {
+                      const isApproved = vehicle.isApproved === true;
+                      return (
+                      <button
                         key={vehicle.id}
+                        disabled={!isApproved}
                         onClick={() => setSelectedVehicle(vehicle.id)}
-                        className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all duration-200 border-2 text-left ${selectedVehicle === vehicle.id ? 'border-brand-secondary bg-brand-secondary/5 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-brand-secondary/30'}`}
+                        className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all duration-200 border-2 text-left ${!isApproved ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700' : selectedVehicle === vehicle.id ? 'border-brand-secondary bg-brand-secondary/5 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-brand-secondary/30'}`}
                       >
-                        <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-lg overflow-hidden shrink-0 shadow-sm border border-slate-100 dark:border-slate-700">
-                          {vehicle.images?.front ? <img src={vehicle.images.front} className="w-full h-full object-cover" /> : <Car className="w-5 h-5 m-3 opacity-30 text-slate-500"/>}
+                        <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-lg overflow-hidden shrink-0 shadow-sm border border-slate-100 dark:border-slate-700 relative">
+                          {vehicle.images?.front ? <img src={vehicle.images.front} className="w-full h-full object-cover" /> : <Car className="w-5 h-5 m-3 opacity-30 text-slate-500" />}
                         </div>
                         <div className="flex-1 overflow-hidden">
                           <p className="font-bold text-xs text-slate-900 dark:text-white truncate">{vehicle.details?.make} {vehicle.details?.model}</p>
-                          <p className="text-[9px] text-slate-500 font-medium truncate mt-0.5">{vehicle.details?.year} • {vehicle.details?.color || "Standard"}</p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <p className="text-[9px] text-slate-500 font-medium truncate">{vehicle.details?.year} • {vehicle.details?.color || "Standard"}</p>
+                          </div>
+                          {!isApproved && (
+                            <span className="inline-block mt-1 text-[8px] px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 font-bold uppercase tracking-wider">Awaiting Admins Approval</span>
+                          )}
                         </div>
                         <div className="shrink-0">
                           {selectedVehicle === vehicle.id ? (
@@ -254,47 +301,73 @@ export default function BidForJobsPage() {
                           )}
                         </div>
                       </button>
-                    ))}
+                    )})}
                   </div>
                 );
               })()}
             </div>
-            
+
             <div className="mb-6">
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-2">Your Bid Amount</label>
               <div className="relative">
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">₦</span>
-                <input 
-                  type="text" 
-                  value={amount} 
+                <input
+                  type="text"
+                  value={amount}
                   onChange={(e) => {
                     const rawValue = e.target.value.replace(/,/g, '');
                     if (!isNaN(Number(rawValue))) {
                       setAmount(rawValue === '' ? '' : Number(rawValue).toLocaleString());
                     }
-                  }} 
-                  placeholder="Enter amount" 
-                  className="w-full pl-8 pr-4 py-3 md:py-4 text-lg font-bold rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all" 
+                  }}
+                  placeholder="Enter amount"
+                  className="w-full pl-8 pr-4 py-3 md:py-4 text-lg font-bold rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:border-transparent transition-all"
                 />
               </div>
-              <div className="mt-3 flex items-center justify-between">
-                <span className="text-xs text-slate-500">Passenger proposed: <b className="text-slate-800 dark:text-slate-200">₦{Number(selectedRequest.budget).toLocaleString()}</b></span>
-                <button onClick={() => setAmount(Number(selectedRequest.budget).toLocaleString())} className="text-[10px] font-bold text-brand-primary px-3 py-1.5 bg-brand-primary/10 rounded-lg hover:bg-brand-primary/20 transition-colors">Match budget</button>
+              <div className="mt-3 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-500">Passenger proposed: <b className="text-slate-800 dark:text-slate-200">₦{Number(selectedRequest.budget).toLocaleString()}</b></span>
+                  <button onClick={() => setAmount(Number(selectedRequest.budget).toLocaleString())} className="text-[10px] font-bold text-brand-primary px-3 py-1.5 bg-brand-primary/10 rounded-lg hover:bg-brand-primary/20 transition-colors">Match budget</button>
+                </div>
+                {!showDescriptionInput ? (
+                  <button onClick={() => setShowDescriptionInput(true)} className="text-[10px] font-bold text-brand-secondary text-left hover:underline">Add Description (Optional)</button>
+                ) : (
+                  <textarea
+                    value={bidDescription}
+                    onChange={(e) => setBidDescription(e.target.value)}
+                    placeholder="Explain condition or reason for your bid..."
+                    className="w-full p-3 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-secondary resize-none"
+                    rows={2}
+                  />
+                )}
               </div>
             </div>
-            
-            <button 
-              disabled={submitting || bidCount >= limits.dailyBids || !selectedVehicle} 
-              onClick={() => setShowBidConfirm(true)} 
-              className={`w-full py-4 rounded-2xl font-bold text-lg transition-all shadow-xl hover:-translate-y-1 ${!selectedVehicle ? 'bg-slate-300 dark:bg-slate-800 text-slate-500 shadow-none hover:translate-y-0 cursor-not-allowed' : 'bg-brand-secondary text-white shadow-brand-secondary/30 hover:bg-brand-secondary/90'}`}
+
+            {selectedRequest?.passengerId === user?.uid && (
+              <p className="text-xs text-red-500 font-bold mb-3 text-center">You cannot bid on your own request.</p>
+            )}
+            <button
+              disabled={submitting || bidCount >= limits.dailyBids || !selectedVehicle || selectedRequest?.passengerId === user?.uid}
+              onClick={() => setShowBidConfirm(true)}
+              className={`w-full py-4 rounded-2xl font-bold text-lg transition-all shadow-xl hover:-translate-y-1 ${(!selectedVehicle || selectedRequest?.passengerId === user?.uid) ? 'bg-slate-300 dark:bg-slate-800 text-slate-500 shadow-none hover:translate-y-0 cursor-not-allowed' : 'bg-brand-secondary text-white shadow-brand-secondary/30 hover:bg-brand-secondary/90'}`}
             >
-              {submitting ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : bidCount >= limits.dailyBids ? "Bid limit reached" : "Submit Proposal"}
+              {submitting ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : bidCount >= limits.dailyBids ? "Bid limit reached" : selectedRequest?.passengerId === user?.uid ? "Cannot bid on own request" : "Submit Proposal"}
             </button>
           </div>
         </div>
       )}
 
-      {showBidConfirm && <div className="fixed inset-0 z-[60] bg-black/60 flex items-center justify-center p-4"><div className="bg-background border border-card-border rounded-2xl p-6 max-w-sm w-full"><h2 className="font-bold text-lg mb-2">Confirm your bid</h2><p className="text-sm text-foreground/70 mb-5">Submitting this bid uses one of your available driver bids.</p><div className="flex gap-3"><button onClick={() => setShowBidConfirm(false)} className="flex-1 py-2 rounded-xl border border-card-border">Cancel</button><button onClick={() => { setShowBidConfirm(false); submitBid(); }} className="flex-1 py-2 rounded-xl bg-brand-secondary text-white font-bold">Confirm bid</button></div></div></div>}
+      {showBidConfirm &&
+        <div className="px-6 fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-4 md:p-6 max-w-sm w-full animate-in zoom-in-95 duration-200">
+            <h2 className="text-center font-bold text-base md:text-lg mb-1.5 md:mb-2 text-slate-900 dark:text-white">Confirm your bid</h2>
+            <p className="text-center text-xs md:text-sm text-slate-600 dark:text-slate-400 mb-4 md:mb-5">Submitting this bid uses one of your available bids.</p>
+            <div className="flex gap-2 md:gap-3">
+              <button onClick={() => setShowBidConfirm(false)} className="flex-1 py-1.5 px-3 md:py-2 text-sm font-medium rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Cancel</button>
+              <button onClick={() => { setShowBidConfirm(false); submitBid(); }} className="flex-1 py-1.5 px-3 md:py-2 text-sm rounded-xl bg-brand-secondary text-white font-bold shadow-lg shadow-brand-secondary/30 hover:bg-brand-secondary/90 transition-all hover:-translate-y-0.5">Confirm bid</button>
+            </div>
+          </div>
+        </div>}
 
       {showInfoModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -311,7 +384,7 @@ export default function BidForJobsPage() {
             <ul className="list-disc pl-5 space-y-3 text-sm text-slate-600 dark:text-slate-300">
               <li>Placing a bid consumes one of your available bids. Non-VIP drivers receive 1 free bid per month.</li>
               <li>Bids reset completely at the start of each month (they do not roll over).</li>
-              <li>Requests remain available for {requestDurationDays === 1 ? "1 week" : `${Math.ceil(requestDurationDays / 7)} weeks`} unless they expire or a driver is selected.</li>
+              <li>Requests remain available for {requestDurationDays} {requestDurationDays === 1 ? 'day' : 'days'} unless they expire or a driver is selected.</li>
               <li>If a passenger deletes a job request you bid on, your bid count is returned to you.</li>
               <li>Report passengers who disappoint, behave maliciously, or break the service rules using the report button in your chat.</li>
             </ul>

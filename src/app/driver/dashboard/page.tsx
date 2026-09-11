@@ -106,24 +106,24 @@ export default function DriverDashboard() {
         <nav className="flex flex-row md:flex-col gap-2 flex-1 md:flex-initial md:space-y-2 overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
           <button
             onClick={() => setActiveTab("profile")}
-            className={`flex-1 md:flex-initial md:w-full flex items-center justify-center md:justify-start gap-2 px-3 py-2 rounded-lg transition-all whitespace-nowrap text-sm ${
+            className={`flex-1 md:flex-initial md:w-full flex items-center justify-center md:justify-start gap-1 md:gap-2 px-2 py-1.5 md:px-3 md:py-2 rounded-lg transition-all whitespace-nowrap text-[11px] md:text-sm ${
               activeTab === "profile"
                 ? "bg-brand-primary text-white shadow-md shadow-brand-primary/20"
                 : "bg-card-bg md:bg-transparent hover:bg-card-bg/80 text-foreground/80 hover:text-foreground border border-card-border md:border-none"
             }`}
           >
-            <UserIcon className="w-4 h-4" />
+            <UserIcon className="w-3 h-3 md:w-4 md:h-4" />
             <span className="font-medium">My Profile</span>
           </button>
           <button
             onClick={() => setActiveTab("vehicles")}
-            className={`flex-1 md:flex-initial md:w-full flex items-center justify-center md:justify-start gap-2 px-3 py-2 rounded-lg transition-all whitespace-nowrap text-sm ${
+            className={`flex-1 md:flex-initial md:w-full flex items-center justify-center md:justify-start gap-1 md:gap-2 px-2 py-1.5 md:px-3 md:py-2 rounded-lg transition-all whitespace-nowrap text-[11px] md:text-sm ${
               activeTab === "vehicles"
                 ? "bg-brand-secondary text-white shadow-md shadow-brand-secondary/20"
                 : "bg-card-bg md:bg-transparent hover:bg-card-bg/80 text-foreground/80 hover:text-foreground border border-card-border md:border-none"
             }`}
           >
-            <Car className="w-4 h-4" />
+            <Car className="w-3 h-3 md:w-4 md:h-4" />
             <span className="font-medium">My Vehicles</span>
           </button>
           <button
@@ -142,8 +142,9 @@ export default function DriverDashboard() {
               </span>
             )}
           </button>
-          <Link href="/purchase-history" className="flex-1 md:flex-initial md:w-full flex items-center justify-center md:justify-start px-3 py-2 rounded-lg text-sm font-medium text-foreground/80 hover:bg-card-bg/80 hover:text-foreground whitespace-nowrap">
-            Purchase History
+          <Link href="/purchase-history" className="flex-1 md:flex-initial md:w-full flex items-center justify-center md:justify-start px-2 py-1.5 md:px-3 md:py-2 rounded-lg text-[11px] md:text-sm font-medium text-foreground/80 hover:bg-card-bg/80 hover:text-foreground whitespace-nowrap underline md:no-underline">
+            <span className="md:hidden">Purchases</span>
+            <span className="hidden md:inline">Purchase History</span>
           </Link>
         </nav>
 

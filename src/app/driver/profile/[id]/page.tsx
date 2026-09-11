@@ -224,9 +224,12 @@ export default function DriverProfilePage() {
               )}
             </h2>
 
-            <div className="flex items-center justify-center md:justify-start gap-1 bg-card-border/50 px-3 py-1 md:py-1.5 rounded-full mb-3 md:mb-4 w-max mx-auto md:mx-0">
-              {renderStars(driver.rating || 5.0)}
-              <span className="ml-2 font-bold text-sm">{(driver.rating || 5.0).toFixed(1)}</span>
+            <div className="flex flex-col items-center md:items-start bg-card-border/50 px-4 py-2 rounded-xl mb-4 w-max mx-auto md:mx-0 shadow-inner">
+              <div className="flex items-center gap-1">
+                {renderStars(Math.min(5, Math.floor((driver.jobsWon || 0) / 2)))}
+                <span className="ml-1.5 md:ml-2 font-bold text-xs md:text-sm uppercase text-brand-primary">Level {Math.min(5, Math.floor((driver.jobsWon || 0) / 2))}</span>
+              </div>
+              <span className="text-[10px] text-foreground/60 font-medium text-center md:text-left">{driver.jobsWon || 0} jobs won</span>
             </div>
 
             <div className="space-y-3 mb-4 md:mb-6">

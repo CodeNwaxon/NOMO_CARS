@@ -180,7 +180,13 @@ export default function CategoryVehicles() {
               (v.services || []).some((s: any) => (s.destination || "").toLowerCase().includes(destQuery));
 
             return locMatches && destMatches;
-          }).sort((a, b) => (b.driverVipStars || 0) - (a.driverVipStars || 0));
+          }).sort((a, b) => {
+            const vipDiff = (b.driverVipStars || 0) - (a.driverVipStars || 0);
+            if (vipDiff !== 0) return vipDiff;
+            const levelA = Math.floor((a.driverJobsWon || 0) / 2);
+            const levelB = Math.floor((b.driverJobsWon || 0) / 2);
+            return levelB - levelA;
+          });
 
           const displayedVehicles = filteredVehicles.slice(0, visibleCount);
 
@@ -286,9 +292,19 @@ export default function CategoryVehicles() {
                               <span>{v.details.year}</span> <span className="opacity-50">•</span> <span>{v.details.color || "Standard Color"}</span> <span className="opacity-50">•</span> <span>AC: {v.details.ac ? "Yes" : "No"}</span>
                             </div>
 
-                            <Link href={`/driver/profile/${v.driverId}`} className="text-[10px] md:text-sm text-brand-primary font-semibold hover:underline mb-4 inline-block truncate">
-                              Driver's Profile
-                            </Link>
+                            <div className="mb-4 mt-1">
+                              <Link href={`/driver/profile/${v.driverId}`} className="text-[12px] md:text-sm font-bold text-foreground hover:underline inline-block truncate mb-0.5">
+                                {v.driverName}
+                              </Link>
+                              <div className="flex items-center gap-1.5">
+                                <div className="flex">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star key={i} className={`w-3 h-3 md:w-3.5 md:h-3.5 ${i < Math.min(5, Math.floor((v.driverJobsWon || 0) / 2)) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-300 dark:text-slate-700'}`} />
+                                  ))}
+                                </div>
+                                <span className="text-foreground/50 text-[10px]">• {v.driverJobsWon || 0} jobs won</span>
+                              </div>
+                            </div>
 
                             <div className="mt-auto flex gap-2 w-full border-t border-card-border pt-3 md:pt-4">
                               <button

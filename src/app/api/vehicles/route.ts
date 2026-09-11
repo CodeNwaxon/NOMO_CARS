@@ -97,6 +97,7 @@ export async function GET(request: NextRequest) {
       v.driverName = dData.username || dData.firstName || "Unknown";
       v.driverIsDisabled = dData.isDisabled || false;
       v.driverTicketExpiry = dData.ticketExpiry || null;
+      v.driverJobsWon = dData.jobsWon || 0;
 
       // Extract driverCreatedAt or createdAt for the personal 90-day ticket calculation
       let createdAtStr = null;

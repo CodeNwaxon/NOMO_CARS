@@ -393,9 +393,14 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
           <h2 className="text-lg md:text-2xl font-bold mb-1 capitalize w-full truncate px-2">{isEditing ? formData.username : getDisplayName()}</h2>
           <p className="text-xs md:text-sm text-foreground/60 mb-4 w-full truncate px-2">{user.email}</p>
 
-          <div className="flex items-center gap-1 bg-card-border/50 px-3 py-1.5 md:px-4 md:py-2 rounded-full mb-6 shadow-inner">
-            {renderStars(profile?.rating || 5.0)}
-            <span className="ml-1.5 md:ml-2 font-bold text-xs md:text-sm">{(profile?.rating || 5.0).toFixed(1)}</span>
+          <div className="flex flex-col items-center gap-1 bg-card-border/50 px-4 py-2 rounded-xl mb-6 shadow-inner">
+            <div className="flex items-center gap-1">
+              {renderStars(Math.min(5, Math.floor((profile?.jobsWon || 0) / 2)))}
+              <span className="ml-1.5 md:ml-2 font-bold text-xs md:text-sm uppercase text-brand-primary">
+                Level {Math.min(5, Math.floor((profile?.jobsWon || 0) / 2))}
+              </span>
+            </div>
+            <span className="text-[10px] text-foreground/60 font-medium">{profile?.jobsWon || 0} jobs won</span>
           </div>
 
           {!isEditing ? (
