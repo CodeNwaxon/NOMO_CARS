@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { LogOut, User as UserIcon, Car, MessageCircle, Loader2, AlertTriangle } from "lucide-react";
+import { LogOut, User as UserIcon, Car, MessageCircle, Loader2, AlertTriangle, XCircle } from "lucide-react";
 import { useChat } from "@/context/ChatContext";
 import ProfileTab from "./ProfileTab";
 import VehiclesTab from "./VehiclesTab";
@@ -31,9 +31,9 @@ export default function DriverDashboard() {
         router.push("/");
       } else if (profile?.role !== "driver") {
         router.push("/driver/register");
-      } else if (!profile?.isApproved) {
+      } else if (!profile?.isApproved && !profile?.isRejected) {
         router.push("/driver/awaiting-approval");
-      } else {
+      } else if (profile?.isApproved) {
         // Enforce limits lazily on background load
         import("@/actions/enforcement").then((m) => {
           m.enforceDriverLimits(user.uid).catch(console.error);
@@ -42,7 +42,7 @@ export default function DriverDashboard() {
     }
   }, [user, profile, loading, router]);
 
-  if (loading || !user || !profile || !profile.isApproved) {
+  if (loading || !user || !profile || (!profile.isApproved && !profile.isRejected)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-12 h-12 text-brand-primary animate-spin" />
@@ -77,7 +77,42 @@ export default function DriverDashboard() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
+    <div className="min-h-screen flex flex-col md:flex-row relative">
+      {/* REJECTION OVERLAY */}
+      {profile.isRejected && (
+        <div className="absolute inset-0 z-50 bg-white/60 dark:bg-slate-950/60 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-red-100 dark:border-red-900 shadow-2xl rounded-3xl max-w-lg w-full p-8 text-center animate-in zoom-in-95 duration-300">
+            <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+              <XCircle className="w-10 h-10 text-red-500" />
+            </div>
+            <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2">Application Rejected</h2>
+            <p className="text-slate-600 dark:text-slate-400 mb-6">
+              Unfortunately, your driver application was not approved by our team.
+            </p>
+            
+            <div className="bg-red-50 dark:bg-red-900/10 rounded-2xl p-4 mb-8 text-left border border-red-100 dark:border-red-900/30">
+              <p className="text-xs font-bold text-red-800 dark:text-red-400 uppercase tracking-wider mb-1">Reason for Rejection</p>
+              <p className="text-red-900 dark:text-red-200 text-sm">{profile.rejectionReason || "No specific reason provided."}</p>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link 
+                href="/passenger/home"
+                className="px-6 py-3 rounded-xl font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors"
+              >
+                Go to Passenger Profile
+              </Link>
+              <Link 
+                href="/driver/register"
+                className="px-6 py-3 rounded-xl font-bold text-white bg-red-500 hover:bg-red-600 shadow-lg shadow-red-500/20 transition-all"
+              >
+                Reapply Now
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar Navigation / Mobile Top Nav */}
       <aside className="w-full md:w-64 glass-panel md:min-h-screen border-b md:border-b-0 md:border-r border-card-border p-4 md:p-6 flex flex-col">
         <div className="mb-4 md:mb-10 flex justify-between items-center md:block">

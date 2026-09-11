@@ -346,18 +346,36 @@ export default function DriverProfilePage() {
                 <div className="p-5 flex-1 flex flex-col">
                   <h3 className="text-lg font-bold mb-1 truncate">{v.details.make} {v.details.model}</h3>
                   <div className="text-[10px] md:text-sm text-foreground/60 mb-4 border-b border-card-border pb-4 flex flex-wrap gap-x-2 gap-y-1 items-center leading-tight">
-                    <span>Yr: {v.details.year}</span> <span className="opacity-50">•</span> <span>Seats: {v.details.seats}</span> <span className="opacity-50">•</span> <span>AC: {v.details.ac ? "Yes" : "No"}</span>
+                    <span>Yr: {v.details.year}</span> 
+                    {v.details.color && (
+                      <>
+                        <span className="opacity-50">•</span> <span className="capitalize">{v.details.color}</span>
+                      </>
+                    )}
+                    <span className="opacity-50">•</span> <span>Seats: {v.details.seats}</span> <span className="opacity-50">•</span> <span>AC: {v.details.ac ? "Yes" : "No"}</span>
                   </div>
 
                   <div className="mt-auto flex gap-2">
                     <button 
-                      onClick={() => setShowContactOverlayFor({ id: v.id, name: `${v.details.make} ${v.details.model}` })}
+                      onClick={() => {
+                        if (v.isApproved === false) {
+                          toast.error("This driver's vehicle is currently under security review and cannot be booked right now.");
+                          return;
+                        }
+                        setShowContactOverlayFor({ id: v.id, name: `${v.details.make} ${v.details.model}` });
+                      }}
                       className="flex-1 py-3 text-[10px] md:text-sm bg-brand-secondary/10 hover:bg-brand-secondary text-brand-secondary hover:text-white font-medium rounded-xl transition-colors"
                     >
                       Request Ride
                     </button>
                     <button
-                      onClick={() => setViewingServicesFor({ id: v.id, name: `${v.details.make} ${v.details.model}` })}
+                      onClick={() => {
+                        if (v.isApproved === false) {
+                          toast.error("This driver's vehicle is currently under security review and cannot provide services right now.");
+                          return;
+                        }
+                        setViewingServicesFor({ id: v.id, name: `${v.details.make} ${v.details.model}` });
+                      }}
                       className="flex-1 py-3 text-[10px] md:text-sm bg-brand-primary/10 hover:bg-brand-primary text-brand-primary hover:text-white font-medium rounded-xl transition-colors"
                     >
                       Services

@@ -131,37 +131,66 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
   useEffect(() => {
     if (!user) return;
 
-    const lastChecked = localStorage.getItem(`lastUserNotifCheck_${user.uid}`) || "1970-01-01T00:00:00.000Z";
-    const lastCheckedTime = new Date(lastChecked).getTime();
-    
-    // Simple query to avoid needing a complex composite index
+    // Track IDs we've already processed to avoid duplicates
+    const seenIdsKey = `seenNotifIds_${user.uid}`;
+    let seenIds: Set<string>;
+    try {
+      const stored = localStorage.getItem(seenIdsKey);
+      seenIds = stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      seenIds = new Set();
+    }
+
+    // Track whether this is the very first snapshot (initial load)
+    let isInitialLoad = true;
+
     const nQuery = query(
       collection(db, "user_notifications"),
       where("userId", "==", user.uid)
     );
 
     const unsubscribe = onSnapshot(nQuery, (snapshot) => {
-      if (snapshot.empty) {
-        localStorage.setItem(`lastUserNotifCheck_${user.uid}`, new Date().toISOString());
-        return;
-      }
-
       const newNotifs: AppNotification[] = [];
+
       snapshot.docChanges().forEach((change) => {
         if (change.type === "added") {
+          const docId = change.doc.id;
+          // Skip if we've already seen this notification
+          if (seenIds.has(docId)) return;
+          seenIds.add(docId);
+
           const data = change.doc.data();
-          if (data.createdAt > lastCheckedTime) {
-            newNotifs.push({
-              id: change.doc.id,
-              title: data.title || "Notification",
-              message: data.message,
-              date: data.createdAt,
-              isRead: false,
-              link: data.link,
-              image: data.image,
-              urlLabel: data.urlLabel
-            });
+
+          // Normalize createdAt to a number (handle both ISO string and timestamp)
+          let dateNum: number;
+          if (typeof data.createdAt === "number") {
+            dateNum = data.createdAt;
+          } else if (typeof data.createdAt === "string") {
+            dateNum = new Date(data.createdAt).getTime();
+          } else {
+            dateNum = Date.now();
           }
+
+          // On initial load, only show notifications from the last 7 days
+          // On subsequent snapshots, show ALL new docs (these are real-time arrivals)
+          if (isInitialLoad) {
+            const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+            if (dateNum < sevenDaysAgo) return;
+          }
+
+          // Skip already-read notifications from Firestore
+          if (data.read === true) return;
+
+          newNotifs.push({
+            id: docId,
+            title: data.title || "Notification",
+            message: data.message,
+            date: dateNum,
+            isRead: false,
+            link: data.link,
+            image: data.image,
+            urlLabel: data.urlLabel
+          });
         }
       });
 
@@ -169,12 +198,20 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
         setNotifications(prev => {
           const existingIds = new Set(prev.map(n => n.id));
           const uniqueNew = newNotifs.filter(n => !existingIds.has(n.id));
-          // Sort new notifications so newest is first
           uniqueNew.sort((a, b) => b.date - a.date);
           return [...uniqueNew, ...prev];
         });
       }
-      localStorage.setItem(`lastUserNotifCheck_${user.uid}`, new Date().toISOString());
+
+      // Persist seen IDs (cap at 500 to avoid unbounded growth)
+      const idsArray = Array.from(seenIds);
+      if (idsArray.length > 500) {
+        const trimmed = idsArray.slice(idsArray.length - 500);
+        seenIds = new Set(trimmed);
+      }
+      localStorage.setItem(seenIdsKey, JSON.stringify(Array.from(seenIds)));
+
+      isInitialLoad = false;
     }, (err) => {
       console.error("Error listening to user notifications:", err);
     });

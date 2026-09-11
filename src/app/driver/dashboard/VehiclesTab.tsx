@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { collection, addDoc, setDoc, query, where, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { collection, addDoc, setDoc, query, where, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
-import { Loader2, Plus, UploadCloud, ArrowLeft, Car, CarFront, Bike, Truck, Plane, Ship, Bus, Settings, Edit3, Trash2, Eye, Info, X, Star, Check, Share2 } from "lucide-react";
+import { Loader2, Plus, UploadCloud, ArrowLeft, Car, CarFront, Bike, Truck, Plane, Ship, Bus, Settings, Edit3, Trash2, Eye, Info, X, Star, Check, Share2, XCircle } from "lucide-react";
 import { toast } from "react-hot-toast";
 import ManageServicesModal from "./ManageServicesModal";
 import EditVehicleModal from "./EditVehicleModal";
+import { notifyAdminsClient } from "@/lib/notifyClient";
 import ImageViewerOverlay from "@/components/ImageViewerOverlay";
 import { useVIPLimits } from "@/hooks/useVIPLimits";
 import Link from "next/link";
@@ -293,6 +294,13 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
       } else {
         await addDoc(collection(db, "vehicles"), vehicleData);
       }
+
+      // Send persistent notification to admin via client
+      await notifyAdminsClient(
+        "New Vehicle Pending",
+        `A driver has submitted a ${vehicleData.details.make} ${vehicleData.details.model} for review.`,
+        "/admin/vehicle-approvals"
+      );
 
       toast.success("Vehicle submitted for approval!");
       setStep("list");
@@ -631,6 +639,33 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
                     {v.category}
                   </div>
 
+                  {/* REJECTION OVERLAY */}
+                  {v.isRejected && (
+                    <div className="absolute inset-0 z-20 bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center rounded-2xl animate-in zoom-in-95 duration-200 border-2 border-red-500/50">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); initiateDelete(v.id); }}
+                        className="absolute top-2 right-2 w-8 h-8 bg-red-100 hover:bg-red-200 dark:bg-red-900/50 dark:hover:bg-red-900 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center transition-colors shadow-sm"
+                        title="Delete Application"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                      <div className="w-12 h-12 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center mb-2 shadow-inner">
+                        <XCircle className="w-6 h-6 text-red-500" />
+                      </div>
+                      <h4 className="text-lg font-black text-slate-900 dark:text-white leading-tight">Application Rejected</h4>
+                      <div className="bg-red-50 dark:bg-red-900/20 w-full mt-2 p-2 rounded-lg border border-red-100 dark:border-red-900/50 text-left">
+                        <p className="text-[10px] font-bold text-red-800 dark:text-red-400 uppercase tracking-wider mb-0.5">Reason:</p>
+                        <p className="text-[11px] text-red-900 dark:text-red-200 font-medium line-clamp-2">{v.rejectionReason || "No specific reason provided."}</p>
+                      </div>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setEditingVehicle(v); }}
+                        className="mt-3 w-full py-2 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-red-500/30 active:scale-95"
+                      >
+                        Reapply
+                      </button>
+                    </div>
+                  )}
+
                   {/* View Full Image Button Overlay */}
                   <button
                     onClick={() => {
@@ -703,48 +738,69 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
 
                   {/* Actions Area */}
                   <div className="mt-4 flex flex-col gap-2 border-t border-card-border/50 pt-4">
-                    {v.isSuspendedByLimit ? (
-                      <div className="flex items-center justify-center gap-2 mb-1">
-                        <Link href="/vip" className="text-center text-xs text-red-500 hover:text-red-600 font-bold hover:underline">
-                          Upgrade VIP to unlock this vehicle
-                        </Link>
-                        <button onClick={() => setShowVIPInfo(true)} className="w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition flex-shrink-0">
-                          <Info className="w-3 h-3" />
+                    {v.isRejected ? (
+                      /* Rejected vehicle: only Reapply + small delete */
+                      <div className="flex flex-col gap-2">
+                        <button
+                          onClick={() => setEditingVehicle(v)}
+                          className="w-full py-2.5 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-red-500/20 active:scale-95 flex items-center justify-center gap-2"
+                        >
+                          <Edit3 className="w-4 h-4" /> Reapply
+                        </button>
+                        <button
+                          onClick={() => initiateDelete(v.id)}
+                          className="text-xs text-red-400 hover:text-red-600 font-medium transition-colors text-center"
+                        >
+                          Delete Application
                         </button>
                       </div>
-                    ) : null}
+                    ) : (
+                      /* Normal vehicle actions */
+                      <>
+                        {v.isSuspendedByLimit ? (
+                          <div className="flex items-center justify-center gap-2 mb-1">
+                            <Link href="/vip" className="text-center text-xs text-red-500 hover:text-red-600 font-bold hover:underline">
+                              Upgrade VIP to unlock this vehicle
+                            </Link>
+                            <button onClick={() => setShowVIPInfo(true)} className="w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center hover:bg-red-600 transition flex-shrink-0">
+                              <Info className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ) : null}
 
-                    <button
-                      onClick={() => setManagingServicesFor({ id: v.id, name: `${v.details.make} ${v.details.model}` })}
-                      disabled={v.isSuspendedByLimit}
-                      className={`w-full py-2 font-bold rounded-lg text-sm transition-colors ${v.isSuspendedByLimit ? "bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed" : "bg-brand-primary/10 text-brand-primary hover:bg-brand-primary hover:text-white"}`}
-                    >
-                      Manage Routes & Services
-                    </button>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setEditingVehicle(v)}
-                        disabled={v.isSuspendedByLimit}
-                        className={`flex-1 py-2 border font-bold rounded-lg text-sm transition-colors flex items-center justify-center gap-2 ${v.isSuspendedByLimit ? "bg-gray-100 dark:bg-gray-800 border-transparent text-gray-400 cursor-not-allowed" : "bg-card-bg border-card-border hover:bg-card-border/50 text-foreground/80"}`}
-                      >
-                        <Edit3 className="w-4 h-4" /> Edit
-                      </button>
-                      <button
-                        onClick={() => initiateDelete(v.id)}
-                        className="flex-1 py-2 bg-red-500/10 text-red-500 font-bold rounded-lg text-sm hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center gap-2"
-                      >
-                        <Trash2 className="w-4 h-4" /> Delete
-                      </button>
-                      {hasShareBenefit() && v.isApproved && (
                         <button
-                          onClick={() => handleShare(v)}
-                          title="Share Vehicle"
-                          className="px-3 py-2 bg-blue-500/10 text-blue-500 font-bold rounded-lg hover:bg-blue-500 hover:text-white transition-colors flex items-center justify-center"
+                          onClick={() => setManagingServicesFor({ id: v.id, name: `${v.details.make} ${v.details.model}` })}
+                          disabled={v.isSuspendedByLimit}
+                          className={`w-full py-2 font-bold rounded-lg text-sm transition-colors ${v.isSuspendedByLimit ? "bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed" : "bg-brand-primary/10 text-brand-primary hover:bg-brand-primary hover:text-white"}`}
                         >
-                          <Share2 className="w-4 h-4" />
+                          Manage Routes & Services
                         </button>
-                      )}
-                    </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setEditingVehicle(v)}
+                            disabled={v.isSuspendedByLimit}
+                            className={`flex-1 py-2 border font-bold rounded-lg text-sm transition-colors flex items-center justify-center gap-2 ${v.isSuspendedByLimit ? "bg-gray-100 dark:bg-gray-800 border-transparent text-gray-400 cursor-not-allowed" : "bg-card-bg border-card-border hover:bg-card-border/50 text-foreground/80"}`}
+                          >
+                            <Edit3 className="w-4 h-4" /> Edit
+                          </button>
+                          <button
+                            onClick={() => initiateDelete(v.id)}
+                            className="flex-1 py-2 bg-red-500/10 text-red-500 font-bold rounded-lg text-sm hover:bg-red-500 hover:text-white transition-colors flex items-center justify-center gap-2"
+                          >
+                            <Trash2 className="w-4 h-4" /> Delete
+                          </button>
+                          {hasShareBenefit() && v.isApproved && (
+                            <button
+                              onClick={() => handleShare(v)}
+                              title="Share Vehicle"
+                              className="px-3 py-2 bg-blue-500/10 text-blue-500 font-bold rounded-lg hover:bg-blue-500 hover:text-white transition-colors flex items-center justify-center"
+                            >
+                              <Share2 className="w-4 h-4" />
+                            </button>
+                          )}
+                        </div>
+                      </>
+                    )}
                   </div>
 
                 </div>

@@ -47,7 +47,9 @@ export default function AwaitingApproval() {
 
         <h1 className="text-2xl md:text-3xl font-bold mb-2">Awaiting Approval</h1>
         <p className="text-xs md:text-sm text-foreground/80 mb-6 leading-relaxed">
-          Thank you for registering with Nomo Cars, {profile?.firstName}! Our team is currently reviewing your application and documents.
+          Thank you for registering with Nomo Cars, {profile?.firstName}! Our team is currently reviewing your application and documents. 
+          <br/><br/>
+          <span className="font-bold text-brand-primary">Approval typically happens immediately, but may take up to a maximum of 48 hours.</span>
         </p>
 
         <div className="bg-black/5 dark:bg-white/5 rounded-2xl p-3 md:p-4 mb-4 md:mb-6 text-sm text-foreground/80 text-left shadow-inner">

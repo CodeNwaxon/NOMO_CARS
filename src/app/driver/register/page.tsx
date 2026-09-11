@@ -6,9 +6,11 @@ import { useAuth } from "@/context/AuthContext";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { storage, db } from "@/lib/firebase";
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
+import { notifyAdminsClient } from "@/lib/notifyClient";
 import { Loader2, UploadCloud, Camera } from "lucide-react";
 import { buildDriverSearchTokens } from "@/lib/constants";
 
@@ -173,7 +175,14 @@ export default function DriverRegistration() {
         driverCreatedAt: serverTimestamp(),
       });
 
-      // 3. Refresh Profile and redirect
+      // 3. Send persistent notification to all admins via client
+      await notifyAdminsClient(
+        "New Driver Pending",
+        `${data.firstName} ${data.lastName} has registered and is awaiting approval.`,
+        "/admin/driver-approvals"
+      );
+
+      // 4. Refresh Profile and redirect
       await refreshProfile();
       router.push("/driver/awaiting-approval");
     } catch (error) {

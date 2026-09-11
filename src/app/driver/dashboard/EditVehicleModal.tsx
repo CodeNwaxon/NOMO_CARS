@@ -6,6 +6,7 @@ import { db } from "@/lib/firebase";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { X, Loader2, Camera, Save, ImageIcon } from "lucide-react";
 import { toast } from "react-hot-toast";
+import { notifyAdminsClient } from "@/lib/notifyClient";
 
 const getFieldConfig = (category: string) => {
   const isTwoWheeler = ["motorbike", "keke"].includes(category);
@@ -148,11 +149,57 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
       if (config.details.plateNumber) detailsToSave.plateNumber = form.plateNumber;
       if (config.details.registrationNumber) detailsToSave.registrationNumber = form.registrationNumber;
 
+      const editedFields: string[] = vehicle.editedFields || [];
+
+      const checkChanged = (oldVal: any, newVal: any, label: string) => {
+        if (oldVal !== newVal && !editedFields.includes(label)) {
+          editedFields.push(label);
+        }
+      };
+
+      checkChanged(vehicle.details?.make, form.make, "Make");
+      checkChanged(vehicle.details?.model, form.model, "Model");
+      checkChanged(vehicle.details?.year, form.year, "Year");
+
+      if (config.details.seats) checkChanged(vehicle.details?.seats, form.seats, "Seats");
+      if (config.details.color) checkChanged(vehicle.details?.color, form.color, "Color");
+      if (config.details.ac) checkChanged(vehicle.details?.ac, form.ac, "AC");
+      if (config.details.payload) checkChanged(vehicle.details?.payloadCapacity, form.payloadCapacity, "Payload Capacity");
+      if (config.details.capacity) checkChanged(vehicle.details?.totalCapacity, form.totalCapacity, "Total Capacity");
+      if (config.details.plateNumber) checkChanged(vehicle.details?.plateNumber, form.plateNumber, "Plate Number");
+      if (config.details.registrationNumber) checkChanged(vehicle.details?.registrationNumber, form.registrationNumber, "Registration Number");
+
+      Object.keys(updatedImages).forEach(key => {
+        if (vehicle.images?.[key] !== updatedImages[key]) {
+          const label = imageLabels[key] || `${key} image`;
+          if (!editedFields.includes(label)) editedFields.push(label);
+        }
+      });
+
+      Object.keys(updatedDocs).forEach(key => {
+        if (vehicle.documents?.[key] !== updatedDocs[key]) {
+          const label = docLabels[key] || `${key} document`;
+          if (!editedFields.includes(label)) editedFields.push(label);
+        }
+      });
+
       await updateDoc(doc(db, "vehicles", vehicle.id), {
         details: detailsToSave,
         images: updatedImages,
         documents: updatedDocs,
+        isApproved: false, // Reset approval status to enforce admin re-verification
+        isRejected: false, // Reset rejection status
+        rejectionReason: null, // Clear rejection reason
+        editedSinceLastApproval: true, // Flag for admin dashboard notification
+        editedFields: editedFields, // Tell admin exactly what changed
       });
+
+      // Send persistent notification to admin via client
+      await notifyAdminsClient(
+        "Vehicle Re-submitted",
+        `A driver has submitted a ${detailsToSave.make} ${detailsToSave.model} for review.`,
+        "/admin/vehicle-approvals"
+      );
 
       toast.success("Vehicle updated successfully!");
       onSaved();

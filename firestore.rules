@@ -129,6 +129,14 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Admin Roles collection
+    match /adminRoles/{adminId} {
+      // Any authenticated user can read admin roles (needed for notification routing)
+      allow read: if request.auth != null;
+      // Only admins can modify roles
+      allow write: if isAdmin();
+    }
+
     // User Notifications collection
     match /user_notifications/{notificationId} {
       // Any authenticated user can create a notification for someone else

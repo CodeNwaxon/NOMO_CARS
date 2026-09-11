@@ -3,12 +3,13 @@
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { collection, query, where, getDocs, updateDoc, doc, setDoc, getDoc, deleteDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, updateDoc, doc, setDoc, getDoc, deleteDoc, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Loader2, ArrowLeft, CheckCircle, XCircle, LayoutDashboard, ShieldAlert, Trash2, Search } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle, XCircle, LayoutDashboard, ShieldAlert, Trash2, Search, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 import ImageViewerOverlay from "@/components/ImageViewerOverlay";
+import { sendApprovalEmail } from "@/actions/notify";
 
 export default function ManageVehiclesPage() {
   const { user, loading: authLoading } = useAuth();
@@ -36,6 +37,11 @@ export default function ManageVehiclesPage() {
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
   const [pendingAction, setPendingAction] = useState<{ type: "unapprove" | "delete", vehicleId: string } | null>(null);
+
+  // Approval/Rejection Modal State
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [approvalAction, setApprovalAction] = useState<{ type: "approve" | "reject", vehicleId: string } | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -68,6 +74,17 @@ export default function ManageVehiclesPage() {
           ...data,
           seenVehicleApprovals: Array.from(currentSeen)
         }, { merge: true });
+
+        // Clear the edited flag for any re-submitted vehicles since admin has now seen them
+        fetchedVehicles.forEach(async (v: any) => {
+          if (v.editedSinceLastApproval) {
+            try {
+              await updateDoc(doc(db, "vehicles", v.id), { editedSinceLastApproval: false });
+            } catch (err) {
+              console.error("Failed to clear edited flag:", err);
+            }
+          }
+        });
       }
     } catch (error) {
       console.error("Error fetching vehicles:", error);
@@ -77,28 +94,69 @@ export default function ManageVehiclesPage() {
     }
   };
 
-  const approveVehicle = async (vehicleId: string) => {
-    const toastId = toast.loading("Approving vehicle...");
-    try {
-      await updateDoc(doc(db, "vehicles", vehicleId), { isApproved: true });
-      setVehicles(vehicles.filter(v => v.id !== vehicleId));
-      toast.success("Vehicle approved successfully!", { id: toastId });
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to approve vehicle.", { id: toastId });
+  const handleApprovalSubmit = async () => {
+    if (!approvalAction) return;
+    if (approvalAction.type === "reject" && !rejectionReason.trim()) {
+      toast.error("Rejection reason is required.");
+      return;
     }
-  };
 
-  const rejectVehicle = async (vehicleId: string) => {
-    if (!confirm("Are you sure you want to reject and delete this vehicle application?")) return;
-    const toastId = toast.loading("Rejecting vehicle...");
+    const { type, vehicleId } = approvalAction;
+    const toastId = toast.loading(`${type === "approve" ? "Approving" : "Rejecting"} vehicle...`);
+
     try {
-      await deleteDoc(doc(db, "vehicles", vehicleId));
-      setVehicles(vehicles.filter(v => v.id !== vehicleId));
-      toast.success("Vehicle application rejected.", { id: toastId });
+      const v = vehicles.find(v => v.id === vehicleId);
+      
+      if (type === "approve") {
+        await updateDoc(doc(db, "vehicles", vehicleId), { 
+          isApproved: true, 
+          isRejected: false, 
+          rejectionReason: null,
+          editedFields: [],
+          approvedBy: user?.email || "Admin"
+        });
+        setVehicles(vehicles.filter(v => v.id !== vehicleId));
+        toast.success("Vehicle approved successfully!", { id: toastId });
+
+        if (v?.driverId) {
+          await sendApprovalEmail(v.driverId, "vehicle", `${v.details?.make} ${v.details?.model}`);
+          await addDoc(collection(db, "user_notifications"), {
+            userId: v.driverId,
+            type: "approval",
+            title: "Vehicle Approved",
+            message: `Your ${v.details?.make} ${v.details?.model} has been approved and is now live!`,
+            read: false,
+            createdAt: new Date().toISOString(),
+            link: "/driver/dashboard?tab=vehicles"
+          });
+        }
+      } else {
+        await updateDoc(doc(db, "vehicles", vehicleId), { 
+          isApproved: false, 
+          isRejected: true, 
+          rejectionReason: rejectionReason.trim() 
+        });
+        setVehicles(vehicles.filter(v => v.id !== vehicleId));
+        toast.success("Vehicle application rejected.", { id: toastId });
+
+        if (v?.driverId) {
+          await addDoc(collection(db, "user_notifications"), {
+            userId: v.driverId,
+            type: "approval",
+            title: "Vehicle Rejected",
+            message: `Your ${v.details?.make} ${v.details?.model} application was rejected. Reason: ${rejectionReason.trim()}`,
+            read: false,
+            createdAt: new Date().toISOString(),
+            link: "/driver/dashboard?tab=vehicles"
+          });
+        }
+      }
+      setShowApprovalModal(false);
+      setApprovalAction(null);
+      setRejectionReason("");
     } catch (error) {
       console.error(error);
-      toast.error("Failed to reject vehicle.", { id: toastId });
+      toast.error(`Failed to ${type} vehicle.`, { id: toastId });
     }
   };
 
@@ -258,6 +316,17 @@ export default function ManageVehiclesPage() {
                     <div className="space-y-1 my-3 text-xs text-gray-600 dark:text-gray-400 flex-1">
                       <p><strong>Category:</strong> {vehicle.category || "N/A"}</p>
                       <p><strong>Driver ID:</strong> <span className="font-mono text-[10px]">{vehicle.driverId || "N/A"}</span></p>
+
+                      {vehicle.editedFields && vehicle.editedFields.length > 0 && (
+                        <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                          <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 mb-1 flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" /> Re-submitted Changes:
+                          </p>
+                          <p className="text-[10px] text-amber-700 dark:text-amber-500 font-medium leading-tight">
+                            {vehicle.editedFields.join(', ')}
+                          </p>
+                        </div>
+                      )}
                       {vehicle.documents && Object.values(vehicle.documents).length > 0 ? (
                         <div className="flex flex-wrap gap-1.5 mt-1">
                           {Object.entries(vehicle.documents).map(([key, url]) => (
@@ -285,10 +354,10 @@ export default function ManageVehiclesPage() {
                     <div className="flex gap-2 mt-auto">
                       {activeTab === "pending" ? (
                         <>
-                          <button onClick={() => rejectVehicle(vehicle.id)} className="flex-1 py-1.5 text-xs bg-red-100 text-red-600 rounded-lg font-semibold hover:bg-red-200 transition-colors flex justify-center items-center gap-1.5">
+                          <button onClick={() => { setApprovalAction({ type: "reject", vehicleId: vehicle.id }); setShowApprovalModal(true); }} className="flex-1 py-1.5 text-xs bg-red-100 text-red-600 rounded-lg font-semibold hover:bg-red-200 transition-colors flex justify-center items-center gap-1.5">
                             <XCircle className="w-3.5 h-3.5" /> Reject
                           </button>
-                          <button onClick={() => approveVehicle(vehicle.id)} className="flex-1 py-1.5 text-xs bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 transition-colors shadow-lg shadow-green-500/20 flex justify-center items-center gap-1.5">
+                          <button onClick={() => { setApprovalAction({ type: "approve", vehicleId: vehicle.id }); setShowApprovalModal(true); }} className="flex-1 py-1.5 text-xs bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 transition-colors shadow-lg shadow-green-500/20 flex justify-center items-center gap-1.5">
                             <CheckCircle className="w-3.5 h-3.5" /> Approve
                           </button>
                         </>
@@ -309,6 +378,12 @@ export default function ManageVehiclesPage() {
                         </>
                       )}
                     </div>
+
+                    {activeTab === "approved" && vehicle.approvedBy && (
+                      <p className="text-[10px] text-gray-400 mt-3 text-center border-t border-gray-100 dark:border-gray-800 pt-2">
+                        Approved by: {vehicle.approvedBy.replace("@gmail.com", "@")}
+                      </p>
+                    )}
                   </div>
                 </div>
               ))}
@@ -342,6 +417,48 @@ export default function ManageVehiclesPage() {
               <button
                 onClick={confirmAction}
                 className="flex-1 py-2.5 rounded-xl font-bold text-white bg-brand-primary hover:bg-brand-primary/90 transition-colors shadow-lg shadow-brand-primary/20"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Approval/Rejection Modal */}
+      {showApprovalModal && approvalAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+              Confirm {approvalAction.type === "approve" ? "Approval" : "Rejection"}
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              {approvalAction.type === "approve" 
+                ? "Are you sure you want to approve this vehicle? The driver will be notified." 
+                : "Are you sure you want to reject this vehicle application? Please provide a reason below."}
+            </p>
+            
+            {approvalAction.type === "reject" && (
+              <textarea 
+                placeholder="Reason for rejection..." 
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-primary outline-none mb-6 resize-none h-24"
+                value={rejectionReason}
+                onChange={e => setRejectionReason(e.target.value)}
+              />
+            )}
+            
+            <div className="flex gap-3">
+              <button 
+                onClick={() => { setShowApprovalModal(false); setApprovalAction(null); setRejectionReason(""); }}
+                className="flex-1 py-2.5 rounded-xl font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleApprovalSubmit}
+                className={`flex-1 py-2.5 rounded-xl font-bold text-white transition-colors shadow-lg ${
+                  approvalAction.type === "approve" ? "bg-green-500 hover:bg-green-600 shadow-green-500/20" : "bg-red-500 hover:bg-red-600 shadow-red-500/20"
+                }`}
               >
                 Confirm
               </button>

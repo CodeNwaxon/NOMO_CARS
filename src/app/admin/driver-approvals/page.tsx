@@ -3,13 +3,14 @@
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { collection, query, where, getDocs, updateDoc, doc, setDoc, getDoc, deleteDoc } from "firebase/firestore";
+import { collection, query, where, getDocs, updateDoc, doc, setDoc, getDoc, deleteDoc, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Loader2, ArrowLeft, CheckCircle, XCircle, UserCheck, ShieldAlert, Check, Search, Car } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 import ImageViewerOverlay from "@/components/ImageViewerOverlay";
 import DriverVehiclesModal from "@/components/DriverVehiclesModal";
+import { sendApprovalEmail } from "@/actions/notify";
 
 export default function ManageDriversPage() {
   const { user, loading: authLoading } = useAuth();
@@ -40,6 +41,11 @@ export default function ManageDriversPage() {
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
   const [adminPassword, setAdminPassword] = useState("");
   const [pendingAction, setPendingAction] = useState<{ type: "disable" | "enable", driverId: string } | null>(null);
+
+  // Approval/Rejection Modal State
+  const [showApprovalModal, setShowApprovalModal] = useState(false);
+  const [approvalAction, setApprovalAction] = useState<{ type: "approve" | "reject", driverId: string } | null>(null);
+  const [rejectionReason, setRejectionReason] = useState("");
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -81,28 +87,62 @@ export default function ManageDriversPage() {
     }
   };
 
-  const approveDriver = async (driverId: string) => {
-    const toastId = toast.loading("Approving driver...");
-    try {
-      await updateDoc(doc(db, "users", driverId), { isApproved: true });
-      setDrivers(drivers.filter(d => d.id !== driverId));
-      toast.success("Driver approved successfully!", { id: toastId });
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to approve driver.", { id: toastId });
+  const handleApprovalSubmit = async () => {
+    if (!approvalAction) return;
+    if (approvalAction.type === "reject" && !rejectionReason.trim()) {
+      toast.error("Rejection reason is required.");
+      return;
     }
-  };
 
-  const rejectDriver = async (driverId: string) => {
-    if (!confirm("Are you sure you want to reject and delete this driver's application?")) return;
-    const toastId = toast.loading("Rejecting driver...");
+    const { type, driverId } = approvalAction;
+    const toastId = toast.loading(`${type === "approve" ? "Approving" : "Rejecting"} driver...`);
+
     try {
-      await deleteDoc(doc(db, "users", driverId));
-      setDrivers(drivers.filter(d => d.id !== driverId));
-      toast.success("Driver application rejected.", { id: toastId });
+      if (type === "approve") {
+        await updateDoc(doc(db, "users", driverId), { 
+          isApproved: true, 
+          isRejected: false, 
+          rejectionReason: null,
+          approvedBy: user?.email || "Admin" 
+        });
+        setDrivers(drivers.filter(d => d.id !== driverId));
+        toast.success("Driver approved successfully!", { id: toastId });
+        
+        await sendApprovalEmail(driverId, "driver", "Account");
+        await addDoc(collection(db, "user_notifications"), {
+          userId: driverId,
+          type: "approval",
+          title: "Account Approved",
+          message: `Your driver account has been approved! You can now start adding vehicles.`,
+          read: false,
+          createdAt: new Date().toISOString(),
+          link: "/driver/dashboard"
+        });
+      } else {
+        await updateDoc(doc(db, "users", driverId), { 
+          isApproved: false, 
+          isRejected: true, 
+          rejectionReason: rejectionReason.trim() 
+        });
+        setDrivers(drivers.filter(d => d.id !== driverId));
+        toast.success("Driver application rejected.", { id: toastId });
+
+        await addDoc(collection(db, "user_notifications"), {
+          userId: driverId,
+          type: "approval",
+          title: "Application Rejected",
+          message: `Your driver application was rejected. Reason: ${rejectionReason.trim()}`,
+          read: false,
+          createdAt: new Date().toISOString(),
+          link: "/driver/dashboard"
+        });
+      }
+      setShowApprovalModal(false);
+      setApprovalAction(null);
+      setRejectionReason("");
     } catch (error) {
       console.error(error);
-      toast.error("Failed to reject driver.", { id: toastId });
+      toast.error(`Failed to ${type} driver.`, { id: toastId });
     }
   };
 
@@ -281,10 +321,10 @@ export default function ManageDriversPage() {
                 <div className="flex gap-3 mt-auto">
                   {activeTab === "pending" ? (
                     <>
-                      <button onClick={() => rejectDriver(driver.id)} className="flex-1 py-2 bg-red-100 text-red-600 rounded-xl font-semibold hover:bg-red-200 transition-colors flex justify-center items-center gap-2">
+                      <button onClick={() => { setApprovalAction({ type: "reject", driverId: driver.id }); setShowApprovalModal(true); }} className="flex-1 py-2 bg-red-100 text-red-600 rounded-xl font-semibold hover:bg-red-200 transition-colors flex justify-center items-center gap-2">
                         <XCircle className="w-4 h-4" /> Reject
                       </button>
-                      <button onClick={() => approveDriver(driver.id)} className="flex-1 py-2 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition-colors shadow-lg shadow-green-500/20 flex justify-center items-center gap-2">
+                      <button onClick={() => { setApprovalAction({ type: "approve", driverId: driver.id }); setShowApprovalModal(true); }} className="flex-1 py-2 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition-colors shadow-lg shadow-green-500/20 flex justify-center items-center gap-2">
                         <CheckCircle className="w-4 h-4" /> Approve
                       </button>
                     </>
@@ -308,6 +348,12 @@ export default function ManageDriversPage() {
                     </>
                   )}
                 </div>
+
+                {activeTab === "approved" && driver.approvedBy && (
+                  <p className="text-[10px] text-gray-400 mt-3 text-center border-t border-gray-100 dark:border-gray-800 pt-2">
+                    Approved by: {driver.approvedBy.replace("@gmail.com", "@")}
+                  </p>
+                )}
               </div>
             ))}
           </div>
@@ -358,6 +404,48 @@ export default function ManageDriversPage() {
               <button 
                 onClick={confirmToggleStatus}
                 className="flex-1 py-2.5 rounded-xl font-bold text-white bg-brand-primary hover:bg-brand-primary/90 transition-colors shadow-lg shadow-brand-primary/20"
+              >
+                Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Approval/Rejection Modal */}
+      {showApprovalModal && approvalAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+              Confirm {approvalAction.type === "approve" ? "Approval" : "Rejection"}
+            </h3>
+            <p className="text-sm text-gray-500 mb-4">
+              {approvalAction.type === "approve" 
+                ? "Are you sure you want to approve this driver? They will be notified." 
+                : "Are you sure you want to reject this application? Please provide a reason below."}
+            </p>
+            
+            {approvalAction.type === "reject" && (
+              <textarea 
+                placeholder="Reason for rejection..." 
+                className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-white focus:ring-2 focus:ring-brand-primary outline-none mb-6 resize-none h-24"
+                value={rejectionReason}
+                onChange={e => setRejectionReason(e.target.value)}
+              />
+            )}
+            
+            <div className="flex gap-3">
+              <button 
+                onClick={() => { setShowApprovalModal(false); setApprovalAction(null); setRejectionReason(""); }}
+                className="flex-1 py-2.5 rounded-xl font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleApprovalSubmit}
+                className={`flex-1 py-2.5 rounded-xl font-bold text-white transition-colors shadow-lg ${
+                  approvalAction.type === "approve" ? "bg-green-500 hover:bg-green-600 shadow-green-500/20" : "bg-red-500 hover:bg-red-600 shadow-red-500/20"
+                }`}
               >
                 Confirm
               </button>

@@ -68,7 +68,7 @@ export default function AdminDashboard() {
       if (unsubVehicles) unsubVehicles();
       const vehiclesQ = query(collection(db, "vehicles"), where("isApproved", "==", false));
       unsubVehicles = onSnapshot(vehiclesQ, (snap) => {
-        const newCount = snap.docs.filter(d => !seenVehicles.includes(d.id)).length;
+        const newCount = snap.docs.filter(d => !seenVehicles.includes(d.id) || d.data().editedSinceLastApproval).length;
         setVehicleApprovalsCount(newCount);
       });
 

@@ -775,7 +775,7 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
       {/* Level Info Modal */}
       {showLevelInfo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-background border border-card-border rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl relative">
+          <div className="bg-white dark:bg-slate-900 border border-card-border rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl relative">
             <button
               onClick={() => setShowLevelInfo(false)}
               className="absolute top-4 right-4 p-2 text-foreground/50 hover:text-foreground transition-colors"

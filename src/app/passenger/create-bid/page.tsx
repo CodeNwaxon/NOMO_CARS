@@ -150,6 +150,15 @@ export default function CreateBidPage() {
 
   const selectDriver = async (bid: any) => {
     if (!selectedRequest) return;
+
+    if (bid.vehicleId) {
+      const vSnap = await getDoc(doc(db, "vehicles", bid.vehicleId));
+      if (vSnap.exists() && vSnap.data().isApproved === false) {
+        toast.error("This driver's vehicle is currently under security review and cannot be booked right now.");
+        return;
+      }
+    }
+
     await updateDoc(doc(db, "requests", selectedRequest.id), { status: "assigned", selectedDriverId: bid.driverId, selectedBidId: bid.id, selectedDriverName: bid.driverName });
 
     // Notify passenger locally
