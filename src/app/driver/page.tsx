@@ -14,12 +14,12 @@ export default function DriverPage() {
     if (!loading && user) {
       if (profile?.role === "driver") {
         if (profile.isApproved) {
-          router.push("/driver/dashboard");
+          router.replace("/driver/dashboard");
         } else {
-          router.push("/driver/awaiting-approval");
+          router.replace("/driver/awaiting-approval");
         }
       } else {
-        router.push("/driver/register");
+        router.replace("/driver/register");
       }
     }
   }, [user, profile, loading, router]);

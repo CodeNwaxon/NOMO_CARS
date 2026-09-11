@@ -19,5 +19,13 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
+  ],
+  "screenshots": [
+    {
+      "src": "/truck.png",
+      "sizes": "496x320",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
   ]
 }

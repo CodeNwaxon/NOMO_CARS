@@ -137,9 +137,9 @@ export default function DriverRegistration() {
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push("/");
+      router.replace("/");
     } else if (profile?.role === "driver") {
-      router.push("/driver/dashboard");
+      router.replace("/driver/dashboard");
     }
   }, [user, profile, loading, router]);
 

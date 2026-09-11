@@ -10,6 +10,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useVIPLimits } from "@/hooks/useVIPLimits";
 import { useNotifications } from "@/context/NotificationContext";
 import ImageViewerOverlay from "@/components/ImageViewerOverlay";
+import ChatOverlay from "@/components/ChatOverlay";
 
 export default function CreateBidPage() {
   const router = useRouter();
@@ -37,6 +38,40 @@ export default function CreateBidPage() {
   const [editingBidCount, setEditingBidCount] = useState<number>(0);
   const isLocked = !!editingId && editingBidCount > 0;
   const [showRequestConfirm, setShowRequestConfirm] = useState(false);
+  const [assignedDriverInfo, setAssignedDriverInfo] = useState<any>(null);
+  const [assignedDriverLoading, setAssignedDriverLoading] = useState(false);
+  const [chatOverlayData, setChatOverlayData] = useState<any>(null);
+
+  const openAssignedDriver = async (request: any) => {
+    if (!request.selectedBidId) return;
+    setAssignedDriverLoading(true);
+    setAssignedDriverInfo({ loading: true, request });
+    
+    try {
+      const bidDoc = await getDoc(doc(db, "requests", request.id, "bids", request.selectedBidId));
+      if (bidDoc.exists()) {
+        const bidData = bidDoc.data();
+        if (bidData.vehicleId) {
+          const vSnap = await getDoc(doc(db, "vehicles", bidData.vehicleId));
+          if (vSnap.exists()) {
+             const vData = vSnap.data();
+             bidData.vehicleImages = vData.images || null;
+             bidData.vehicleDocuments = vData.documents || null;
+             if (vData.details) {
+               bidData.vehicleDetails = vData.details;
+             }
+          }
+        }
+        setAssignedDriverInfo({ loading: false, bid: bidData, request });
+      } else {
+        setAssignedDriverInfo(null);
+      }
+    } catch (e) {
+      console.error(e);
+      setAssignedDriverInfo(null);
+    }
+    setAssignedDriverLoading(false);
+  };
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -185,20 +220,19 @@ export default function CreateBidPage() {
 
     await updateDoc(doc(db, "requests", selectedRequest.id), { status: "assigned", selectedDriverId: bid.driverId, selectedBidId: bid.id, selectedDriverName: bid.driverName });
 
-    // Notify passenger locally
-    addNotification("Driver selected", `${bid.driverName} was selected for your ${selectedRequest.category} request.`, "/passenger/create-bid");
+    toast.success("Driver selected successfully!");
 
     if (bid.driverId) {
       // Update driver's jobs won count
       await updateDoc(doc(db, "users", bid.driverId), { jobsWon: increment(1) });
-
+      
       // Push real-time notification to the driver
       await addDoc(collection(db, "user_notifications"), {
         userId: bid.driverId,
         title: "Bid Accepted!",
         message: `Your bid was accepted for a ${selectedRequest.category} request to ${selectedRequest.destinationCity || "the passenger's destination"}.`,
         createdAt: Date.now(),
-        link: "/driver/dashboard"
+        link: "/driver/bid-for-jobs"
       });
     }
 
@@ -361,7 +395,10 @@ export default function CreateBidPage() {
                     const expired = isExpired(request);
                     const taken = request.status === "assigned";
                     return (
-                      <div id={`request-${request.id}`} key={request.id} onClick={() => !expired && !taken && openBidders(request)} className={`cursor-pointer text-left rounded-xl md:rounded-2xl p-2.5 md:p-5 transition-all duration-300 transform relative overflow-hidden group ${taken ? "bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-slate-700 opacity-60 grayscale-[60%] cursor-default" : expired ? "bg-card-bg border border-card-border opacity-60 grayscale cursor-default" : highlightId === request.id ? "bg-gradient-to-br from-brand-primary/10 to-brand-secondary/5 border-2 border-brand-primary ring-4 ring-brand-primary/30 shadow-lg shadow-brand-primary/40 animate-pulse hover:-translate-y-1.5" : "bg-gradient-to-br from-brand-primary/10 to-brand-secondary/5 border border-brand-primary/50 shadow-lg shadow-brand-primary/20 hover:bg-brand-primary/5 hover:border-brand-primary hover:shadow-2xl hover:shadow-brand-primary/40 hover:-translate-y-1.5"}`}>
+                      <div id={`request-${request.id}`} key={request.id} onClick={() => {
+                        if (taken) openAssignedDriver(request);
+                        else if (!expired) openBidders(request);
+                      }} className={`cursor-pointer text-left rounded-xl md:rounded-2xl p-2.5 md:p-5 transition-all duration-300 transform relative overflow-hidden group ${taken ? "bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer" : expired ? "bg-card-bg border border-card-border opacity-60 grayscale cursor-default" : highlightId === request.id ? "bg-gradient-to-br from-brand-primary/10 to-brand-secondary/5 border-2 border-brand-primary ring-4 ring-brand-primary/30 shadow-lg shadow-brand-primary/40 animate-pulse hover:-translate-y-1.5" : "bg-gradient-to-br from-brand-primary/10 to-brand-secondary/5 border border-brand-primary/50 shadow-lg shadow-brand-primary/20 hover:bg-brand-primary/5 hover:border-brand-primary hover:shadow-2xl hover:shadow-brand-primary/40 hover:-translate-y-1.5"}`}>
 
                         <div className="absolute top-0 right-0 w-16 h-16 md:w-32 md:h-32 bg-brand-primary/15 rounded-full blur-xl md:blur-2xl -mr-6 -mt-6 md:-mr-10 md:-mt-10 group-hover:bg-brand-primary/30 transition-colors duration-300 pointer-events-none"></div>
 
@@ -447,6 +484,79 @@ export default function CreateBidPage() {
             </div>
           </div>
         </div>}
+
+      {assignedDriverInfo && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center mb-4 sticky top-0 bg-white dark:bg-slate-900 pt-1 pb-3 border-b border-slate-100 dark:border-slate-800 z-10">
+              <h2 className="font-bold text-lg text-slate-900 dark:text-white">Assigned Driver</h2>
+              <button onClick={() => setAssignedDriverInfo(null)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full"><X className="w-5 h-5 text-slate-500" /></button>
+            </div>
+
+            {assignedDriverInfo.loading ? (
+              <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-brand-primary" /></div>
+            ) : assignedDriverInfo.bid ? (
+              <div className="border border-green-200 dark:border-green-800/50 rounded-xl p-4 bg-green-50/50 dark:bg-green-900/10 relative overflow-hidden">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex gap-3 items-start flex-1">
+                    {(assignedDriverInfo.bid.vehicleImages?.front || assignedDriverInfo.bid.vehicleDetails?.images?.front) && (
+                      <div className="w-16 h-16 md:w-20 md:h-20 shrink-0 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 relative group">
+                        <img src={assignedDriverInfo.bid.vehicleImages?.front || assignedDriverInfo.bid.vehicleDetails?.images?.front} alt="Vehicle" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <b className="block text-base text-slate-900 dark:text-white">{assignedDriverInfo.bid.driverName}</b>
+                      </div>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{assignedDriverInfo.bid.vehicleDetails?.make} {assignedDriverInfo.bid.vehicleDetails?.model}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="text-right shrink-0 ml-2">
+                    <p className="text-[9px] md:text-[10px] text-slate-500 dark:text-slate-400 font-medium mb-0.5">Your budget</p>
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1.5">₦{Number(assignedDriverInfo.request.budget).toLocaleString()}</p>
+                    
+                    <>
+                      <p className="text-[9px] md:text-[10px] text-brand-primary font-bold mb-0.5 mt-2">Driver Accepted:</p>
+                      <span className="inline-block font-bold text-brand-primary bg-brand-primary/10 px-2 py-1 rounded text-sm md:text-base border border-brand-primary/20">₦{Number(assignedDriverInfo.bid.amount).toLocaleString()}</span>
+                    </>
+                  </div>
+                </div>
+                {assignedDriverInfo.bid.description && (
+                  <div className="mt-3 p-3 bg-white/50 dark:bg-black/20 rounded-lg border border-slate-200/50 dark:border-slate-700/50">
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Driver Note:</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 italic">{assignedDriverInfo.bid.description}</p>
+                  </div>
+                )}
+                <div className="mt-3 flex items-center justify-between">
+                  <p className="text-sm text-slate-700 dark:text-slate-300">{assignedDriverInfo.bid.driverPhone || "Phone unavailable"}</p>
+                  <button onClick={() => router.push(`/driver/profile/${assignedDriverInfo.bid.driverId}`)} className="bg-green-600 text-white text-xs px-3 py-1.5 rounded font-medium hover:bg-green-700 transition-colors">Profile</button>
+                </div>
+
+                <div className="flex gap-2 mt-3">
+                  <a href={`tel:${assignedDriverInfo.bid.driverPhone || ""}`} className="flex-1 text-center py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300">Call</a>
+                  {assignedDriverInfo.bid.driverPhone && (
+                    <a href={`https://wa.me/${assignedDriverInfo.bid.driverPhone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="flex-1 text-center py-2 rounded-lg border border-green-500 text-green-600 text-xs font-medium hover:bg-green-50 dark:hover:bg-green-950 transition-colors">WhatsApp</a>
+                  )}
+                  <button onClick={() => setChatOverlayData({
+                    driverId: assignedDriverInfo.bid.driverId,
+                    driverName: assignedDriverInfo.bid.driverName,
+                    driverImage: assignedDriverInfo.bid.vehicleImages?.front || assignedDriverInfo.bid.vehicleDetails?.images?.front
+                  })} className="flex-1 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300">Chat</button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-center text-slate-500 py-8">Failed to load driver details.</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {imageViewerLoadingId && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <Loader2 className="w-10 h-10 text-white animate-spin" />
+        </div>
+      )}
 
       {showInfoModal && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -568,14 +678,17 @@ export default function CreateBidPage() {
                         <p className="text-sm text-foreground/80 italic">{bid.description}</p>
                       </div>
                     )}
-                    <p className="text-sm mt-3">{bid.driverPhone || "Phone unavailable"}</p>
+                    <div className="mt-3 flex items-center justify-between">
+                      <p className="text-sm">{bid.driverPhone || "Phone unavailable"}</p>
+                      <button onClick={() => router.push(`/driver/profile/${bid.driverId}`)} className="bg-green-600 text-white text-xs px-3 py-1.5 rounded font-medium hover:bg-green-700 transition-colors">Profile</button>
+                    </div>
 
                     <div className="flex gap-2 mt-3">
                       <a href={`tel:${bid.driverPhone || ""}`} className="flex-1 text-center py-2 rounded-lg border border-card-border text-xs font-medium hover:bg-foreground/5">Call</a>
                       {bid.driverPhone && (
                         <a href={`https://wa.me/${bid.driverPhone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="flex-1 text-center py-2 rounded-lg border border-green-500 text-green-600 text-xs font-medium hover:bg-green-50 dark:hover:bg-green-950">WhatsApp</a>
                       )}
-                      <button onClick={() => router.push(`/driver/profile/${bid.driverId}`)} className="flex-1 py-2 rounded-lg border border-card-border text-xs font-medium hover:bg-foreground/5">Profile</button>
+                      <button onClick={() => router.push(`/chat/${bid.driverId}`)} className="flex-1 py-2 rounded-lg border border-card-border text-xs font-medium hover:bg-foreground/5">Chat</button>
                     </div>
 
                     <button onClick={() => setDriverToConfirm(bid)} className="mt-3 w-full py-2.5 rounded-lg bg-brand-primary text-white text-sm font-bold shadow hover:shadow-md transition-shadow">Select this driver</button>
@@ -589,9 +702,9 @@ export default function CreateBidPage() {
 
       {driverToConfirm && (
         <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-background border border-card-border rounded-2xl p-6 max-w-sm w-full shadow-2xl">
-            <h2 className="font-bold text-lg mb-2">Confirm selection</h2>
-            <p className="text-sm text-foreground/70 mb-6">You are about to select <b className="text-foreground">{driverToConfirm.driverName}</b> for your request. You cannot change this after confirming.</p>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-sm w-full shadow-2xl">
+            <h2 className="font-bold text-lg mb-2 text-slate-900 dark:text-white">Confirm selection</h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">You are about to select <b className="text-slate-900 dark:text-white">{driverToConfirm.driverName}</b> for your request. You cannot change this after confirming.</p>
             <div className="flex gap-3">
               <button onClick={() => setDriverToConfirm(null)} className="flex-1 py-3 rounded-xl border border-card-border font-medium hover:bg-card-bg">Cancel</button>
               <button onClick={() => { const bid = driverToConfirm; setDriverToConfirm(null); selectDriver(bid); }} className="flex-1 py-3 rounded-xl bg-brand-primary text-white font-bold shadow-lg hover:shadow-brand-primary/30">Confirm</button>
@@ -606,6 +719,15 @@ export default function CreateBidPage() {
           initialIndex={viewerState.initialIndex}
           singleMode={viewerState.singleMode}
           onClose={() => setViewerState(prev => ({ ...prev, isOpen: false }))}
+        />
+      )}
+      
+      {chatOverlayData && (
+        <ChatOverlay
+          driverId={chatOverlayData.driverId}
+          driverName={chatOverlayData.driverName}
+          driverImage={chatOverlayData.driverImage}
+          onClose={() => setChatOverlayData(null)}
         />
       )}
     </div>

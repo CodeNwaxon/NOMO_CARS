@@ -8,6 +8,7 @@ import { collection, doc, addDoc, getDoc, getDocs, query, where, runTransaction 
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { useVIPLimits } from "@/hooks/useVIPLimits";
+import ChatOverlay from "@/components/ChatOverlay";
 
 export default function BidForJobsPage() {
   const router = useRouter();
@@ -58,6 +59,39 @@ export default function BidForJobsPage() {
     setAppliedRequests(applied);
     setBidCount(bidCounts.reduce<number>((total: number, count: number) => total + Number(count), 0));
     setLoading(false);
+  };
+
+  const [assignedBidInfo, setAssignedBidInfo] = useState<any>(null);
+  const [chatOverlayData, setChatOverlayData] = useState<any>(null);
+
+  const openAssignedBid = async (request: any, bid: any) => {
+    setAssignedBidInfo({ loading: true });
+    try {
+      const passengerDoc = await getDoc(doc(db, "users", request.passengerId));
+      let passengerPhone = "";
+      let passengerWhatsapp = false;
+      if (passengerDoc.exists()) {
+        passengerPhone = passengerDoc.data().phone || "";
+        passengerWhatsapp = passengerDoc.data().whatsappEnabled ?? false;
+      }
+      
+      if (bid.vehicleId) {
+        const vSnap = await getDoc(doc(db, "vehicles", bid.vehicleId));
+        if (vSnap.exists()) {
+           const vData = vSnap.data();
+           bid.vehicleImages = vData.images || null;
+           bid.vehicleDocuments = vData.documents || null;
+           if (vData.details) {
+             bid.vehicleDetails = vData.details;
+           }
+        }
+      }
+
+      setAssignedBidInfo({ loading: false, request, bid, passengerPhone, passengerWhatsapp });
+    } catch(e) {
+      console.error(e);
+      setAssignedBidInfo(null);
+    }
   };
 
   useEffect(() => { if (!authLoading && user) loadJobs(); }, [authLoading, user]);
@@ -190,7 +224,17 @@ export default function BidForJobsPage() {
             const isAssigned = request.status === "assigned";
             const isWinner = isAssigned && request.selectedDriverId === user?.uid;
 
-            return <button key={request.id} disabled={isApplied || isAssigned || request.status !== "open" || bidCount >= limits.dailyBids} onClick={() => { setSelectedRequest(request); setAmount(Number(request.budget).toLocaleString()); setSelectedVehicle(""); setBidDescription(""); setShowDescriptionInput(false); }} className={`text-left rounded-xl md:rounded-2xl p-2.5 md:p-5 transition-all duration-300 relative overflow-hidden group ${isWinner ? "bg-green-50 dark:bg-green-900/20 border border-green-500/50 cursor-default" : isAssigned ? "bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-slate-700 opacity-60 grayscale-[60%] cursor-not-allowed" : isApplied ? "bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 opacity-70 grayscale-[30%] cursor-not-allowed" : request.status !== "open" || bidCount >= limits.dailyBids ? "bg-card-bg border border-card-border opacity-60 grayscale cursor-not-allowed" : "bg-gradient-to-br from-brand-secondary/10 to-brand-primary/5 border border-brand-secondary/50 shadow-lg shadow-brand-secondary/20 hover:bg-brand-secondary/5 hover:border-brand-secondary hover:shadow-2xl hover:shadow-brand-secondary/40 hover:-translate-y-1.5"}`}>
+            return <button key={request.id} disabled={!isWinner && (isApplied || isAssigned || request.status !== "open" || bidCount >= limits.dailyBids)} onClick={() => {
+              if (isWinner) {
+                openAssignedBid(request, driverBid);
+              } else {
+                setSelectedRequest(request); 
+                setAmount(Number(request.budget).toLocaleString()); 
+                setSelectedVehicle(""); 
+                setBidDescription(""); 
+                setShowDescriptionInput(false); 
+              }
+            }} className={`text-left rounded-xl md:rounded-2xl p-2.5 md:p-5 transition-all duration-300 relative overflow-hidden group ${isWinner ? "bg-green-50 dark:bg-green-900/20 border border-green-500/50 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/40" : isAssigned ? "bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-slate-700 opacity-60 grayscale-[60%] cursor-not-allowed" : isApplied ? "bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 opacity-70 grayscale-[30%] cursor-not-allowed" : request.status !== "open" || bidCount >= limits.dailyBids ? "bg-card-bg border border-card-border opacity-60 grayscale cursor-not-allowed" : "bg-gradient-to-br from-brand-secondary/10 to-brand-primary/5 border border-brand-secondary/50 shadow-lg shadow-brand-secondary/20 hover:bg-brand-secondary/5 hover:border-brand-secondary hover:shadow-2xl hover:shadow-brand-secondary/40 hover:-translate-y-1.5"}`}>
               {isWinner ? (
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-2 md:border-4 border-green-500 text-green-500 text-lg md:text-3xl font-black px-3 py-1 md:px-6 md:py-2 rounded-lg md:rounded-xl opacity-40 transform -rotate-12 z-20 pointer-events-none select-none tracking-widest uppercase shadow-sm">
                   WON
@@ -262,7 +306,7 @@ export default function BidForJobsPage() {
                 <div className="flex items-center gap-2">
                   <p className="text-[8px] md:text-[10px] font-medium flex items-center gap-1 md:gap-1.5 text-brand-secondary bg-white/50 dark:bg-black/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded backdrop-blur-sm">
                     <Clock3 className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" />
-                    {request.status === "assigned" ? "Driver selected" : `${Math.max(0, Math.ceil((Number(request.expiresAt) - Date.now()) / 86400000))} days left`}
+                    {request.status === "assigned" ? (isWinner ? "You are selected for this job" : "Driver selected") : `${Math.max(0, Math.ceil((Number(request.expiresAt) - Date.now()) / 86400000))} days left`}
                   </p>
                   {(request.bidCount || 0) > 0 && (
                     <p className="text-[8px] md:text-[10px] font-medium flex items-center gap-1 md:gap-1.5 text-brand-primary bg-white/50 dark:bg-black/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded backdrop-blur-sm">
@@ -439,6 +483,85 @@ export default function BidForJobsPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {assignedBidInfo && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center mb-4 sticky top-0 bg-white dark:bg-slate-900 pt-1 pb-3 border-b border-slate-100 dark:border-slate-800 z-10">
+              <h2 className="font-bold text-lg text-slate-900 dark:text-white">Assigned Job Info</h2>
+              <button onClick={() => setAssignedBidInfo(null)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full"><X className="w-5 h-5 text-slate-500" /></button>
+            </div>
+
+            {assignedBidInfo.loading ? (
+              <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-brand-primary" /></div>
+            ) : assignedBidInfo.bid && assignedBidInfo.request ? (
+              <div className="border border-green-200 dark:border-green-800/50 rounded-xl p-4 bg-green-50/50 dark:bg-green-900/10 relative overflow-hidden">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex gap-3 items-start flex-1">
+                    {(assignedBidInfo.bid.vehicleImages?.front || assignedBidInfo.bid.vehicleDetails?.images?.front) && (
+                      <div className="w-16 h-16 md:w-20 md:h-20 shrink-0 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 relative group">
+                        <img src={assignedBidInfo.bid.vehicleImages?.front || assignedBidInfo.bid.vehicleDetails?.images?.front} alt="Vehicle" className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <b className="block text-base text-slate-900 dark:text-white">{assignedBidInfo.bid.driverName}</b>
+                      </div>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{assignedBidInfo.bid.vehicleDetails?.make} {assignedBidInfo.bid.vehicleDetails?.model}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="text-right shrink-0 ml-2">
+                    <p className="text-[9px] md:text-[10px] text-slate-500 dark:text-slate-400 font-medium mb-0.5">Request Budget</p>
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1.5">₦{Number(assignedBidInfo.request.budget).toLocaleString()}</p>
+                    
+                    <>
+                      <p className="text-[9px] md:text-[10px] text-brand-primary font-bold mb-0.5 mt-2">You Proposed:</p>
+                      <span className="inline-block font-bold text-brand-primary bg-brand-primary/10 px-2 py-1 rounded text-sm md:text-base border border-brand-primary/20">₦{Number(assignedBidInfo.bid.amount).toLocaleString()}</span>
+                    </>
+                  </div>
+                </div>
+
+                {assignedBidInfo.bid.description && (
+                  <div className="mt-3 p-3 bg-white/50 dark:bg-black/20 rounded-lg border border-slate-200/50 dark:border-slate-700/50">
+                    <p className="text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Driver Note:</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 italic">{assignedBidInfo.bid.description}</p>
+                  </div>
+                )}
+                
+                <div className="mt-3">
+                  <p className="text-sm text-slate-700 dark:text-slate-300">{assignedBidInfo.passengerPhone || "Phone unavailable"}</p>
+                </div>
+
+                <div className="flex gap-2 mt-3">
+                  {assignedBidInfo.passengerPhone && (
+                    <a href={`tel:${assignedBidInfo.passengerPhone || ""}`} className="flex-1 text-center py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300">Call</a>
+                  )}
+                  {assignedBidInfo.passengerPhone && assignedBidInfo.passengerWhatsapp && (
+                    <a href={`https://wa.me/${assignedBidInfo.passengerPhone.replace(/\D/g, "")}`} target="_blank" rel="noreferrer" className="flex-1 text-center py-2 rounded-lg border border-green-500 text-green-600 text-xs font-medium hover:bg-green-50 dark:hover:bg-green-950 transition-colors">WhatsApp</a>
+                  )}
+                  <button onClick={() => setChatOverlayData({
+                    driverId: user?.uid,
+                    passengerId: assignedBidInfo.request.passengerId,
+                    chatPartnerName: assignedBidInfo.request.passengerName || "Passenger"
+                  })} className="flex-1 py-2 rounded-lg border border-slate-200 dark:border-slate-700 text-xs font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-300">Chat</button>
+                </div>
+              </div>
+            ) : (
+              <p className="text-center text-slate-500 py-8">Failed to load job details.</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {chatOverlayData && (
+        <ChatOverlay
+          driverId={chatOverlayData.driverId}
+          passengerId={chatOverlayData.passengerId}
+          chatPartnerName={chatOverlayData.chatPartnerName}
+          onClose={() => setChatOverlayData(null)}
+        />
       )}
     </div>
   );
