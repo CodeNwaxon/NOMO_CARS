@@ -59,7 +59,12 @@ export default function ManageVehiclesPage() {
       }
 
       const snap = await getDocs(q);
-      const fetchedVehicles = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      let fetchedVehicles = snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+      
+      // Filter out rejected vehicles from the pending tab
+      if (tab === "pending") {
+        fetchedVehicles = fetchedVehicles.filter(v => !v.isRejected);
+      }
       setVehicles(fetchedVehicles);
 
       // Only mark as seen if we are fetching pending approvals
@@ -309,7 +314,21 @@ export default function ManageVehiclesPage() {
                       <h3 className="font-bold text-base text-gray-900 dark:text-white truncate">
                         {vehicle.details?.make || "Unknown"} {vehicle.details?.model || ""}
                       </h3>
-                      <p className="text-[10px] text-gray-500 truncate">{vehicle.details?.year || "Unknown Year"}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-[10px] text-gray-500">{vehicle.details?.year || "Unknown Year"}</p>
+                        {vehicle.details?.color && (
+                          <>
+                            <span className="text-[10px] text-gray-300">•</span>
+                            <div className="flex items-center gap-1">
+                              <span 
+                                className="w-3 h-3 rounded-full border border-gray-300 dark:border-gray-600 shadow-inner flex-shrink-0" 
+                                style={{ backgroundColor: vehicle.details.color.toLowerCase() }}
+                              />
+                              <span className="text-[10px] text-gray-500 capitalize">{vehicle.details.color}</span>
+                            </div>
+                          </>
+                        )}
+                      </div>
                       <p className="text-[10px] font-semibold text-brand-primary mt-0.5 uppercase tracking-wider">{vehicle.details?.plateNumber || "No Plate"}</p>
                     </div>
 
@@ -317,7 +336,22 @@ export default function ManageVehiclesPage() {
                       <p><strong>Category:</strong> {vehicle.category || "N/A"}</p>
                       <p><strong>Driver ID:</strong> <span className="font-mono text-[10px]">{vehicle.driverId || "N/A"}</span></p>
 
-                      {vehicle.editedFields && vehicle.editedFields.length > 0 && (
+                      {vehicle.editedChanges && vehicle.editedChanges.length > 0 ? (
+                        <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                          <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 mb-1.5 flex items-center gap-1">
+                            <AlertTriangle className="w-3 h-3" /> Re-submitted Changes:
+                          </p>
+                          <div className="space-y-1.5">
+                            {vehicle.editedChanges.map((change: any, i: number) => (
+                              <div key={i} className="text-[10px] leading-tight">
+                                <span className="font-semibold text-gray-700 dark:text-gray-300">{change.label}:</span>
+                                <span className="ml-1 text-gray-900 dark:text-white font-medium">{change.newValue}</span>
+                                <span className="ml-1 text-[9px] text-red-500 line-through">{change.oldValue}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : vehicle.editedFields && vehicle.editedFields.length > 0 ? (
                         <div className="mt-2 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
                           <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 mb-1 flex items-center gap-1">
                             <AlertTriangle className="w-3 h-3" /> Re-submitted Changes:
@@ -326,7 +360,7 @@ export default function ManageVehiclesPage() {
                             {vehicle.editedFields.join(', ')}
                           </p>
                         </div>
-                      )}
+                      ) : null}
                       {vehicle.documents && Object.values(vehicle.documents).length > 0 ? (
                         <div className="flex flex-wrap gap-1.5 mt-1">
                           {Object.entries(vehicle.documents).map(([key, url]) => (

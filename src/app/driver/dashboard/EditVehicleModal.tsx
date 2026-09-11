@@ -150,10 +150,12 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
       if (config.details.registrationNumber) detailsToSave.registrationNumber = form.registrationNumber;
 
       const editedFields: string[] = vehicle.editedFields || [];
+      const editedChanges: { label: string; oldValue: string; newValue: string }[] = [];
 
       const checkChanged = (oldVal: any, newVal: any, label: string) => {
-        if (oldVal !== newVal && !editedFields.includes(label)) {
-          editedFields.push(label);
+        if (oldVal !== newVal) {
+          if (!editedFields.includes(label)) editedFields.push(label);
+          editedChanges.push({ label, oldValue: String(oldVal ?? "N/A"), newValue: String(newVal ?? "N/A") });
         }
       };
 
@@ -173,6 +175,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
         if (vehicle.images?.[key] !== updatedImages[key]) {
           const label = imageLabels[key] || `${key} image`;
           if (!editedFields.includes(label)) editedFields.push(label);
+          editedChanges.push({ label, oldValue: "Previous image", newValue: "New image uploaded" });
         }
       });
 
@@ -180,6 +183,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
         if (vehicle.documents?.[key] !== updatedDocs[key]) {
           const label = docLabels[key] || `${key} document`;
           if (!editedFields.includes(label)) editedFields.push(label);
+          editedChanges.push({ label, oldValue: "Previous document", newValue: "New document uploaded" });
         }
       });
 
@@ -192,6 +196,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
         rejectionReason: null, // Clear rejection reason
         editedSinceLastApproval: true, // Flag for admin dashboard notification
         editedFields: editedFields, // Tell admin exactly what changed
+        editedChanges: editedChanges, // Old vs New values for admin comparison
       });
 
       // Send persistent notification to admin via client

@@ -63,7 +63,12 @@ export default function ManageDriversPage() {
       }
       
       const snap = await getDocs(q);
-      const fetchedDrivers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      let fetchedDrivers = snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+      
+      // Filter out rejected drivers from the pending tab
+      if (tab === "pending") {
+        fetchedDrivers = fetchedDrivers.filter(d => !d.isRejected);
+      }
       setDrivers(fetchedDrivers);
 
       // Only mark as seen if we are fetching pending approvals

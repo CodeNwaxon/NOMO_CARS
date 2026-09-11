@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { collection, addDoc, setDoc, query, where, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
+import { collection, addDoc, setDoc, query, where, getDocs, deleteDoc, doc, updateDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { Loader2, Plus, UploadCloud, ArrowLeft, Car, CarFront, Bike, Truck, Plane, Ship, Bus, Settings, Edit3, Trash2, Eye, Info, X, Star, Check, Share2, XCircle } from "lucide-react";
@@ -180,24 +180,26 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
   });
 
   const fetchVehicles = async () => {
-    setLoading(true);
-    try {
-      const q = query(collection(db, "vehicles"), where("driverId", "==", userId));
-      const querySnapshot = await getDocs(q);
-      const fetchedVehicles: any[] = [];
-      querySnapshot.forEach((doc) => {
-        fetchedVehicles.push({ id: doc.id, ...doc.data() });
-      });
-      setVehicles(fetchedVehicles);
-    } catch (error) {
-      console.error("Error fetching vehicles:", error);
-    } finally {
-      setLoading(false);
-    }
+    // Manual refresh is now a no-op since onSnapshot handles updates in real-time
+    // This function is kept for backwards compatibility with form submission handlers
   };
 
   useEffect(() => {
-    fetchVehicles();
+    setLoading(true);
+    const q = query(collection(db, "vehicles"), where("driverId", "==", userId));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedVehicles: any[] = [];
+      snapshot.forEach((doc) => {
+        fetchedVehicles.push({ id: doc.id, ...doc.data() });
+      });
+      setVehicles(fetchedVehicles);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error listening to vehicles:", error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [userId]);
 
   const handleCategorySelect = (categoryId: string) => {
@@ -642,13 +644,6 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
                   {/* REJECTION OVERLAY */}
                   {v.isRejected && (
                     <div className="absolute inset-0 z-20 bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center rounded-2xl animate-in zoom-in-95 duration-200 border-2 border-red-500/50">
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); initiateDelete(v.id); }}
-                        className="absolute top-2 right-2 w-8 h-8 bg-red-100 hover:bg-red-200 dark:bg-red-900/50 dark:hover:bg-red-900 text-red-600 dark:text-red-400 rounded-full flex items-center justify-center transition-colors shadow-sm"
-                        title="Delete Application"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
                       <div className="w-12 h-12 bg-red-100 dark:bg-red-900/50 rounded-full flex items-center justify-center mb-2 shadow-inner">
                         <XCircle className="w-6 h-6 text-red-500" />
                       </div>
@@ -657,12 +652,6 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
                         <p className="text-[10px] font-bold text-red-800 dark:text-red-400 uppercase tracking-wider mb-0.5">Reason:</p>
                         <p className="text-[11px] text-red-900 dark:text-red-200 font-medium line-clamp-2">{v.rejectionReason || "No specific reason provided."}</p>
                       </div>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); setEditingVehicle(v); }}
-                        className="mt-3 w-full py-2 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-red-500/30 active:scale-95"
-                      >
-                        Reapply
-                      </button>
                     </div>
                   )}
 
