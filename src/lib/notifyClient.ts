@@ -11,7 +11,11 @@ export async function notifyAdminsClient(title: string, message: string, link: s
     rolesSnap.forEach((docSnap) => {
       const data = docSnap.data();
       const routes = data.routes || [];
-      if (routes.includes("all") || routes.some((r: string) => link.startsWith(r))) {
+      if (
+        routes.includes("all") ||
+        routes.some((r: string) => r !== "/admin" && link.startsWith(r)) ||
+        (link === "/admin" && routes.includes("/admin"))
+      ) {
         adminIds.add(docSnap.id);
       }
     });
