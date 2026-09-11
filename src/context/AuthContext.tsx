@@ -227,6 +227,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (profile?.displayImage) urlsToDelete.push(profile.displayImage);
       if (profile?.identityImage) urlsToDelete.push(profile.identityImage);
       
+      // 3. Fetch all vehicles associated with the user to delete their images and documents
+      const { collection, query, where, getDocs, deleteDoc } = await import("firebase/firestore");
+      const q = query(collection(db, "vehicles"), where("driverId", "==", user.uid));
+      const vehiclesSnapshot = await getDocs(q);
+      
+      const vehicleDocsToDelete: any[] = [];
+      vehiclesSnapshot.forEach((docSnap) => {
+        const vehicle = docSnap.data();
+        vehicleDocsToDelete.push(docSnap.ref);
+        
+        if (vehicle.images) {
+          Object.values(vehicle.images).forEach((url) => {
+            if (typeof url === "string" && url.includes("cloudinary.com")) {
+              urlsToDelete.push(url);
+            }
+          });
+        }
+        if (vehicle.documents) {
+          Object.values(vehicle.documents).forEach((url) => {
+            if (typeof url === "string" && url.includes("cloudinary.com")) {
+              urlsToDelete.push(url);
+            }
+          });
+        }
+      });
+
       if (urlsToDelete.length > 0) {
         try {
           const { deleteImagesFromCloudinary } = await import("@/lib/cloudinary");
@@ -237,7 +263,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
       }
 
-      // 3. Delete user document from Firestore
+      // 4. Delete vehicle documents from Firestore
+      for (const vehicleRef of vehicleDocsToDelete) {
+        await deleteDoc(vehicleRef);
+      }
+
+      // 5. Delete user document from Firestore
       const docRef = doc(db, "users", user.uid);
       await deleteDoc(docRef);
 

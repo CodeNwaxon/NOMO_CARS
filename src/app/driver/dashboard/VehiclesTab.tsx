@@ -707,7 +707,7 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
                 </div>
 
                 <div className="p-5 relative">
-                  <h4 className="font-bold text-lg leading-tight mb-2">{v.details.make} {v.details.model}</h4>
+                  <h4 className="font-bold text-lg leading-tight mb-2 capitalize">{v.details.make} {v.details.model}</h4>
 
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] md:text-xs text-foreground/70 font-medium">
                     <span>{v.details.year}</span>

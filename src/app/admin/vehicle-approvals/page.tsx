@@ -311,7 +311,7 @@ export default function ManageVehiclesPage() {
 
                   <div className="px-2 pb-3">
                     <div>
-                      <h3 className="font-bold text-base text-gray-900 dark:text-white truncate">
+                      <h3 className="font-bold text-base text-gray-900 dark:text-white truncate capitalize">
                         {vehicle.details?.make || "Unknown"} {vehicle.details?.model || ""}
                       </h3>
                       <div className="flex items-center gap-2 mt-0.5">
