@@ -538,7 +538,8 @@ export default function PassengerDashboard() {
             href="/purchase-history"
             className="flex-1 sm:flex-none sm:w-auto px-2 py-3 md:px-8 md:py-4 text-foreground text-xs md:text-base font-bold rounded-md md:rounded-xl border border-card-border hover:bg-card-border/50 transition-all flex items-center justify-center whitespace-nowrap"
           >
-            Purchase History
+            <span className="md:hidden">Purchases</span>
+            <span className="hidden md:inline">Purchase History</span>
           </Link>
         </div>
 

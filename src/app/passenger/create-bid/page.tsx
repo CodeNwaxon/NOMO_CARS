@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, Info, X, Loader2, Trash2, Clock3, Edit2, Star } from "lucide-react";
+import { ArrowLeft, Info, X, Loader2, Trash2, Clock3, Edit2, Star, Crown } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { addDoc, collection, deleteDoc, doc, getDocs, query, where, updateDoc, getDoc, increment } from "firebase/firestore";
@@ -42,7 +42,14 @@ export default function CreateBidPage() {
       getDoc(doc(db, "adminSettings", "pricing")),
       getDocs(query(collection(db, "requests"), where("passengerId", "==", user.uid)))
     ]);
-    setRequestDurationDays(Number(pricingSnap.data()?.requestDurationDays ?? 14));
+    const pData = pricingSnap.data();
+    let duration = Number(pData?.requestDurationDays ?? 14);
+    if (profile?.vipStars === 4) {
+      duration = Number(pData?.vip4RequestDurationDays ?? 21);
+    } else if (profile?.vipStars === 5) {
+      duration = Number(pData?.vip5RequestDurationDays ?? 30);
+    }
+    setRequestDurationDays(duration);
     setRequests(requestSnap.docs.map((item): any => ({ id: item.id, ...item.data() })).sort((a: any, b: any) => Number(b.createdAt || 0) - Number(a.createdAt || 0)));
     const monthStart = new Date();
     monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
@@ -87,6 +94,7 @@ export default function CreateBidPage() {
           ...requestData,
           passengerId: user.uid,
           passengerName: profile?.username || profile?.firstName || "Passenger",
+          passengerVipStars: profile?.vipStars || 0,
           status: "open",
           bidCount: 0,
           createdAt: now,
@@ -110,7 +118,7 @@ export default function CreateBidPage() {
   const openBidders = async (request: any) => {
     const snapshot = await getDocs(collection(db, "requests", request.id, "bids"));
     const biddersData: any[] = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
-    
+
     // Fetch driver profiles to get latest jobsWon count
     for (let bid of biddersData) {
       if (bid.driverId) {
@@ -126,7 +134,7 @@ export default function CreateBidPage() {
       const vipA = a.driverVipStars || 0;
       const vipB = b.driverVipStars || 0;
       if (vipA !== vipB) return vipB - vipA;
-      
+
       const levelA = Math.floor((a.jobsWon || 0) / 2);
       const levelB = Math.floor((b.jobsWon || 0) / 2);
       if (levelA !== levelB) return levelB - levelA;
@@ -453,14 +461,26 @@ export default function CreateBidPage() {
                   <div key={bid.id} className="border border-card-border rounded-xl p-4 bg-card-bg">
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <b className="block text-base">{bid.driverName}</b>
+                        <div className="flex items-center gap-2">
+                          <b className="block text-base">{bid.driverName}</b>
+                          {bid.driverVipStars === 4 && (
+                            <span className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold tracking-wider shadow-sm uppercase whitespace-nowrap">
+                              VIP 4
+                            </span>
+                          )}
+                          {bid.driverVipStars >= 5 && (
+                            <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-white text-[9px] px-1.5 py-0.5 rounded font-bold tracking-wider shadow-sm uppercase whitespace-nowrap flex items-center gap-0.5">
+                              <Crown className="w-2.5 h-2.5" /> VIP {bid.driverVipStars}
+                            </span>
+                          )}
+                        </div>
                         <div className="flex items-center gap-1.5 mt-0.5 mb-1">
-                           <div className="flex">
-                             {[...Array(5)].map((_, i) => (
-                               <Star key={i} className={`w-3 h-3 md:w-3.5 md:h-3.5 ${i < Math.min(5, Math.floor((bid.jobsWon || 0) / 2)) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-300 dark:text-slate-700'}`} />
-                             ))}
-                           </div>
-                           <span className="text-foreground/50 text-[10px]">• {bid.jobsWon || 0} jobs won</span>
+                          <div className="flex">
+                            {[...Array(5)].map((_, i) => (
+                              <Star key={i} className={`w-3 h-3 md:w-3.5 md:h-3.5 ${i < Math.min(5, Math.floor((bid.jobsWon || 0) / 2)) ? 'fill-yellow-400 text-yellow-400' : 'text-slate-300 dark:text-slate-700'}`} />
+                            ))}
+                          </div>
+                          <span className="text-foreground/50 text-[10px]">• {bid.jobsWon || 0} jobs won</span>
                         </div>
                         <p className="text-xs text-foreground/60">{bid.vehicleDetails?.make} {bid.vehicleDetails?.model}</p>
                       </div>

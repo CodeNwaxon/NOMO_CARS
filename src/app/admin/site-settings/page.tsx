@@ -720,7 +720,8 @@ export default function SiteSettingsPage() {
                     className="px-6 py-2.5 bg-brand-primary text-white font-bold rounded-xl hover:bg-brand-primary/90 transition-all disabled:opacity-50 flex items-center gap-2"
                   >
                     {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                    Confirm & Save
+                    <span className="md:hidden">Save</span>
+                    <span className="hidden md:inline">Confirm & Save</span>
                   </button>
                 </div>
               </form>

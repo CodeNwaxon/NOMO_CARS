@@ -135,7 +135,7 @@ export default function PurchaseHistoryPage() {
                     <Link href={`/receipt/${transaction.reference || transaction.id}`} title="View receipt" className="p-2 rounded-lg text-brand-primary hover:bg-brand-primary/10">
                       <ExternalLink className="w-4 h-4" />
                     </Link>
-                    <button onClick={() => { setSelectedId(transaction.id); setAction("delete"); }} title="Hide purchase" className="p-2 rounded-lg text-red-500 hover:bg-red-500/10">
+                    <button onClick={() => { setSelectedId(transaction.id); setAction("delete"); }} title="Delete purchase" className="p-2 rounded-lg text-red-500 hover:bg-red-500/10">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -150,8 +150,12 @@ export default function PurchaseHistoryPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-background border border-card-border rounded-2xl p-6 max-w-sm w-full shadow-2xl">
             <button onClick={() => { setAction(null); setSelectedId(null); }} className="float-right p-1 text-foreground/50 hover:text-foreground"><X className="w-5 h-5" /></button>
-            <h2 className="text-xl font-bold mb-3">{action === "clear" ? "Clear transaction history?" : "Hide this transaction?"}</h2>
-            <p className="text-sm text-foreground/70 mb-6">{action === "clear" ? "These purchases will disappear from your view. They will remain in our records." : "This purchase will disappear from your view. The receipt will remain in our records."}</p>
+            <h2 className="text-xl font-bold mb-3 text-red-500">{action === "clear" ? "Clear transaction history?" : "Delete this transaction?"}</h2>
+            <p className="text-sm text-foreground/70 mb-6">
+              {action === "clear" 
+                ? "This action cannot be undone and your transaction history will be deleted permanently." 
+                : "This action cannot be undone and this receipt will be deleted permanently."}
+            </p>
             <div className="flex gap-3">
               <button onClick={() => { setAction(null); setSelectedId(null); }} className="flex-1 py-2.5 rounded-xl border border-card-border font-semibold">Cancel</button>
               <button
@@ -159,7 +163,7 @@ export default function PurchaseHistoryPage() {
                 onClick={() => hideTransactions(action === "clear" ? transactions.map((transaction) => transaction.id) : selectedId ? [selectedId] : [])}
                 className="flex-1 py-2.5 rounded-xl bg-red-500 text-white font-semibold disabled:opacity-50"
               >
-                {working ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : action === "clear" ? "Clear history" : "Hide transaction"}
+                {working ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : action === "clear" ? "Clear history" : "Delete transaction"}
               </button>
             </div>
           </div>

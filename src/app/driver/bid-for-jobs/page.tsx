@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, Info, X, Loader2, CheckCircle2, Clock3, Search, Car, MapPin, Navigation } from "lucide-react";
+import { ArrowLeft, Info, X, Loader2, CheckCircle2, Clock3, Search, Car, MapPin, Navigation, Crown } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useRouter, useSearchParams } from "next/navigation";
 import { collection, doc, addDoc, getDoc, getDocs, query, where, runTransaction } from "firebase/firestore";
@@ -204,8 +204,18 @@ export default function BidForJobsPage() {
               ) : null}
               <div className="absolute top-0 right-0 w-16 h-16 md:w-32 md:h-32 bg-brand-secondary/15 rounded-full blur-xl md:blur-2xl -mr-6 -mt-6 md:-mr-10 md:-mt-10 group-hover:bg-brand-secondary/30 transition-colors duration-300"></div>
               <div className="flex justify-between items-start mb-2 md:mb-4 relative z-10">
-                <div>
-                  <span className="inline-block px-1.5 py-0.5 md:px-2.5 md:py-1 bg-white/60 dark:bg-black/40 backdrop-blur-md rounded md:rounded-lg text-[8px] md:text-[10px] font-bold uppercase tracking-wider text-brand-secondary mb-1 md:mb-2 border border-brand-secondary/10">{request.category}</span>
+                <div className="flex flex-col gap-1.5 items-start">
+                  <span className="inline-block px-1.5 py-0.5 md:px-2.5 md:py-1 bg-white/60 dark:bg-black/40 backdrop-blur-md rounded md:rounded-lg text-[8px] md:text-[10px] font-bold uppercase tracking-wider text-brand-secondary border border-brand-secondary/10">{request.category}</span>
+                  {request.passengerVipStars === 4 && (
+                    <span className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-[8px] md:text-[9px] px-1.5 py-0.5 rounded font-bold tracking-wider shadow-sm uppercase whitespace-nowrap">
+                      VIP 4 Customer
+                    </span>
+                  )}
+                  {(request.passengerVipStars || 0) >= 5 && (
+                    <span className="bg-gradient-to-r from-amber-400 to-amber-600 text-white text-[8px] md:text-[9px] px-1.5 py-0.5 rounded font-bold tracking-wider shadow-sm uppercase whitespace-nowrap flex items-center gap-0.5">
+                      <Crown className="w-2.5 h-2.5" /> VIP {request.passengerVipStars} Customer
+                    </span>
+                  )}
                 </div>
                 <div className="text-right">
                   <span className="text-[11px] md:text-base font-bold text-slate-900 dark:text-white">₦{Number(request.budget).toLocaleString()}</span>

@@ -15,6 +15,8 @@ const CEO_UID = "xFAB29wQyBfGk4W2oLaD9qwxgfY2";
 interface PricingConfig {
   startTicketCollection: boolean;
   requestDurationDays: number;
+  vip4RequestDurationDays: number;
+  vip5RequestDurationDays: number;
   nonVipLimits: {
     maxCars: number;
     maxRoutesPerCar: number;
@@ -42,6 +44,8 @@ export default function ManagePurchasesPage() {
   const [pricing, setPricing] = useState<PricingConfig>({
     startTicketCollection: true,
     requestDurationDays: 14,
+    vip4RequestDurationDays: 21,
+    vip5RequestDurationDays: 30,
     pointsPerStar: 20,
     nonVipLimits: {
       maxCars: 1,
@@ -106,6 +110,8 @@ export default function ManagePurchasesPage() {
         setPricing({
           startTicketCollection: data.startTicketCollection ?? true,
           requestDurationDays: Number(data.requestDurationDays ?? 14),
+          vip4RequestDurationDays: Number(data.vip4RequestDurationDays ?? 21),
+          vip5RequestDurationDays: Number(data.vip5RequestDurationDays ?? 30),
           pointsPerStar: data.pointsPerStar ?? 20,
           nonVipLimits: data.nonVipLimits || { maxCars: 1, maxRoutesPerCar: 1, dailyBids: 1, createBidLimit: 1 },
           tickets: data.tickets || [],
@@ -407,7 +413,7 @@ export default function ManagePurchasesPage() {
               <h3 className="font-bold text-foreground mb-4">Non-VIP (Base Tier)</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="col-span-2 md:col-span-4 mb-2 border-b border-slate-200 dark:border-slate-700/50 pb-4">
-                  <label className="block text-xs font-bold text-foreground/60 mb-1 uppercase tracking-wider">Created Request Duration (days)</label>
+                  <label className="block text-xs font-bold text-foreground/60 mb-1 uppercase tracking-wider">Base Request Duration (days)</label>
                   <input type="text" inputMode="numeric" value={pricing.requestDurationDays || ""} onChange={(e) => setPricing({...pricing, requestDurationDays: e.target.value ? parseInt(e.target.value.replace(/\D/g, ""), 10) : 0})} className="w-full md:w-1/2 bg-white dark:bg-slate-950 border-none text-slate-900 dark:text-slate-100 rounded-xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-brand-primary focus:outline-none transition-all" />
                   <p className="text-[10px] text-foreground/50 mt-1">Controls how long passenger requests remain open.</p>
                 </div>
@@ -435,6 +441,13 @@ export default function ManagePurchasesPage() {
               <div key={`limit-${index}`} className="flex flex-col bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl transition-all hover:shadow-md">
                 <h3 className="font-bold text-brand-primary mb-4">{vipObj.label}</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {(vipObj.stars === 4 || vipObj.stars === 5) && (
+                    <div className="col-span-2 md:col-span-4 mb-2 border-b border-slate-200 dark:border-slate-700/50 pb-4">
+                      <label className="block text-xs font-bold text-foreground/60 mb-1 uppercase tracking-wider">VIP {vipObj.stars} Request Duration (days)</label>
+                      <input type="text" inputMode="numeric" value={vipObj.stars === 4 ? pricing.vip4RequestDurationDays || "" : pricing.vip5RequestDurationDays || ""} onChange={(e) => setPricing({...pricing, [vipObj.stars === 4 ? "vip4RequestDurationDays" : "vip5RequestDurationDays"]: e.target.value ? parseInt(e.target.value.replace(/\D/g, ""), 10) : 0})} className="w-full md:w-1/2 bg-white dark:bg-slate-950 border-none text-slate-900 dark:text-slate-100 rounded-xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-brand-primary focus:outline-none transition-all" />
+                      <p className="text-[10px] text-foreground/50 mt-1">Controls how long VIP {vipObj.stars} passenger requests remain open.</p>
+                    </div>
+                  )}
                   <div>
                     <label className="block text-xs font-bold text-foreground/60 mb-1 uppercase tracking-wider">Max Cars</label>
                     <input type="text" inputMode="numeric" value={vipObj.maxCars || ""} onChange={(e) => updateVip(index, "maxCars", e.target.value ? parseInt(e.target.value.replace(/\D/g, ""), 10) : 0)} className="w-full bg-white dark:bg-slate-950 border-none text-slate-900 dark:text-slate-100 rounded-xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-brand-primary focus:outline-none transition-all" />

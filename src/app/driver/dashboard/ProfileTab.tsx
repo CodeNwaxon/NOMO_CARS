@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import {
-  User, Phone, Star, Camera, Check, X, LogOut, MapPin, CarFront, Share2, Crown, Ticket, Briefcase, Bus, Truck, Car
+  User, Phone, Star, Camera, Check, X, LogOut, MapPin, CarFront, Share2, Crown, Ticket, Briefcase, Bus, Truck, Car, Info
 } from "lucide-react";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -43,6 +43,7 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
   const [isEditing, setIsEditing] = useState(false);
   const [showShareOverlay, setShowShareOverlay] = useState(false);
   const [showBidCategoryModal, setShowBidCategoryModal] = useState(false);
+  const [showLevelInfo, setShowLevelInfo] = useState(false);
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -393,8 +394,15 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
           <h2 className="text-lg md:text-2xl font-bold mb-1 capitalize w-full truncate px-2">{isEditing ? formData.username : getDisplayName()}</h2>
           <p className="text-xs md:text-sm text-foreground/60 mb-4 w-full truncate px-2">{user.email}</p>
 
-          <div className="flex flex-col items-center gap-1 bg-card-border/50 px-4 py-2 rounded-xl mb-6 shadow-inner">
-            <div className="flex items-center gap-1">
+          <div className="flex flex-col items-center gap-1 bg-card-border/50 px-4 py-2 rounded-xl mb-6 shadow-inner relative">
+            <button 
+              onClick={() => setShowLevelInfo(true)} 
+              className="absolute top-2 right-2 p-1 text-foreground/40 hover:text-brand-primary transition-colors"
+              title="How to level up?"
+            >
+              <Info className="w-4 h-4" />
+            </button>
+            <div className="flex items-center gap-1 mt-1">
               {renderStars(Math.min(5, Math.floor((profile?.jobsWon || 0) / 2)))}
               <span className="ml-1.5 md:ml-2 font-bold text-xs md:text-sm uppercase text-brand-primary">
                 Level {Math.min(5, Math.floor((profile?.jobsWon || 0) / 2))}
@@ -500,8 +508,8 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-              <div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+              <div className="col-span-1 order-1">
                 <label className="block text-xs md:text-sm font-medium text-foreground/70 mb-1.5 md:mb-2">First Name</label>
                 {isEditing ? (
                   <input
@@ -518,7 +526,7 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
                   </div>
                 )}
               </div>
-              <div>
+              <div className="col-span-2 md:col-span-1 order-3 md:order-2">
                 <label className="block text-xs md:text-sm font-medium text-foreground/70 mb-1.5 md:mb-2">Middle Name</label>
                 {isEditing ? (
                   <input
@@ -535,7 +543,7 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
                   </div>
                 )}
               </div>
-              <div>
+              <div className="col-span-1 order-2 md:order-3">
                 <label className="block text-xs md:text-sm font-medium text-foreground/70 mb-1.5 md:mb-2">Last Name</label>
                 {isEditing ? (
                   <input
@@ -599,7 +607,7 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-2 gap-4 md:gap-6">
               <div>
                 <label className="block text-xs md:text-sm font-medium text-foreground/70 mb-1.5 md:mb-2">Operating City</label>
                 {isEditing ? (
@@ -760,6 +768,51 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
                 );
               })}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Level Info Modal */}
+      {showLevelInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-background border border-card-border rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl relative">
+            <button
+              onClick={() => setShowLevelInfo(false)}
+              className="absolute top-4 right-4 p-2 text-foreground/50 hover:text-foreground transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-500/20">
+              <Star className="w-8 h-8 text-amber-500 fill-amber-500" />
+            </div>
+            
+            <h3 className="text-xl md:text-2xl font-bold text-center mb-2">Driver Level</h3>
+            <p className="text-sm text-center text-foreground/70 mb-6">
+              Your star level is determined by the number of successful bids you win. For every 2 jobs won, you gain 1 star!
+            </p>
+            
+            <div className="space-y-3 mb-6 bg-card-border/30 p-4 rounded-xl">
+              <div className="flex items-start gap-3">
+                <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                <p className="text-sm">Boosts customer confidence when they review your profile.</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                <p className="text-sm">Increases your ranking in search results, placing you ahead of lower-level drivers.</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                <p className="text-sm">Helps you secure better and higher-paying jobs!</p>
+              </div>
+            </div>
+            
+            <button
+              onClick={() => setShowLevelInfo(false)}
+              className="w-full py-3 bg-brand-primary text-white font-bold rounded-xl hover:bg-brand-primary/90 transition-colors shadow-lg"
+            >
+              Got it!
+            </button>
           </div>
         </div>
       )}

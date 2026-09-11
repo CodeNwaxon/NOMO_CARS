@@ -22,14 +22,14 @@ export default function ReceiptPage() {
   const id = params.id as string;
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
-  
+
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
-    
+
     if (!user) {
       router.push("/auth");
       return;
@@ -42,7 +42,7 @@ export default function ReceiptPage() {
       try {
         const docRef = doc(db, "transactions", id);
         const docSnap = await getDoc(docRef);
-        
+
         if (docSnap.exists()) {
           const data = docSnap.data() as Transaction;
           setTransaction(data);
@@ -108,74 +108,76 @@ export default function ReceiptPage() {
   const date = new Date(transaction.createdAt).toLocaleString();
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8 pt-8">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-2 md:p-8 pt-4 md:pt-8">
       {/* Non-printable controls */}
-      <div className="max-w-2xl mx-auto mb-6 flex justify-between items-center print:hidden">
-        <button 
-          onClick={() => router.back()} 
-          className="flex items-center gap-2 text-slate-500 hover:text-brand-primary transition-colors font-medium"
+      <div className="max-w-2xl mx-auto mb-4 md:mb-6 flex justify-between items-center print:hidden">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1 md:gap-2 text-slate-500 hover:text-brand-primary transition-colors text-sm md:text-base font-medium"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-3 h-3 md:w-4 md:h-4" />
           Back
         </button>
-        <button 
+        <button
           onClick={handlePrint}
-          className="flex items-center gap-2 bg-brand-primary text-white px-5 py-2.5 rounded-lg font-bold shadow-lg shadow-brand-primary/20 hover:bg-brand-primary/90 transition-colors"
+          className="flex items-center gap-1 md:gap-2 bg-brand-primary text-white px-3 py-1.5 md:px-5 md:py-2.5 text-xs md:text-base rounded-lg font-bold shadow-lg shadow-brand-primary/20 hover:bg-brand-primary/90 transition-colors"
         >
-          <Printer className="w-4 h-4" />
+          <Printer className="w-3 h-3 md:w-4 md:h-4" />
           Print Receipt
         </button>
       </div>
 
       {/* The Receipt Container */}
-      <div className="max-w-2xl mx-auto bg-white dark:bg-slate-900 shadow-xl rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 print:shadow-none print:border-none print:bg-white print:text-black">
-        
-        {/* Header */}
-        <div className="bg-brand-primary p-8 text-center print:bg-transparent print:text-black print:border-b-2 print:border-black">
-          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-md print:shadow-none print:border print:border-black">
-            <CheckCircle2 className="w-8 h-8 text-brand-primary print:text-black" />
-          </div>
-          <h1 className="text-3xl font-black text-white tracking-tight print:text-black">Payment Successful</h1>
-          <p className="text-white/80 mt-1 font-medium print:text-gray-600">{date}</p>
-        </div>
+      <div className="px-7 md:px-0">
+        <div className="max-w-2xl mx-auto bg-white dark:bg-slate-900 shadow-xl rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 print:shadow-none print:border-none print:bg-white print:text-black">
 
-        {/* Body */}
-        <div className="p-8 md:p-10">
-          <div className="flex justify-between items-end mb-10 pb-6 border-b border-dashed border-slate-300 dark:border-slate-700">
-            <div>
-              <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Amount Paid</p>
-              <h2 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white print:text-black">₦{transaction.amount.toLocaleString()}</h2>
+          {/* Header */}
+          <div className="bg-brand-primary p-4 md:p-8 text-center print:bg-transparent print:text-black print:border-b-2 print:border-black">
+            <div className="w-12 h-12 md:w-16 md:h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-2 md:mb-4 shadow-md print:shadow-none print:border print:border-black">
+              <CheckCircle2 className="w-6 h-6 md:w-8 md:h-8 text-brand-primary print:text-black" />
             </div>
-            <div className="text-right">
-              <div className="inline-block px-3 py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-bold text-sm rounded-full print:border print:border-green-600 print:bg-transparent">
-                PAID
-              </div>
-            </div>
+            <h1 className="text-xl md:text-3xl font-black text-white tracking-tight print:text-black">Payment Successful</h1>
+            <p className="text-white/80 mt-0.5 md:mt-1 text-xs md:text-base font-medium print:text-gray-600">{date}</p>
           </div>
 
-          <div className="space-y-6">
-            <div>
-              <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Transaction ID</p>
-              <p className="font-mono text-slate-900 dark:text-white font-medium print:text-black">{transaction.reference}</p>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Body */}
+          <div className="p-4 md:p-10">
+            <div className="flex justify-between items-end mb-6 md:mb-10 pb-4 md:pb-6 border-b border-dashed border-slate-300 dark:border-slate-700">
               <div>
-                <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Customer Email</p>
-                <p className="text-slate-900 dark:text-white font-medium print:text-black">{transaction.userEmail || "N/A"}</p>
+                <p className="text-xs md:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5 md:mb-1">Amount Paid</p>
+                <h2 className="text-2xl md:text-5xl font-black text-slate-900 dark:text-white print:text-black">₦{transaction.amount.toLocaleString()}</h2>
               </div>
+              <div className="text-right">
+                <div className="inline-block px-2 py-0.5 md:px-3 md:py-1 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 font-bold text-[10px] md:text-sm rounded-full print:border print:border-green-600 print:bg-transparent">
+                  PAID
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4 md:space-y-6">
               <div>
-                <p className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Purchase Type</p>
-                <p className="text-slate-900 dark:text-white font-medium capitalize print:text-black">{transaction.type}</p>
+                <p className="text-[10px] md:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5 md:mb-1">Transaction ID</p>
+                <p className="font-mono text-xs md:text-base text-slate-900 dark:text-white font-medium print:text-black">{transaction.reference}</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+                <div>
+                  <p className="text-[10px] md:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5 md:mb-1">Customer Email</p>
+                  <p className="text-xs md:text-base text-slate-900 dark:text-white font-medium print:text-black">{transaction.userEmail || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] md:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5 md:mb-1">Purchase Type</p>
+                  <p className="text-xs md:text-base text-slate-900 dark:text-white font-medium capitalize print:text-black">{transaction.type}</p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Footer */}
-        <div className="bg-slate-50 dark:bg-slate-800/50 p-6 text-center border-t border-slate-200 dark:border-slate-800 print:bg-transparent print:border-t-2 print:border-black">
-          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Thank you for your business!</p>
-          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">If you have any questions, please contact support at nomocars.com.</p>
+          {/* Footer */}
+          <div className="bg-slate-50 dark:bg-slate-800/50 p-4 md:p-6 text-center border-t border-slate-200 dark:border-slate-800 print:bg-transparent print:border-t-2 print:border-black">
+            <p className="text-[11px] md:text-sm text-slate-500 dark:text-slate-400 font-medium">Thank you for your business!</p>
+            <p className="text-[9px] md:text-xs text-slate-400 dark:text-slate-500 mt-1">If you have any questions, please contact support at nomocars.com.</p>
+          </div>
         </div>
       </div>
     </div>

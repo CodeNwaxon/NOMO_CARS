@@ -32,6 +32,7 @@ const vehicleSchema = z.object({
   make: z.string().min(2, "Make is required"),
   model: z.string().min(2, "Model is required"),
   year: z.string().min(4, "Year is required"),
+  color: z.string().min(2, "Color is required").optional(),
   seats: z.string().optional(),
   ac: z.boolean().optional(),
   plateNumber: z.string().optional(),
@@ -49,6 +50,7 @@ const getFieldConfig = (category: string) => {
 
   return {
     details: {
+      color: true,
       seats: !isTwoWheeler && !isHeavy && !isSpecial,
       ac: !isTwoWheeler && !isHeavy && !isSpecial,
       payload: isHeavy,
@@ -231,6 +233,7 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
     }
 
     // Validate dynamic conditional details
+    if (config.details.color && !data.color) { toast.error("Vehicle color is required"); return; }
     if (config.details.plateNumber && !data.plateNumber) { toast.error("Plate number is required"); return; }
     if (config.details.registrationNumber && !data.registrationNumber) { toast.error("Registration/Tail number is required"); return; }
     if (config.details.seats && !data.seats) { toast.error("Number of seats is required"); return; }
@@ -267,6 +270,7 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
       };
 
       if (config.details.seats) detailsToSave.seats = data.seats;
+      if (config.details.color) detailsToSave.color = data.color;
       if (config.details.ac) detailsToSave.ac = data.ac;
       if (config.details.payload) detailsToSave.payloadCapacity = data.payload;
       if (config.details.capacity) detailsToSave.totalCapacity = data.capacity;
@@ -440,6 +444,13 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
                 <input type="number" {...register("year")} placeholder="e.g. 2018" className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl" />
                 {errors.year && <p className="text-brand-accent text-xs mt-1">{errors.year.message}</p>}
               </div>
+
+              {config.details.color && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Color</label>
+                  <input {...register("color")} placeholder="e.g. Silver, Black" className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl" />
+                </div>
+              )}
 
               {config.details.plateNumber && (
                 <div>
@@ -654,16 +665,23 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
                   <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] md:text-xs text-foreground/70 font-medium">
                     <span>{v.details.year}</span>
 
+                    {v.details.color && (
+                      <>
+                        <span className="opacity-50">•</span>
+                        <span className="capitalize">{v.details.color}</span>
+                      </>
+                    )}
+
                     {(v.details.plateNumber || v.details.registrationNumber) && (
                       <>
-                        <span className="w-1 h-1 rounded-full bg-foreground/30"></span>
+                        <span className="opacity-50">•</span>
                         <span className="uppercase">{v.details.plateNumber || v.details.registrationNumber}</span>
                       </>
                     )}
 
                     {v.details.seats && (
                       <>
-                        <span className="w-1 h-1 rounded-full bg-foreground/30"></span>
+                        <span className="opacity-50">•</span>
                         <span>{v.details.seats} Seats</span>
                       </>
                     )}

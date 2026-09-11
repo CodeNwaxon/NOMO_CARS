@@ -14,6 +14,7 @@ const getFieldConfig = (category: string) => {
 
   return {
     details: {
+      color: true,
       seats: !isTwoWheeler && !isHeavy && !isSpecial,
       ac: !isTwoWheeler && !isHeavy && !isSpecial,
       payload: isHeavy,
@@ -68,6 +69,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
     make: vehicle.details?.make || "",
     model: vehicle.details?.model || "",
     year: vehicle.details?.year || "",
+    color: vehicle.details?.color || "",
     seats: vehicle.details?.seats || "",
     ac: vehicle.details?.ac ?? true,
     plateNumber: vehicle.details?.plateNumber || "",
@@ -139,6 +141,7 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
       };
 
       if (config.details.seats) detailsToSave.seats = form.seats;
+      if (config.details.color) detailsToSave.color = form.color;
       if (config.details.ac) detailsToSave.ac = form.ac;
       if (config.details.payload) detailsToSave.payloadCapacity = form.payloadCapacity;
       if (config.details.capacity) detailsToSave.totalCapacity = form.totalCapacity;
@@ -234,6 +237,18 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
                   className="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary focus:outline-none transition-all"
                 />
               </div>
+
+              {config.details.color && (
+                <div>
+                  <label className="block text-sm font-medium mb-1">Color</label>
+                  <input
+                    value={form.color}
+                    onChange={(e) => handleChange("color", e.target.value)}
+                    placeholder="e.g. Silver, Black"
+                    className="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary focus:outline-none transition-all"
+                  />
+                </div>
+              )}
 
               {config.details.plateNumber && (
                 <div>
