@@ -15,6 +15,8 @@ interface Transaction {
   createdAt: string;
   userEmail: string;
   userId: string;
+  planName?: string;
+  planStars?: number;
 }
 
 export default function ReceiptPage() {
@@ -167,7 +169,13 @@ export default function ReceiptPage() {
                 </div>
                 <div>
                   <p className="text-[10px] md:text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-0.5 md:mb-1">Purchase Type</p>
-                  <p className="text-xs md:text-base text-slate-900 dark:text-white font-medium capitalize print:text-black">{transaction.type}</p>
+                  <p className={`text-xs md:text-base font-bold capitalize print:text-black ${
+                    transaction.type === 'vip' 
+                      ? (transaction.planStars === 5 ? 'text-amber-500' : 'text-brand-primary') 
+                      : 'text-slate-900 dark:text-white'
+                  }`}>
+                    {transaction.planName ? transaction.planName.replace("1 Days", "1 Day") : transaction.type}
+                  </p>
                 </div>
               </div>
             </div>
