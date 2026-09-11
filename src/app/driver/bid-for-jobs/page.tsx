@@ -306,7 +306,7 @@ export default function BidForJobsPage() {
                 <div className="flex items-center gap-2">
                   <p className="text-[8px] md:text-[10px] font-medium flex items-center gap-1 md:gap-1.5 text-brand-secondary bg-white/50 dark:bg-black/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded backdrop-blur-sm">
                     <Clock3 className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" />
-                    {request.status === "assigned" ? (isWinner ? "You are selected for this job" : "Driver selected") : `${Math.max(0, Math.ceil((Number(request.expiresAt) - Date.now()) / 86400000))} days left`}
+                    {request.status === "assigned" ? (isWinner ? "You are selected" : "Driver selected") : `${Math.max(0, Math.ceil((Number(request.expiresAt) - Date.now()) / 86400000))} days left`}
                   </p>
                   {(request.bidCount || 0) > 0 && (
                     <p className="text-[8px] md:text-[10px] font-medium flex items-center gap-1 md:gap-1.5 text-brand-primary bg-white/50 dark:bg-black/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded backdrop-blur-sm">
