@@ -74,21 +74,21 @@ export default function BidForJobsPage() {
         passengerPhone = passengerDoc.data().phone || "";
         passengerWhatsapp = passengerDoc.data().whatsappEnabled ?? false;
       }
-      
+
       if (bid.vehicleId) {
         const vSnap = await getDoc(doc(db, "vehicles", bid.vehicleId));
         if (vSnap.exists()) {
-           const vData = vSnap.data();
-           bid.vehicleImages = vData.images || null;
-           bid.vehicleDocuments = vData.documents || null;
-           if (vData.details) {
-             bid.vehicleDetails = vData.details;
-           }
+          const vData = vSnap.data();
+          bid.vehicleImages = vData.images || null;
+          bid.vehicleDocuments = vData.documents || null;
+          if (vData.details) {
+            bid.vehicleDetails = vData.details;
+          }
         }
       }
 
       setAssignedBidInfo({ loading: false, request, bid, passengerPhone, passengerWhatsapp });
-    } catch(e) {
+    } catch (e) {
       console.error(e);
       setAssignedBidInfo(null);
     }
@@ -228,11 +228,11 @@ export default function BidForJobsPage() {
               if (isWinner) {
                 openAssignedBid(request, driverBid);
               } else {
-                setSelectedRequest(request); 
-                setAmount(Number(request.budget).toLocaleString()); 
-                setSelectedVehicle(""); 
-                setBidDescription(""); 
-                setShowDescriptionInput(false); 
+                setSelectedRequest(request);
+                setAmount(Number(request.budget).toLocaleString());
+                setSelectedVehicle("");
+                setBidDescription("");
+                setShowDescriptionInput(false);
               }
             }} className={`text-left rounded-xl md:rounded-2xl p-2.5 md:p-5 transition-all duration-300 relative overflow-hidden group ${isWinner ? "bg-green-50 dark:bg-green-900/20 border border-green-500/50 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/40" : isAssigned ? "bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-slate-700 opacity-60 grayscale-[60%] cursor-not-allowed" : isApplied ? "bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 opacity-70 grayscale-[30%] cursor-not-allowed" : request.status !== "open" || bidCount >= limits.dailyBids ? "bg-card-bg border border-card-border opacity-60 grayscale cursor-not-allowed" : "bg-gradient-to-br from-brand-secondary/10 to-brand-primary/5 border border-brand-secondary/50 shadow-lg shadow-brand-secondary/20 hover:bg-brand-secondary/5 hover:border-brand-secondary hover:shadow-2xl hover:shadow-brand-secondary/40 hover:-translate-y-1.5"}`}>
               {isWinner ? (
@@ -266,7 +266,7 @@ export default function BidForJobsPage() {
                 <div className="text-right shrink-0 ml-2">
                   <p className="text-[9px] md:text-[10px] text-foreground/60 font-medium mb-0.5">Passenger budget</p>
                   <p className="text-[11px] md:text-base font-bold text-slate-800 dark:text-slate-200 mb-1.5">₦{Number(request.budget).toLocaleString()}</p>
-                  
+
                   {driverBid && driverBid.amount !== Number(request.budget) && (
                     <>
                       <p className="text-[9px] md:text-[10px] text-brand-primary font-bold mb-0.5">Your Proposal:</p>
@@ -303,7 +303,7 @@ export default function BidForJobsPage() {
               </div>
 
               <div className="mt-2 pt-2 md:mt-3 md:pt-3 border-t border-brand-secondary/10 flex items-center justify-between relative z-10">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1 md:gap-2">
                   <p className="text-[8px] md:text-[10px] font-medium flex items-center gap-1 md:gap-1.5 text-brand-secondary bg-white/50 dark:bg-black/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded backdrop-blur-sm">
                     <Clock3 className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" />
                     {request.status === "assigned" ? (isWinner ? "You are selected" : "Driver selected") : `${Math.max(0, Math.ceil((Number(request.expiresAt) - Date.now()) / 86400000))} days left`}
@@ -360,33 +360,34 @@ export default function BidForJobsPage() {
                     {matchingVehicles.map((vehicle) => {
                       const isApproved = vehicle.isApproved === true;
                       return (
-                      <button
-                        key={vehicle.id}
-                        disabled={!isApproved}
-                        onClick={() => setSelectedVehicle(vehicle.id)}
-                        className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all duration-200 border-2 text-left ${!isApproved ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700' : selectedVehicle === vehicle.id ? 'border-brand-secondary bg-brand-secondary/5 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-brand-secondary/30'}`}
-                      >
-                        <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-lg overflow-hidden shrink-0 shadow-sm border border-slate-100 dark:border-slate-700 relative">
-                          {vehicle.images?.front ? <img src={vehicle.images.front} className="w-full h-full object-cover" /> : <Car className="w-5 h-5 m-3 opacity-30 text-slate-500" />}
-                        </div>
-                        <div className="flex-1 overflow-hidden">
-                          <p className="font-bold text-xs text-slate-900 dark:text-white truncate">{vehicle.details?.make} {vehicle.details?.model}</p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <p className="text-[9px] text-slate-500 font-medium truncate">{vehicle.details?.year} • {vehicle.details?.color || "Standard"}</p>
+                        <button
+                          key={vehicle.id}
+                          disabled={!isApproved}
+                          onClick={() => setSelectedVehicle(vehicle.id)}
+                          className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all duration-200 border-2 text-left ${!isApproved ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700' : selectedVehicle === vehicle.id ? 'border-brand-secondary bg-brand-secondary/5 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-brand-secondary/30'}`}
+                        >
+                          <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-lg overflow-hidden shrink-0 shadow-sm border border-slate-100 dark:border-slate-700 relative">
+                            {vehicle.images?.front ? <img src={vehicle.images.front} className="w-full h-full object-cover" /> : <Car className="w-5 h-5 m-3 opacity-30 text-slate-500" />}
                           </div>
-                          {!isApproved && (
-                            <span className="inline-block mt-1 text-[8px] px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 font-bold uppercase tracking-wider">Awaiting Admins Approval</span>
-                          )}
-                        </div>
-                        <div className="shrink-0">
-                          {selectedVehicle === vehicle.id ? (
-                            <CheckCircle2 className="w-6 h-6 text-brand-secondary" />
-                          ) : (
-                            <div className="w-6 h-6 rounded-full border-2 border-slate-300 dark:border-slate-600"></div>
-                          )}
-                        </div>
-                      </button>
-                    )})}
+                          <div className="flex-1 overflow-hidden">
+                            <p className="font-bold text-xs text-slate-900 dark:text-white truncate">{vehicle.details?.make} {vehicle.details?.model}</p>
+                            <div className="flex items-center gap-2 mt-0.5">
+                              <p className="text-[9px] text-slate-500 font-medium truncate">{vehicle.details?.year} • {vehicle.details?.color || "Standard"}</p>
+                            </div>
+                            {!isApproved && (
+                              <span className="inline-block mt-1 text-[8px] px-1.5 py-0.5 rounded bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 font-bold uppercase tracking-wider">Awaiting Admins Approval</span>
+                            )}
+                          </div>
+                          <div className="shrink-0">
+                            {selectedVehicle === vehicle.id ? (
+                              <CheckCircle2 className="w-6 h-6 text-brand-secondary" />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full border-2 border-slate-300 dark:border-slate-600"></div>
+                            )}
+                          </div>
+                        </button>
+                      )
+                    })}
                   </div>
                 );
               })()}
@@ -511,11 +512,11 @@ export default function BidForJobsPage() {
                       <p className="text-xs text-slate-600 dark:text-slate-400 mt-1">{assignedBidInfo.bid.vehicleDetails?.make} {assignedBidInfo.bid.vehicleDetails?.model}</p>
                     </div>
                   </div>
-                  
+
                   <div className="text-right shrink-0 ml-2">
                     <p className="text-[9px] md:text-[10px] text-slate-500 dark:text-slate-400 font-medium mb-0.5">Request Budget</p>
                     <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-1.5">₦{Number(assignedBidInfo.request.budget).toLocaleString()}</p>
-                    
+
                     <>
                       <p className="text-[9px] md:text-[10px] text-brand-primary font-bold mb-0.5 mt-2">You Proposed:</p>
                       <span className="inline-block font-bold text-brand-primary bg-brand-primary/10 px-2 py-1 rounded text-sm md:text-base border border-brand-primary/20">₦{Number(assignedBidInfo.bid.amount).toLocaleString()}</span>
@@ -529,7 +530,7 @@ export default function BidForJobsPage() {
                     <p className="text-sm text-slate-600 dark:text-slate-400 italic">{assignedBidInfo.bid.description}</p>
                   </div>
                 )}
-                
+
                 <div className="mt-3">
                   <p className="text-sm text-slate-700 dark:text-slate-300">{assignedBidInfo.passengerPhone || "Phone unavailable"}</p>
                 </div>
