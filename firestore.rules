@@ -176,7 +176,8 @@ service cloud.firestore {
       match /bids/{bidId} {
         allow read: if request.auth != null && (
           get(/databases/$(database)/documents/requests/$(requestId)).data.passengerId == request.auth.uid ||
-          resource.data.driverId == request.auth.uid
+          bidId == request.auth.uid ||
+          (resource != null && resource.data.driverId == request.auth.uid)
         );
         allow create: if request.auth != null && request.resource.data.driverId == request.auth.uid;
         allow update: if request.auth != null && resource.data.driverId == request.auth.uid;

@@ -20,6 +20,8 @@ interface UserProfile {
   operatingState?: string;
   isApproved?: boolean;
   isDisabled?: boolean;
+  isRejected?: boolean;
+  rejectionReason?: string;
   username?: string;
   displayImage?: string;
   rating?: number;

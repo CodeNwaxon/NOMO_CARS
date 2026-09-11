@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, Info, X, Loader2, CheckCircle2, Clock3, Search, Car, MapPin, Navigation, Crown } from "lucide-react";
+import { ArrowLeft, Info, X, Loader2, CheckCircle2, Clock3, Search, Car, MapPin, Navigation, Crown, Eye } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useRouter, useSearchParams } from "next/navigation";
 import { collection, doc, addDoc, getDoc, getDocs, query, where, runTransaction } from "firebase/firestore";
@@ -23,7 +23,7 @@ export default function BidForJobsPage() {
   const [bidDescription, setBidDescription] = useState("");
   const [showDescriptionInput, setShowDescriptionInput] = useState(false);
   const [bidCount, setBidCount] = useState(0);
-  const [appliedRequests, setAppliedRequests] = useState<Set<string>>(new Set());
+  const [appliedRequests, setAppliedRequests] = useState<Map<string, any>>(new Map());
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showBidConfirm, setShowBidConfirm] = useState(false);
@@ -49,10 +49,10 @@ export default function BidForJobsPage() {
       return true;
     }));
     setVehicles(vehicleSnap.docs.map((item: any): any => ({ id: item.id, ...item.data() })).filter((item: any) => item.isApproved));
-    const applied = new Set<string>();
+    const applied = new Map<string, any>();
     const bidCounts = await Promise.all(requestSnap.docs.map(async (requestDoc: any): Promise<number> => {
       const bid = await getDocs(query(collection(db, "requests", requestDoc.id, "bids"), where("driverId", "==", user.uid)));
-      if (!bid.empty) applied.add(requestDoc.id);
+      if (!bid.empty) applied.set(requestDoc.id, { id: bid.docs[0].id, ...bid.docs[0].data() });
       return bid.empty ? 0 : 1;
     }));
     setAppliedRequests(applied);
@@ -101,7 +101,7 @@ export default function BidForJobsPage() {
           title: "New Bid Received",
           message: `${profile?.username || profile?.firstName || "A driver"} placed a bid of ₦${numericAmount.toLocaleString()} on your ${selectedRequest.category} request.`,
           createdAt: Date.now(),
-          link: "/passenger/create-bid"
+          link: `/passenger/create-bid?tab=browse&highlight=${selectedRequest.id}`
         });
       }
 
@@ -185,6 +185,7 @@ export default function BidForJobsPage() {
             return matchesLoc && matchesDest;
           }).map((request) => {
             const isApplied = appliedRequests.has(request.id);
+            const driverBid = appliedRequests.get(request.id);
             const isAssigned = request.status === "assigned";
             const isWinner = isAssigned && request.selectedDriverId === user?.uid;
 
@@ -218,10 +219,27 @@ export default function BidForJobsPage() {
                   )}
                 </div>
                 <div className="text-right">
-                  <span className="text-[11px] md:text-base font-bold text-slate-900 dark:text-white">₦{Number(request.budget).toLocaleString()}</span>
+                  <span className={`text-[11px] md:text-base font-bold ${driverBid && driverBid.amount !== Number(request.budget) ? 'text-slate-400 line-through' : 'text-slate-900 dark:text-white'}`}>₦{Number(request.budget).toLocaleString()}</span>
+                  {driverBid && driverBid.amount !== Number(request.budget) && (
+                    <div className="text-brand-primary font-black text-xs md:text-lg leading-tight -mt-0.5">
+                      ₦{Number(driverBid.amount).toLocaleString()}
+                    </div>
+                  )}
                   <p className="text-[7px] md:text-[9px] text-foreground/50 leading-none mt-0.5">Passenger budget</p>
                 </div>
               </div>
+
+              {isWinner && driverBid?.vehicleDetails && (
+                <div className="relative z-10 mb-2 mt-1 md:mt-2 bg-green-100 dark:bg-green-900/40 border border-green-200 dark:border-green-800 rounded-lg p-2 md:p-3">
+                  <p className="text-[8px] md:text-[10px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider mb-1">Approved Vehicle for this Job</p>
+                  <div className="flex items-center gap-2">
+                    <Car className="w-3 h-3 md:w-4 md:h-4 text-green-600 dark:text-green-500" />
+                    <span className="text-[10px] md:text-sm font-bold text-green-900 dark:text-green-100 capitalize">
+                      {driverBid.vehicleDetails.make} {driverBid.vehicleDetails.model} ({driverBid.vehicleDetails.year})
+                    </span>
+                  </div>
+                </div>
+              )}
 
               <div className="relative z-10 my-1 md:my-2">
                 <p className="text-[10px] md:text-sm font-normal text-slate-800 dark:text-slate-200 leading-tight">
@@ -236,10 +254,18 @@ export default function BidForJobsPage() {
               </div>
 
               <div className="mt-2 pt-2 md:mt-3 md:pt-3 border-t border-brand-secondary/10 flex items-center justify-between relative z-10">
-                <p className="text-[8px] md:text-[10px] font-medium flex items-center gap-1 md:gap-1.5 text-brand-secondary bg-white/50 dark:bg-black/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded backdrop-blur-sm">
-                  <Clock3 className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" />
-                  {request.status === "assigned" ? "Driver selected" : `${Math.max(0, Math.ceil((Number(request.expiresAt) - Date.now()) / 86400000))} days left`}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-[8px] md:text-[10px] font-medium flex items-center gap-1 md:gap-1.5 text-brand-secondary bg-white/50 dark:bg-black/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded backdrop-blur-sm">
+                    <Clock3 className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" />
+                    {request.status === "assigned" ? "Driver selected" : `${Math.max(0, Math.ceil((Number(request.expiresAt) - Date.now()) / 86400000))} days left`}
+                  </p>
+                  {(request.bidCount || 0) > 0 && (
+                    <p className="text-[8px] md:text-[10px] font-medium flex items-center gap-1 md:gap-1.5 text-brand-primary bg-white/50 dark:bg-black/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded backdrop-blur-sm">
+                      <Eye className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" />
+                      {request.bidCount} {request.bidCount === 1 ? 'Bid' : 'Bids'}
+                    </p>
+                  )}
+                </div>
                 <div className="flex w-5 h-5 md:w-8 md:h-8 rounded-full bg-white dark:bg-slate-800 items-center justify-center shadow-sm opacity-100 transition-transform transform translate-x-0 group-hover:translate-x-1">
                   <ArrowLeft className="w-2.5 h-2.5 md:w-4 md:h-4 text-brand-secondary rotate-180" />
                 </div>

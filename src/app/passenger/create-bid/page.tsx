@@ -21,6 +21,9 @@ export default function CreateBidPage() {
   const [requests, setRequests] = useState<any[]>([]);
   const [bidders, setBidders] = useState<any[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  const [imageViewerUrl, setImageViewerUrl] = useState<string | null>(null);
+  const [imageViewerLoadingId, setImageViewerLoadingId] = useState<string | null>(null);
 
   const [requestDurationDays, setRequestDurationDays] = useState(14);
   const [loading, setLoading] = useState(true);
@@ -55,14 +58,25 @@ export default function CreateBidPage() {
     monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
     setQuotaUsed(requestSnap.docs.filter((item) => Number(item.data().createdAt || 0) >= monthStart.getTime()).length);
     setLoading(false);
+    return requestSnap.docs.length > 0;
   };
 
   useEffect(() => {
     if (!authLoading && user) {
-      loadRequests();
+      loadRequests().then((hasRequests) => {
+        const searchParams = new URLSearchParams(window.location.search);
+        if (searchParams.get("browse") === "1" || searchParams.get("tab") === "browse") {
+          setActiveTab("browse");
+        } else if (searchParams.get("category")) {
+          setActiveTab("post");
+        } else if (hasRequests) {
+          setActiveTab("browse");
+        }
+      });
       const searchParams = new URLSearchParams(window.location.search);
-      if (searchParams.get("browse") === "1") {
-        setActiveTab("browse");
+      const hId = searchParams.get("highlight");
+      if (hId) {
+        setHighlightId(hId);
       }
       const categoryParam = searchParams.get("category");
       if (categoryParam) {
@@ -337,7 +351,7 @@ export default function CreateBidPage() {
                     const expired = isExpired(request);
                     const taken = request.status === "assigned";
                     return (
-                      <div key={request.id} onClick={() => !expired && !taken && openBidders(request)} className={`cursor-pointer text-left rounded-xl md:rounded-2xl p-2.5 md:p-5 transition-all duration-300 transform relative overflow-hidden group ${taken ? "bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-slate-700 opacity-60 grayscale-[60%] cursor-default" : expired ? "bg-card-bg border border-card-border opacity-60 grayscale cursor-default" : "bg-gradient-to-br from-brand-primary/10 to-brand-secondary/5 border border-brand-primary/50 shadow-lg shadow-brand-primary/20 hover:bg-brand-primary/5 hover:border-brand-primary hover:shadow-2xl hover:shadow-brand-primary/40 hover:-translate-y-1.5"}`}>
+                      <div id={`request-${request.id}`} key={request.id} onClick={() => !expired && !taken && openBidders(request)} className={`cursor-pointer text-left rounded-xl md:rounded-2xl p-2.5 md:p-5 transition-all duration-300 transform relative overflow-hidden group ${taken ? "bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-slate-700 opacity-60 grayscale-[60%] cursor-default" : expired ? "bg-card-bg border border-card-border opacity-60 grayscale cursor-default" : highlightId === request.id ? "bg-gradient-to-br from-brand-primary/10 to-brand-secondary/5 border-2 border-brand-primary ring-4 ring-brand-primary/30 shadow-lg shadow-brand-primary/40 animate-pulse hover:-translate-y-1.5" : "bg-gradient-to-br from-brand-primary/10 to-brand-secondary/5 border border-brand-primary/50 shadow-lg shadow-brand-primary/20 hover:bg-brand-primary/5 hover:border-brand-primary hover:shadow-2xl hover:shadow-brand-primary/40 hover:-translate-y-1.5"}`}>
 
                         <div className="absolute top-0 right-0 w-16 h-16 md:w-32 md:h-32 bg-brand-primary/15 rounded-full blur-xl md:blur-2xl -mr-6 -mt-6 md:-mr-10 md:-mt-10 group-hover:bg-brand-primary/30 transition-colors duration-300 pointer-events-none"></div>
 
@@ -467,11 +481,27 @@ export default function CreateBidPage() {
             ) : (
               <div className="space-y-3">
                 {bidders.map((bid) => (
-                  <div key={bid.id} className="border border-card-border rounded-xl p-4 bg-card-bg">
+                  <div key={bid.id} className="border border-slate-200 dark:border-slate-800 rounded-xl p-4 bg-white dark:bg-slate-900 shadow-sm relative overflow-hidden">
                     <div className="flex justify-between items-start mb-2">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <b className="block text-base">{bid.driverName}</b>
+                      <div className="flex gap-3 items-start">
+                        {bid.vehicleDetails?.images?.front && (
+                          <div className="w-12 h-12 md:w-16 md:h-16 shrink-0 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 cursor-pointer border border-slate-200 dark:border-slate-700 relative group" onClick={() => {
+                            if (imageViewerLoadingId === bid.id) return;
+                            setImageViewerLoadingId(bid.id);
+                            setTimeout(() => {
+                              setImageViewerUrl(bid.vehicleDetails.images.front);
+                              setImageViewerLoadingId(null);
+                            }, 500);
+                          }}>
+                            <img src={bid.vehicleDetails.images.front} alt="Vehicle" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              {imageViewerLoadingId === bid.id ? <Loader2 className="w-4 h-4 text-white animate-spin" /> : <p className="text-[8px] font-bold text-white text-center">VIEW<br/>IMG</p>}
+                            </div>
+                          </div>
+                        )}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <b className="block text-base">{bid.driverName}</b>
                           {bid.driverVipStars === 4 && (
                             <span className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-[9px] px-1.5 py-0.5 rounded font-bold tracking-wider shadow-sm uppercase whitespace-nowrap">
                               VIP 4
@@ -492,6 +522,7 @@ export default function CreateBidPage() {
                           <span className="text-foreground/50 text-[10px]">• {bid.jobsWon || 0} jobs won</span>
                         </div>
                         <p className="text-xs text-foreground/60">{bid.vehicleDetails?.make} {bid.vehicleDetails?.model}</p>
+                      </div>
                       </div>
                       <span className="font-bold text-brand-primary bg-brand-primary/10 px-2 py-1 rounded text-sm">₦{Number(bid.amount).toLocaleString()}</span>
                     </div>
@@ -530,6 +561,15 @@ export default function CreateBidPage() {
               <button onClick={() => { const bid = driverToConfirm; setDriverToConfirm(null); selectDriver(bid); }} className="flex-1 py-3 rounded-xl bg-brand-primary text-white font-bold shadow-lg hover:shadow-brand-primary/30">Confirm</button>
             </div>
           </div>
+        </div>
+      )}
+
+      {imageViewerUrl && (
+        <div className="fixed inset-0 z-[120] bg-black/90 backdrop-blur-md flex items-center justify-center p-4 md:p-8 cursor-zoom-out" onClick={() => setImageViewerUrl(null)}>
+          <button onClick={() => setImageViewerUrl(null)} className="absolute top-6 right-6 w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer z-10">
+            <X className="w-6 h-6" />
+          </button>
+          <img src={imageViewerUrl} alt="Full screen" className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl cursor-default" onClick={(e) => e.stopPropagation()} />
         </div>
       )}
     </div>
