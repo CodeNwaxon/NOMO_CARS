@@ -1,15 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Check, Loader2, Star, X } from "lucide-react";
 import { usePaystackPayment } from "react-paystack";
 import { createPendingPayment } from "@/actions/payment";
 
 export default function PaystackVIPCard({ plan, profile, user, onSuccess, onClose, isProcessing, setProcessing }: any) {
   const [showConfirm, setShowConfirm] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   
-  const config = {
-    reference: "vip_" + new Date().getTime().toString(),
+  const [reference] = useState(`vip_${new Date().getTime()}_${Math.floor(Math.random() * 1000)}`);
+
+  const config = useMemo(() => ({
+    reference: reference,
     email: user?.email || "user@nomocars.com",
     amount: plan.price * 100,
     publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "pk_test_9b16ad62bf9ea9b6eef84d379f866e3fa52e31e2",
@@ -21,7 +29,7 @@ export default function PaystackVIPCard({ plan, profile, user, onSuccess, onClos
       planPrice: plan.price,
       custom_fields: []
     }
-  };
+  }), [reference, user?.email, user?.uid, plan.price, plan.stars, plan.name]);
 
   const initializePayment = usePaystackPayment(config);
 
@@ -118,7 +126,7 @@ export default function PaystackVIPCard({ plan, profile, user, onSuccess, onClos
       </div>
 
       {/* Confirmation Modal */}
-      {showConfirm && (
+      {mounted && showConfirm && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl relative text-left text-slate-900 dark:text-white">
             <button
@@ -149,7 +157,8 @@ export default function PaystackVIPCard({ plan, profile, user, onSuccess, onClos
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

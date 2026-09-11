@@ -69,14 +69,17 @@ export default function VIPPage() {
 
           let dynamicFeatures = [...style.features];
 
-          if (v.dailyBids && Number(v.dailyBids) > 0) {
-            dynamicFeatures.splice(1, 0, `${v.dailyBids} Extra bid${Number(v.dailyBids) > 1 ? 's' : ''} monthly`);
+          if (v.dailyBids && Number(v.dailyBids) > 1) {
+            const extraBids = Number(v.dailyBids) - 1;
+            dynamicFeatures.splice(1, 0, `${extraBids} Extra bid${extraBids > 1 ? 's' : ''} monthly`);
           }
-          if (v.maxCars && Number(v.maxCars) > 0) {
-            dynamicFeatures.splice(1, 0, `${v.maxCars} Extra vehicle slot${Number(v.maxCars) > 1 ? 's' : ''} for ${v.durationDays} days`);
+          if (v.maxCars && Number(v.maxCars) > 1) {
+            const extraCars = Number(v.maxCars) - 1;
+            dynamicFeatures.splice(1, 0, `${extraCars} Extra vehicle slot${extraCars > 1 ? 's' : ''} for ${v.durationDays} days`);
           }
-          if (v.maxRoutesPerCar && Number(v.maxRoutesPerCar) > 0) {
-            dynamicFeatures.splice(1, 0, `${v.maxRoutesPerCar} Extra route${Number(v.maxRoutesPerCar) > 1 ? 's' : ''} per vehicle`);
+          if (v.maxRoutesPerCar && Number(v.maxRoutesPerCar) > 1) {
+            const extraRoutes = Number(v.maxRoutesPerCar) - 1;
+            dynamicFeatures.splice(1, 0, `${extraRoutes} Extra route${extraRoutes > 1 ? 's' : ''} per vehicle`);
           }
 
           return {

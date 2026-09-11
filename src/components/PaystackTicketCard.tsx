@@ -1,15 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Check, Loader2, X } from "lucide-react";
 import { usePaystackPayment } from "react-paystack";
 import { createPendingPayment } from "@/actions/payment";
 
 export default function PaystackTicketCard({ plan, user, profile, onSuccess, onClose, isProcessing, setProcessing, hasOwnTicket }: any) {
   const [showConfirm, setShowConfirm] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
-  const config = {
-    reference: "ticket_" + new Date().getTime().toString(),
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const [reference] = useState(`ticket_${new Date().getTime()}_${Math.floor(Math.random() * 1000)}`);
+
+  const config = useMemo(() => ({
+    reference: reference,
     email: user?.email || "driver@nomocars.com",
     amount: plan.price * 100, // Paystack expects kobo
     publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "pk_test_9b16ad62bf9ea9b6eef84d379f866e3fa52e31e2",
@@ -21,7 +29,7 @@ export default function PaystackTicketCard({ plan, user, profile, onSuccess, onC
       planPrice: plan.price,
       custom_fields: []
     }
-  };
+  }), [reference, user?.email, user?.uid, plan.price, plan.days, plan.name]);
 
   const initializePayment = usePaystackPayment(config);
 
@@ -118,7 +126,7 @@ export default function PaystackTicketCard({ plan, user, profile, onSuccess, onC
       </div>
 
       {/* Confirmation Modal */}
-      {showConfirm && (
+      {mounted && showConfirm && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-2xl p-6 w-full max-w-sm shadow-2xl relative text-left text-slate-900 dark:text-white">
             <button
@@ -149,7 +157,8 @@ export default function PaystackTicketCard({ plan, user, profile, onSuccess, onC
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
