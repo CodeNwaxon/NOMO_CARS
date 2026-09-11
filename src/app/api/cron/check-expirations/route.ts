@@ -145,7 +145,25 @@ export async function GET(request: Request) {
     }
     if (deletesInBatch > 0) await deleteBatch.commit();
 
-    return NextResponse.json({ success: true, emailedCount, deletedTransactionCount });
+    const expiredRequests = await adminDb.collection("requests")
+      .where("expiresAt", "<", now)
+      .get();
+    let deletedRequestCount = 0;
+    let requestBatch = adminDb.batch();
+    let requestDeletesInBatch = 0;
+    for (const requestDoc of expiredRequests.docs) {
+      requestBatch.delete(requestDoc.ref);
+      requestDeletesInBatch += 1;
+      deletedRequestCount += 1;
+      if (requestDeletesInBatch === 500) {
+        await requestBatch.commit();
+        requestBatch = adminDb.batch();
+        requestDeletesInBatch = 0;
+      }
+    }
+    if (requestDeletesInBatch > 0) await requestBatch.commit();
+
+    return NextResponse.json({ success: true, emailedCount, deletedTransactionCount, deletedRequestCount });
   } catch (error) {
     console.error("Cron Error:", error);
     return new NextResponse("Internal Server Error", { status: 500 });

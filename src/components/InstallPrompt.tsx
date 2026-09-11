@@ -13,6 +13,7 @@ export default function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [progress, setProgress] = useState(100);
+  const [isDismissed, setIsDismissed] = useState(false);
   const pathname = usePathname();
 
   const sliderDelay = 15000; // 15 seconds
@@ -21,7 +22,7 @@ export default function InstallPrompt() {
     if (typeof window === "undefined") return;
 
     if (pathname?.startsWith("/admin")) return;
-    if (sessionStorage.getItem("pwa_prompt_dismissed") === "true") return;
+    if (sessionStorage.getItem("pwa_prompt_dismissed") === "true" || isDismissed) return;
 
     let showTimer: NodeJS.Timeout;
     let hideTimer: NodeJS.Timeout;
@@ -94,7 +95,7 @@ export default function InstallPrompt() {
       clearTimeout(hideTimer);
       clearInterval(progressInterval);
     };
-  }, [pathname]);
+  }, [pathname, isDismissed]);
 
   const handleInstall = async () => {
     if (!deferredPrompt) {
@@ -111,6 +112,7 @@ export default function InstallPrompt() {
 
   const handleDismiss = () => {
     sessionStorage.setItem("pwa_prompt_dismissed", "true");
+    setIsDismissed(true);
     setIsVisible(false);
   };
 

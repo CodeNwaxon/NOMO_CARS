@@ -127,6 +127,61 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
     return () => unsubscribe();
   }, [user, profile]);
 
+  // Fetch User-Specific Real-time Notifications
+  useEffect(() => {
+    if (!user) return;
+
+    const lastChecked = localStorage.getItem(`lastUserNotifCheck_${user.uid}`) || "1970-01-01T00:00:00.000Z";
+    const lastCheckedTime = new Date(lastChecked).getTime();
+    
+    // Simple query to avoid needing a complex composite index
+    const nQuery = query(
+      collection(db, "user_notifications"),
+      where("userId", "==", user.uid)
+    );
+
+    const unsubscribe = onSnapshot(nQuery, (snapshot) => {
+      if (snapshot.empty) {
+        localStorage.setItem(`lastUserNotifCheck_${user.uid}`, new Date().toISOString());
+        return;
+      }
+
+      const newNotifs: AppNotification[] = [];
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === "added") {
+          const data = change.doc.data();
+          if (data.createdAt > lastCheckedTime) {
+            newNotifs.push({
+              id: change.doc.id,
+              title: data.title || "Notification",
+              message: data.message,
+              date: data.createdAt,
+              isRead: false,
+              link: data.link,
+              image: data.image,
+              urlLabel: data.urlLabel
+            });
+          }
+        }
+      });
+
+      if (newNotifs.length > 0) {
+        setNotifications(prev => {
+          const existingIds = new Set(prev.map(n => n.id));
+          const uniqueNew = newNotifs.filter(n => !existingIds.has(n.id));
+          // Sort new notifications so newest is first
+          uniqueNew.sort((a, b) => b.date - a.date);
+          return [...uniqueNew, ...prev];
+        });
+      }
+      localStorage.setItem(`lastUserNotifCheck_${user.uid}`, new Date().toISOString());
+    }, (err) => {
+      console.error("Error listening to user notifications:", err);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
   const addNotification = (title: string, message: string, link?: string, image?: string, urlLabel?: string) => {
     const newNotif: AppNotification = {
       id: Date.now().toString() + Math.random().toString(36).substring(2, 9),

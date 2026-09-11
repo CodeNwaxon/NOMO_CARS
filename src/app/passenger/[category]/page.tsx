@@ -133,7 +133,7 @@ export default function CategoryVehicles() {
             <div className="flex flex-row gap-2 md:gap-4 w-full xl:w-auto justify-start">
               {!isDriver && (
                 <Link
-                  href="/passenger/create-bid"
+                  href={`/passenger/create-bid?category=${category}`}
                   className="flex items-center justify-center gap-1.5 md:gap-2 px-4 py-2 md:px-6 md:py-2 bg-brand-primary text-white rounded-xl font-medium text-xs sm:text-sm md:text-base hover:bg-brand-primary/90 transition-all shadow-lg hover:shadow-brand-primary/30 hover:-translate-y-0.5 border border-brand-primary/50"
                 >
                   <PlusCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" />
@@ -144,7 +144,7 @@ export default function CategoryVehicles() {
                 <>
                   {profile?.isApproved && (
                     <Link
-                      href="/driver/bid-for-jobs"
+                      href={`/driver/bid-for-jobs?category=${category}`}
                       className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 md:gap-2 px-3 py-2 md:px-6 md:py-2 bg-brand-secondary text-white rounded-xl font-medium text-xs sm:text-sm md:text-base hover:bg-brand-secondary/90 transition-all shadow-lg hover:shadow-brand-secondary/30 hover:-translate-y-0.5"
                     >
                       <Briefcase className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" />
@@ -152,7 +152,7 @@ export default function CategoryVehicles() {
                     </Link>
                   )}
                   <Link
-                    href="/passenger/create-bid"
+                    href={`/passenger/create-bid?category=${category}`}
                     className={`${profile?.isApproved ? 'flex-1 sm:flex-none' : ''} flex items-center justify-center gap-1.5 md:gap-2 px-4 py-2 md:px-6 md:py-2 bg-brand-primary text-white rounded-xl font-medium text-xs sm:text-sm md:text-base hover:bg-brand-primary/90 transition-all shadow-lg hover:shadow-brand-primary/30 hover:-translate-y-0.5 border border-brand-primary/50`}
                   >
                     <PlusCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-5 md:h-5" />

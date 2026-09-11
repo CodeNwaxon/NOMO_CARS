@@ -129,6 +129,14 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // User Notifications collection
+    match /user_notifications/{notificationId} {
+      // Any authenticated user can create a notification for someone else
+      allow create: if request.auth != null;
+      // Users can only read, update, or delete their own notifications
+      allow read, update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
     // Visitors collection (Analytics)
     match /visitors/{visitorId} {
       allow create: if true;
@@ -146,6 +154,22 @@ service cloud.firestore {
 
     match /users/{userId}/hiddenTransactions/{transactionId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /requests/{requestId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.passengerId == request.auth.uid;
+      allow update, delete: if request.auth != null && resource.data.passengerId == request.auth.uid;
+
+      match /bids/{bidId} {
+        allow read: if request.auth != null && (
+          get(/databases/$(database)/documents/requests/$(requestId)).data.passengerId == request.auth.uid ||
+          resource.data.driverId == request.auth.uid
+        );
+        allow create: if request.auth != null && request.resource.data.driverId == request.auth.uid;
+        allow update: if request.auth != null && resource.data.driverId == request.auth.uid;
+        allow delete: if request.auth != null && resource.data.driverId == request.auth.uid;
+      }
     }
   }
 }
