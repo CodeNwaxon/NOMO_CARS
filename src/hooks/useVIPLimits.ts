@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { useAuth } from "@/context/AuthContext";
 
 export interface VIPLimits {
   maxCars: number;
@@ -12,6 +13,7 @@ export interface VIPLimits {
 }
 
 export function useVIPLimits(vipStars: number = 0) {
+  const { profile } = useAuth();
   const [limits, setLimits] = useState<VIPLimits>({
     maxCars: 1,
     maxRoutesPerCar: 1,
@@ -23,28 +25,51 @@ export function useVIPLimits(vipStars: number = 0) {
   useEffect(() => {
     const fetchLimits = async () => {
       try {
-        const pricingRef = doc(db, "adminSettings", "pricing");
-        const snap = await getDoc(pricingRef);
+        const pricingSnap = await getDoc(doc(db, "adminSettings", "pricing"));
         
-        if (snap.exists()) {
-          const data = snap.data();
+        let finalLimits: VIPLimits = { maxCars: 1, maxRoutesPerCar: 1, dailyBids: 1, createBidLimit: 1 };
+
+        if (pricingSnap.exists()) {
+          const data = pricingSnap.data();
+          let tierFound = false;
+          
           if (vipStars > 0 && data.vip) {
             const tier = data.vip.find((v: any) => v.stars === vipStars);
             if (tier) {
-              setLimits({
-                maxCars: tier.maxCars || 2,
-                maxRoutesPerCar: tier.maxRoutesPerCar || 2,
-                dailyBids: tier.dailyBids || 3,
-                createBidLimit: tier.createBidLimit || 3
-              });
-              return;
+              finalLimits = {
+                maxCars: tier.maxCars ?? 2,
+                maxRoutesPerCar: tier.maxRoutesPerCar ?? 2,
+                dailyBids: tier.dailyBids ?? 3,
+                createBidLimit: tier.createBidLimit ?? 3
+              };
+              tierFound = true;
             }
           }
+          
           // Fallback to non-VIP limits
-          if (data.nonVipLimits) {
-            setLimits(data.nonVipLimits);
+          if (!tierFound && data.nonVipLimits) {
+            finalLimits = {
+              maxCars: data.nonVipLimits.maxCars ?? 1,
+              maxRoutesPerCar: data.nonVipLimits.maxRoutesPerCar ?? 1,
+              dailyBids: data.nonVipLimits.dailyBids ?? 1,
+              createBidLimit: data.nonVipLimits.createBidLimit ?? 1
+            };
+          }
+
+          const ticketsStarted = data.startTicketCollection === true;
+          if (!ticketsStarted) {
+            finalLimits.dailyBids = Math.max(finalLimits.dailyBids, 3);
+            finalLimits.createBidLimit = Math.max(finalLimits.createBidLimit, 3);
+          } else if (profile?.createdAt) {
+            const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000;
+            if (Date.now() - profile.createdAt <= ninetyDaysMs) {
+              finalLimits.dailyBids = Math.max(finalLimits.dailyBids, 2);
+              finalLimits.createBidLimit = Math.max(finalLimits.createBidLimit, 2);
+            }
           }
         }
+
+        setLimits(finalLimits);
       } catch (error) {
         console.error("Failed to load VIP limits", error);
       } finally {
@@ -53,7 +78,7 @@ export function useVIPLimits(vipStars: number = 0) {
     };
 
     fetchLimits();
-  }, [vipStars]);
+  }, [vipStars, profile?.createdAt]);
 
   return { limits, loadingLimits };
 }

@@ -406,9 +406,9 @@ export default function ManagePurchasesPage() {
             <div className="flex flex-col bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl transition-all">
               <h3 className="font-bold text-foreground mb-4">Non-VIP (Base Tier)</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
+                <div className="col-span-2 md:col-span-4 mb-2 border-b border-slate-200 dark:border-slate-700/50 pb-4">
                   <label className="block text-xs font-bold text-foreground/60 mb-1 uppercase tracking-wider">Created Request Duration (days)</label>
-                  <input type="text" inputMode="numeric" value={pricing.requestDurationDays || ""} onChange={(e) => setPricing({...pricing, requestDurationDays: e.target.value ? parseInt(e.target.value.replace(/\D/g, ""), 10) : 1})} className="w-full bg-white dark:bg-slate-950 border-none text-slate-900 dark:text-slate-100 rounded-xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-brand-primary focus:outline-none transition-all" />
+                  <input type="text" inputMode="numeric" value={pricing.requestDurationDays || ""} onChange={(e) => setPricing({...pricing, requestDurationDays: e.target.value ? parseInt(e.target.value.replace(/\D/g, ""), 10) : 0})} className="w-full md:w-1/2 bg-white dark:bg-slate-950 border-none text-slate-900 dark:text-slate-100 rounded-xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-brand-primary focus:outline-none transition-all" />
                   <p className="text-[10px] text-foreground/50 mt-1">Controls how long passenger requests remain open.</p>
                 </div>
                 <div>
