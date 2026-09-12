@@ -38,18 +38,24 @@ export default function PaystackVIPCard({ plan, profile, user, onSuccess, onClos
     setShowConfirm(false);
     setProcessing(plan.stars);
 
-    const prepared = await createPendingPayment({ reference: config.reference, userId: user.uid, type: "vip", amount: plan.price, planName: plan.name, planStars: plan.stars, planPrice: plan.price, userEmail: user.email || undefined });
-    if (!prepared.success) {
+    try {
+      const prepared = await createPendingPayment({ reference: config.reference, userId: user.uid, type: "vip", amount: plan.price, planName: plan.name, planStars: plan.stars, planPrice: plan.price, userEmail: user.email || undefined });
+      if (!prepared.success) {
+        throw new Error(prepared.error || "Failed to prepare payment");
+      }
+      
+      setTimeout(() => {
+        initializePayment({
+          onSuccess: (ref: any) => onSuccess(ref, plan),
+          onClose: () => onClose(),
+        });
+      }, 100);
+    } catch (error: any) {
+      console.error("VIP purchase error:", error);
+      const { toast } = await import("react-hot-toast");
+      toast.error(error.message || "Something went wrong. Please try again.");
       setProcessing(null);
-      throw new Error(prepared.error);
     }
-    
-    setTimeout(() => {
-      initializePayment({
-        onSuccess: (ref: any) => onSuccess(ref, plan),
-        onClose: () => onClose(),
-      });
-    }, 100);
   };
 
   const renderStars = (count: number, isPremium: boolean = false) => {

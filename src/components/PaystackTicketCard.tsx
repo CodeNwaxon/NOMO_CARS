@@ -38,27 +38,33 @@ export default function PaystackTicketCard({ plan, user, profile, onSuccess, onC
     setShowConfirm(false);
     setProcessing(plan.days);
 
-    const prepared = await createPendingPayment({
-      reference: config.reference,
-      userId: user.uid,
-      type: "ticket",
-      amount: plan.price,
-      planName: plan.name,
-      planDays: plan.days,
-      planPrice: plan.price,
-      userEmail: user.email || undefined,
-    });
-    if (!prepared.success) {
-      setProcessing(null);
-      throw new Error(prepared.error);
-    }
-    
-    setTimeout(() => {
-      initializePayment({
-        onSuccess: (ref: any) => onSuccess(ref, plan),
-        onClose: () => onClose(),
+    try {
+      const prepared = await createPendingPayment({
+        reference: config.reference,
+        userId: user.uid,
+        type: "ticket",
+        amount: plan.price,
+        planName: plan.name,
+        planDays: plan.days,
+        planPrice: plan.price,
+        userEmail: user.email || undefined,
       });
-    }, 100);
+      if (!prepared.success) {
+        throw new Error(prepared.error || "Failed to prepare payment");
+      }
+      
+      setTimeout(() => {
+        initializePayment({
+          onSuccess: (ref: any) => onSuccess(ref, plan),
+          onClose: () => onClose(),
+        });
+      }, 100);
+    } catch (error: any) {
+      console.error("Ticket purchase error:", error);
+      const { toast } = await import("react-hot-toast");
+      toast.error(error.message || "Something went wrong. Please try again.");
+      setProcessing(null);
+    }
   };
 
   return (

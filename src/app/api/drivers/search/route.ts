@@ -129,11 +129,14 @@ export async function GET(request: NextRequest) {
 
   } catch (error: any) {
     console.error("Error searching drivers API:", error);
+    const isAdminInitError = error.message?.includes('Firebase Admin') || error.message?.includes('Missing Firebase Admin');
     return NextResponse.json(
       {
         success: false,
-        error: "Driver search service is unavailable",
-        code: error?.code || error?.name || "SEARCH_API_ERROR",
+        error: isAdminInitError 
+          ? "Server configuration error. Please contact support."
+          : "Driver search service is unavailable",
+        code: isAdminInitError ? "ADMIN_INIT_FAILED" : (error?.code || error?.name || "SEARCH_API_ERROR"),
         detail: process.env.NODE_ENV === "development" ? error.message : undefined,
       },
       { status: 500 }

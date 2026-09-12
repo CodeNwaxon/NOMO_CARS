@@ -117,8 +117,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: true, vehicles, dynamicStartTicketCollection, dynamicTicketCollectionStartedAt }, { status: 200 });
   } catch (error: any) {
     console.error("Error fetching vehicles API:", error);
+    const isAdminInitError = error.message?.includes('Firebase Admin') || error.message?.includes('Missing Firebase Admin');
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to fetch vehicles" },
+      { 
+        success: false, 
+        error: isAdminInitError 
+          ? "Server configuration error. Please contact support." 
+          : (error.message || "Failed to fetch vehicles"),
+        code: isAdminInitError ? "ADMIN_INIT_FAILED" : "FETCH_ERROR"
+      },
       { status: 500 }
     );
   }
