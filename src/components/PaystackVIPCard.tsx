@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { Check, Loader2, Star, X } from "lucide-react";
 import { usePaystackPayment } from "react-paystack";
 import { createPendingPayment } from "@/actions/payment";
+import { toast } from "react-hot-toast";
 
 export default function PaystackVIPCard({ plan, profile, user, onSuccess, onClose, isProcessing, setProcessing }: any) {
   const [showConfirm, setShowConfirm] = useState(false);
@@ -52,8 +53,7 @@ export default function PaystackVIPCard({ plan, profile, user, onSuccess, onClos
       }, 100);
     } catch (error: any) {
       console.error("VIP purchase error:", error);
-      const { toast } = await import("react-hot-toast");
-      toast.error(error.message || "Something went wrong. Please try again.");
+      toast.error(typeof error?.message === "string" ? error.message : "Something went wrong. Please try again.");
       setProcessing(null);
     }
   };

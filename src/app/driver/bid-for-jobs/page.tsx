@@ -236,7 +236,7 @@ export default function BidForJobsPage() {
               }
             }} className={`text-left rounded-xl md:rounded-2xl p-2.5 md:p-5 transition-all duration-300 relative overflow-hidden group ${isWinner ? "bg-green-50 dark:bg-green-900/20 border border-green-500/50 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/40" : isAssigned ? "bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-slate-700 opacity-60 grayscale-[60%] cursor-not-allowed" : isApplied ? "bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 opacity-70 grayscale-[30%] cursor-not-allowed" : request.status !== "open" || bidCount >= limits.dailyBids ? "bg-card-bg border border-card-border opacity-60 grayscale cursor-not-allowed" : "bg-gradient-to-br from-brand-secondary/10 to-brand-primary/5 border border-brand-secondary/50 shadow-lg shadow-brand-secondary/20 hover:bg-brand-secondary/5 hover:border-brand-secondary hover:shadow-2xl hover:shadow-brand-secondary/40 hover:-translate-y-1.5"}`}>
               {isWinner ? (
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-2 md:border-4 border-green-500 text-green-500 text-lg md:text-3xl font-black px-3 py-1 md:px-6 md:py-2 rounded-lg md:rounded-xl opacity-40 transform -rotate-12 z-20 pointer-events-none select-none tracking-widest uppercase shadow-sm">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-2 md:border-4 border-green-500 text-green-500 text-base md:text-3xl font-black px-3 py-1 md:px-6 md:py-2 rounded-lg md:rounded-xl opacity-40 transform -rotate-12 z-20 pointer-events-none select-none tracking-widest uppercase shadow-sm">
                   WON
                 </div>
               ) : isAssigned ? (
@@ -280,11 +280,11 @@ export default function BidForJobsPage() {
 
               {isWinner && driverBid?.vehicleDetails && (
                 <div className="relative z-10 mb-2 mt-1 md:mt-2 bg-green-100 dark:bg-green-900/40 border border-green-200 dark:border-green-800 rounded-lg p-2 md:p-3">
-                  <p className="text-[8px] md:text-[10px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider mb-1">Approved Vehicle for this Job</p>
+                  <p className="text-[8px] md:text-[10px] font-bold text-green-700 dark:text-green-400 uppercase tracking-wider mb-1"><span className="md:hidden">Approved Vehicle</span><span className="hidden md:inline">Approved Vehicle for this Job</span></p>
                   <div className="flex items-center gap-2">
                     <Car className="w-3 h-3 md:w-4 md:h-4 text-green-600 dark:text-green-500" />
                     <span className="text-[10px] md:text-sm font-bold text-green-900 dark:text-green-100 capitalize">
-                      {driverBid.vehicleDetails.make} {driverBid.vehicleDetails.model} ({driverBid.vehicleDetails.year})
+                      {driverBid.vehicleDetails.make} {driverBid.vehicleDetails.model} <span className="text-[9px] md:text-[inherit]">({driverBid.vehicleDetails.year})</span>
                     </span>
                   </div>
                 </div>
@@ -306,7 +306,7 @@ export default function BidForJobsPage() {
                 <div className="flex items-center gap-1 md:gap-2">
                   <p className="text-[8px] md:text-[10px] font-medium flex items-center gap-1 md:gap-1.5 text-brand-secondary bg-white/50 dark:bg-black/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded backdrop-blur-sm">
                     <Clock3 className="w-2.5 h-2.5 md:w-3.5 md:h-3.5" />
-                    {request.status === "assigned" ? (isWinner ? "You are selected" : "Driver selected") : `${Math.max(0, Math.ceil((Number(request.expiresAt) - Date.now()) / 86400000))} days left`}
+                    {request.status === "assigned" ? (isWinner ? <><span className="md:hidden">Bid Won</span><span className="hidden md:inline">You are selected</span></> : "Driver selected") : `${Math.max(0, Math.ceil((Number(request.expiresAt) - Date.now()) / 86400000))} days left`}
                   </p>
                   {(request.bidCount || 0) > 0 && (
                     <p className="text-[8px] md:text-[10px] font-medium flex items-center gap-1 md:gap-1.5 text-brand-primary bg-white/50 dark:bg-black/30 px-1.5 py-0.5 md:px-2 md:py-1 rounded backdrop-blur-sm">
