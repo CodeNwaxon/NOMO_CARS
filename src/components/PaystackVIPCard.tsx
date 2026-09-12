@@ -53,7 +53,7 @@ export default function PaystackVIPCard({ plan, profile, user, onSuccess, onClos
       }, 100);
     } catch (error: any) {
       console.error("VIP purchase error:", error);
-      toast.error(typeof error?.message === "string" ? error.message : "Something went wrong. Please try again.");
+      toast.error("Error processing your payment. Please try again later.");
       setProcessing(null);
     }
   };

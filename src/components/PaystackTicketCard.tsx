@@ -62,7 +62,7 @@ export default function PaystackTicketCard({ plan, user, profile, onSuccess, onC
       }, 100);
     } catch (error: any) {
       console.error("Ticket purchase error:", error);
-      toast.error(typeof error?.message === "string" ? error.message : "Something went wrong. Please try again.");
+      toast.error("Error processing your payment. Please try again later.");
       setProcessing(null);
     }
   };
