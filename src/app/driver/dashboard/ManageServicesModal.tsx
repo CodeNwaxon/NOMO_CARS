@@ -25,6 +25,7 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
   
   const [isAdding, setIsAdding] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [routeToDelete, setRouteToDelete] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     startPoint: profile?.operatingState ? `${profile.operatingCity ? profile.operatingCity + ', ' : ''}${profile.operatingState}` : "",
@@ -85,12 +86,13 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this route?")) return;
+  const confirmDelete = async () => {
+    if (!routeToDelete) return;
     try {
-      await deleteDoc(doc(db, "vehicleServices", id));
+      await deleteDoc(doc(db, "vehicleServices", routeToDelete));
       toast.success("Service deleted");
       fetchServices();
+      setRouteToDelete(null);
     } catch (error) {
       console.error("Error deleting service", error);
       toast.error("Failed to delete");
@@ -231,7 +233,7 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
                   
                   {/* Delete Button top right */}
                   <button 
-                    onClick={() => handleDelete(service.id)} 
+                    onClick={() => setRouteToDelete(service.id)} 
                     className="absolute top-3 right-3 p-2 text-red-500 bg-red-50 dark:bg-red-900/20 hover:bg-red-500 hover:text-white rounded-lg transition-colors border border-red-500/20 shadow-sm" 
                     title="Delete Route"
                   >
@@ -266,6 +268,22 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
           )}
         </div>
       </div>
+
+      {routeToDelete && (
+        <div className="fixed inset-0 z-[200] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 md:p-8 w-full max-w-sm shadow-2xl border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200 text-center">
+            <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
+              <Trash2 className="w-8 h-8 text-red-500" />
+            </div>
+            <h3 className="text-xl font-bold mb-2">Delete Route?</h3>
+            <p className="text-sm text-foreground/70 mb-6">Are you sure you want to delete this route? This action cannot be undone.</p>
+            <div className="flex gap-3">
+              <button onClick={() => setRouteToDelete(null)} className="flex-1 py-3 rounded-xl border border-card-border font-bold hover:bg-card-bg transition-colors text-sm">Cancel</button>
+              <button onClick={confirmDelete} className="flex-1 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 transition-colors shadow-lg shadow-red-500/30 text-sm">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

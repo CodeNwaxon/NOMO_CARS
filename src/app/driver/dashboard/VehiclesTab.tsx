@@ -645,7 +645,7 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
               <div key={v.id} className={`glass-panel rounded-2xl overflow-hidden group border transition-all shadow-sm ${v.isSuspendedByLimit ? "opacity-60 grayscale border-red-500/30" : "border-card-border/50 hover:border-brand-primary/30 hover:shadow-xl"}`}>
                 <div className="h-40 relative bg-card-border">
                   {displayImage ? (
-                    <img src={displayImage} alt={v.details.make} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    <img src={displayImage} alt={v.details.make} loading="lazy" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-foreground/30"><Car className="w-10 h-10" /></div>
                   )}
