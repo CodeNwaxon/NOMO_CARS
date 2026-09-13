@@ -403,9 +403,10 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
               <Info className="w-4 h-4" />
             </button>
             <div className="flex items-center gap-1 mt-1">
+              <span className="mr-1 font-bold text-sm md:text-base text-brand-primary">{Math.min(5, Math.floor((profile?.jobsWon || 0) / 2))}</span>
               {renderStars(Math.min(5, Math.floor((profile?.jobsWon || 0) / 2)))}
               <span className="ml-1.5 md:ml-2 font-bold text-xs md:text-sm uppercase text-brand-primary">
-                Level {Math.min(5, Math.floor((profile?.jobsWon || 0) / 2))}
+                Level
               </span>
             </div>
             <span className="text-[10px] text-foreground/60 font-medium">{profile?.jobsWon || 0} jobs won</span>

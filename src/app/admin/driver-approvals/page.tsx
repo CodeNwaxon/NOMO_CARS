@@ -113,16 +113,21 @@ export default function ManageDriversPage() {
         setDrivers(drivers.filter(d => d.id !== driverId));
         toast.success("Driver approved successfully!", { id: toastId });
         
-        await sendApprovalEmail(driverId, "driver", "Account");
-        await addDoc(collection(db, "user_notifications"), {
-          userId: driverId,
-          type: "approval",
-          title: "Account Approved",
-          message: `Your driver account has been approved! You can now start adding vehicles.`,
-          read: false,
-          createdAt: new Date().toISOString(),
-          link: "/driver/dashboard"
-        });
+        // Fire-and-forget: don't let email/notification failures override the success toast
+        try {
+          await sendApprovalEmail(driverId, "driver", "Account");
+          await addDoc(collection(db, "user_notifications"), {
+            userId: driverId,
+            type: "approval",
+            title: "Account Approved",
+            message: `Your driver account has been approved! You can now start adding vehicles.`,
+            read: false,
+            createdAt: new Date().toISOString(),
+            link: "/driver/dashboard"
+          });
+        } catch (notifyErr) {
+          console.error("Post-approval notification error (driver still approved):", notifyErr);
+        }
       } else {
         await updateDoc(doc(db, "users", driverId), { 
           isApproved: false, 

@@ -123,17 +123,22 @@ export default function ManageVehiclesPage() {
         setVehicles(vehicles.filter(v => v.id !== vehicleId));
         toast.success("Vehicle approved successfully!", { id: toastId });
 
+        // Fire-and-forget: don't let email/notification failures override the success toast
         if (v?.driverId) {
-          await sendApprovalEmail(v.driverId, "vehicle", `${v.details?.make} ${v.details?.model}`);
-          await addDoc(collection(db, "user_notifications"), {
-            userId: v.driverId,
-            type: "approval",
-            title: "Vehicle Approved",
-            message: `Your ${v.details?.make} ${v.details?.model} has been approved and is now live!`,
-            read: false,
-            createdAt: new Date().toISOString(),
-            link: "/driver/dashboard?tab=vehicles"
-          });
+          try {
+            await sendApprovalEmail(v.driverId, "vehicle", `${v.details?.make} ${v.details?.model}`);
+            await addDoc(collection(db, "user_notifications"), {
+              userId: v.driverId,
+              type: "approval",
+              title: "Vehicle Approved",
+              message: `Your ${v.details?.make} ${v.details?.model} has been approved and is now live!`,
+              read: false,
+              createdAt: new Date().toISOString(),
+              link: "/driver/dashboard?tab=vehicles"
+            });
+          } catch (notifyErr) {
+            console.error("Post-approval notification error (vehicle still approved):", notifyErr);
+          }
         }
       } else {
         await updateDoc(doc(db, "vehicles", vehicleId), { 
