@@ -8,7 +8,7 @@ import { doc, onSnapshot, collection, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Link from "next/link";
 
-const CEO_UID = "xFAB29wQyBfGk4W2oLaD9qwxgfY2";
+const CEO_UID = process.env.NEXT_PUBLIC_ADMIN_UID || "";
 
 export default function AdminDashboard() {
   const { user, loading: authLoading } = useAuth();

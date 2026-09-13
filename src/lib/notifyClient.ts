@@ -3,7 +3,7 @@ import { collection, addDoc, getDocs, doc, getDoc } from "firebase/firestore";
 
 export async function notifyAdminsClient(title: string, message: string, link: string) {
   try {
-    const CEO_UID = process.env.NEXT_PUBLIC_ADMIN_UID || "xFAB29wQyBfGk4W2oLaD9qwxgfY2";
+    const CEO_UID = process.env.NEXT_PUBLIC_ADMIN_UID || "";
     const adminIds = new Set<string>([CEO_UID]);
 
     // Fetch from adminRoles

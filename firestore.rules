@@ -5,7 +5,7 @@ service cloud.firestore {
     function isAdmin() {
       // Replace with the CEO's actual User UID from Firebase Auth
       return request.auth != null && (
-        request.auth.uid == 'xFAB29wQyBfGk4W2oLaD9qwxgfY2' ||
+        request.auth.uid == 't5IY6nMxHJUg2jSakaOsAgQnqj42' ||
         exists(/databases/$(database)/documents/adminRoles/$(request.auth.uid))
       );
     }

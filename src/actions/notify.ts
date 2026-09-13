@@ -71,7 +71,7 @@ export async function notifyAdmins(title: string, message: string, link: string)
     const db = getAdminDb();
     
     // 1. Get CEO
-    const CEO_UID = process.env.NEXT_PUBLIC_ADMIN_UID || "xFAB29wQyBfGk4W2oLaD9qwxgfY2";
+    const CEO_UID = process.env.NEXT_PUBLIC_ADMIN_UID || "";
     const adminIds = new Set<string>([CEO_UID]);
 
     // 2. Get all other admins from adminRoles collection

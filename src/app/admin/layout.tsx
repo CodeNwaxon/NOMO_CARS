@@ -10,7 +10,7 @@ import Link from "next/link";
 import { toast } from "react-hot-toast";
 import { useNotifications } from "@/context/NotificationContext";
 
-const CEO_UID = process.env.NEXT_PUBLIC_ADMIN_UID || "xFAB29wQyBfGk4W2oLaD9qwxgfY2";
+const CEO_UID = process.env.NEXT_PUBLIC_ADMIN_UID || "";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, loading: authLoading } = useAuth();

@@ -10,7 +10,7 @@ import Link from "next/link";
 import { toast } from "react-hot-toast";
 
 // CEO UID for basic protection, but real protection is the password
-const CEO_UID = "xFAB29wQyBfGk4W2oLaD9qwxgfY2";
+const CEO_UID = process.env.NEXT_PUBLIC_ADMIN_UID || "";
 
 interface PricingConfig {
   startTicketCollection: boolean;

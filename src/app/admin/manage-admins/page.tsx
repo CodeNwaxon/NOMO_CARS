@@ -10,7 +10,7 @@ import { Loader2, Search, User, Shield, Phone, Mail, Image as ImageIcon, Save, L
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 
-const CEO_UID = "xFAB29wQyBfGk4W2oLaD9qwxgfY2";
+const CEO_UID = process.env.NEXT_PUBLIC_ADMIN_UID || "";
 
 const ADMIN_ROUTES = [
   { id: "/admin/driver-approvals", name: "Driver Approvals" },
