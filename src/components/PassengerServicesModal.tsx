@@ -42,7 +42,7 @@ export default function PassengerServicesModal({ vehicleId, vehicleName, driverI
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       {/* Dark backdrop */}
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose}></div>
-      
+
       {/* Modal */}
       <div className="relative bg-[#1A1A1A] text-white border border-white/10 rounded-3xl shadow-2xl w-full max-w-lg max-h-[85vh] flex flex-col overflow-hidden">
         {/* Header */}
@@ -52,7 +52,7 @@ export default function PassengerServicesModal({ vehicleId, vehicleName, driverI
             <p className="text-[10px] md:text-xs text-white/60 mt-1">For: <span className="font-bold text-white">{vehicleName}</span></p>
           </div>
           <div className="flex items-center gap-2 md:gap-3">
-            <button 
+            <button
               onClick={() => setShowContactOverlay(true)}
               className="px-3 py-1.5 md:px-4 md:py-2 text-[10px] md:text-xs bg-brand-primary hover:bg-brand-primary/90 text-white font-bold rounded-lg transition-colors border border-brand-primary/50 whitespace-nowrap"
             >
@@ -67,7 +67,7 @@ export default function PassengerServicesModal({ vehicleId, vehicleName, driverI
 
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 custom-scrollbar">
+        <div className="flex-1 overflow-y-auto p-3 md:p-6 custom-scrollbar">
           {loading ? (
             <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-brand-primary" /></div>
           ) : services.length === 0 ? (
@@ -79,10 +79,10 @@ export default function PassengerServicesModal({ vehicleId, vehicleName, driverI
           ) : (
             <div className="space-y-4">
               {services.map((service, index) => (
-                <div key={service.id} className="bg-white/5 border border-white/10 rounded-2xl p-5 hover:border-brand-primary/50 transition-colors relative overflow-hidden group">
+                <div key={service.id} className="bg-white/5 border border-white/10 rounded-2xl p-3 md:p-5 hover:border-brand-primary/50 transition-colors relative overflow-hidden group">
                   {/* Subtle gradient accent */}
                   <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-brand-secondary to-brand-primary opacity-50 group-hover:opacity-100 transition-opacity"></div>
-                  
+
                   <div className="pl-3">
                     <div className="flex flex-col gap-1 mb-3">
                       <div className="flex items-center gap-2 text-brand-primary font-bold">
@@ -95,8 +95,8 @@ export default function PassengerServicesModal({ vehicleId, vehicleName, driverI
                         <span><span className="text-white/50 font-normal mr-1">To:</span>{service.destination}</span>
                       </div>
                     </div>
-                    
-                    <div className="flex items-center justify-between mt-4 border-t border-white/10 pt-4">
+
+                    <div className="flex flex-col md:flex-row md:items-center justify-between mt-4 border-t border-white/10 pt-4 gap-4 md:gap-0">
                       <div className="flex flex-col">
                         <span className="text-[10px] text-white/50 uppercase tracking-wider mb-1">Price</span>
                         <div className="flex items-center gap-2">
@@ -108,17 +108,17 @@ export default function PassengerServicesModal({ vehicleId, vehicleName, driverI
                           )}
                         </div>
                       </div>
-                      
+
                       {service.description && (
-                        <button 
+                        <button
                           onClick={() => setExpandedDesc(expandedDesc === service.id ? null : service.id)}
-                          className="flex items-center gap-1 text-xs font-medium text-brand-primary bg-brand-primary/10 hover:bg-brand-primary/20 px-3 py-1.5 rounded-lg transition-colors"
+                          className="flex items-center justify-center gap-1 text-xs font-medium text-brand-primary bg-brand-primary/10 hover:bg-brand-primary/20 px-3 py-2 md:py-1.5 rounded-lg transition-colors w-full md:w-auto"
                         >
                           Details {expandedDesc === service.id ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                         </button>
                       )}
                     </div>
-                    
+
                     {service.description && expandedDesc === service.id && (
                       <div className="mt-4 p-3 bg-black/40 rounded-xl border border-white/5 text-sm text-white/80 animate-in slide-in-from-top-2">
                         {service.description}
