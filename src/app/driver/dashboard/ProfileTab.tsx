@@ -607,6 +607,19 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
               )}
             </div>
 
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-4">
+              <div>
+                <label className="block text-xs md:text-sm font-medium text-foreground/70 mb-1.5 md:mb-2">Date of Birth</label>
+                <div className="flex items-center gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-gray-100 dark:bg-slate-900/50 rounded-xl cursor-not-allowed">
+                  <User className="w-4 h-4 md:w-5 md:h-5 text-gray-500" />
+                  <span className="font-medium text-sm md:text-base text-gray-500 dark:text-gray-400">
+                    {profile?.dateOfBirth || "Not set"}
+                  </span>
+                  <span className="ml-auto text-[10px] bg-gray-200 dark:bg-slate-800 text-gray-600 dark:text-gray-400 px-2 py-1 rounded">Read-only</span>
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 md:grid-cols-2 gap-4 md:gap-6">
               <div>
                 <label className="block text-xs md:text-sm font-medium text-foreground/70 mb-1.5 md:mb-2">Operating City</label>

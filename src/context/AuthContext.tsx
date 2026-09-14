@@ -13,7 +13,7 @@ interface UserProfile {
   lastName?: string;
   middleName?: string;
   phone?: string;
-  age?: string;
+  dateOfBirth?: string;
   identityNumber?: string;
   identityImage?: string;
   operatingCity?: string;

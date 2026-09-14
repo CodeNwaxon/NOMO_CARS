@@ -87,8 +87,8 @@ export default function SiteSettingsPage() {
         if (faqDoc.exists()) {
           const data = faqDoc.data()?.items || [];
           if (data.length > 0) {
-            setFaqConfig(data);
-            setOriginalFaqConfig(data);
+            setFaqConfig(JSON.parse(JSON.stringify(data)));
+            setOriginalFaqConfig(JSON.parse(JSON.stringify(data)));
           }
         }
 
@@ -96,8 +96,8 @@ export default function SiteSettingsPage() {
         if (policyDoc.exists()) {
           const data = policyDoc.data()?.items || [];
           if (data.length > 0) {
-            setPolicyConfig(data);
-            setOriginalPolicyConfig(data);
+            setPolicyConfig(JSON.parse(JSON.stringify(data)));
+            setOriginalPolicyConfig(JSON.parse(JSON.stringify(data)));
           }
         }
       } catch (err) {
@@ -133,10 +133,10 @@ export default function SiteSettingsPage() {
   };
 
   const handleDiscard = () => {
-    setSiteConfig(originalSiteConfig);
-    setAboutConfig(originalAboutConfig);
-    setFaqConfig(originalFaqConfig);
-    setPolicyConfig(originalPolicyConfig);
+    setSiteConfig(JSON.parse(JSON.stringify(originalSiteConfig)));
+    setAboutConfig(JSON.parse(JSON.stringify(originalAboutConfig)));
+    setFaqConfig(JSON.parse(JSON.stringify(originalFaqConfig)));
+    setPolicyConfig(JSON.parse(JSON.stringify(originalPolicyConfig)));
     toast("Changes discarded", { icon: "↩️" });
   };
 
@@ -186,10 +186,10 @@ export default function SiteSettingsPage() {
       await setDoc(doc(db, "adminSettings", "faq"), { items: faqConfig });
       await setDoc(doc(db, "adminSettings", "policy"), { items: policyConfig });
 
-      setOriginalSiteConfig(siteConfig);
-      setOriginalAboutConfig(aboutConfig);
-      setOriginalFaqConfig(faqConfig);
-      setOriginalPolicyConfig(policyConfig);
+      setOriginalSiteConfig(JSON.parse(JSON.stringify(updatedSiteConfig)));
+      setOriginalAboutConfig(JSON.parse(JSON.stringify(aboutConfig)));
+      setOriginalFaqConfig(JSON.parse(JSON.stringify(faqConfig)));
+      setOriginalPolicyConfig(JSON.parse(JSON.stringify(policyConfig)));
 
       setIsDirty(false);
       setShowPasswordModal(false);
@@ -226,17 +226,20 @@ export default function SiteSettingsPage() {
   };
   const addBulletin = (policyIdx: number) => {
     const newPol = [...policyConfig];
-    newPol[policyIdx].bulletins.push("");
+    newPol[policyIdx] = { ...newPol[policyIdx], bulletins: [...newPol[policyIdx].bulletins, ""] };
     setPolicyConfig(newPol);
   };
   const updateBulletin = (policyIdx: number, bullIdx: number, val: string) => {
     const newPol = [...policyConfig];
-    newPol[policyIdx].bulletins[bullIdx] = val;
+    const newBull = [...newPol[policyIdx].bulletins];
+    newBull[bullIdx] = val;
+    newPol[policyIdx] = { ...newPol[policyIdx], bulletins: newBull };
     setPolicyConfig(newPol);
   };
   const removeBulletin = (policyIdx: number, bullIdx: number) => {
     const newPol = [...policyConfig];
-    newPol[policyIdx].bulletins = newPol[policyIdx].bulletins.filter((_, i) => i !== bullIdx);
+    const newBull = newPol[policyIdx].bulletins.filter((_, i) => i !== bullIdx);
+    newPol[policyIdx] = { ...newPol[policyIdx], bulletins: newBull };
     setPolicyConfig(newPol);
   };
 

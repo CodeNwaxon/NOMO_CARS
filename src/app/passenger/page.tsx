@@ -209,7 +209,7 @@ export default function PassengerCategories() {
                 <h2 className="text-xl md:text-2xl font-bold mb-6 flex items-center gap-2">
                   <User className="text-brand-primary" /> Driver Profiles Found
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-6 w-full">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 md:gap-6 w-full">
                   {searchResults.map((driver, index) => (
                     <Link href={`/driver/profile/${driver.id}`} key={`${driver.id}-${index}`} className="block">
                       <div className="glass-panel p-3 md:p-6 rounded-md md:rounded-2xl flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-2 md:gap-4 hover:shadow-lg transition-all border border-brand-primary/20 hover:border-brand-primary/50 cursor-pointer h-full">

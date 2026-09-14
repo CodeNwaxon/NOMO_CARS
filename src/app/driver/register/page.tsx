@@ -6,9 +6,9 @@ import { useAuth } from "@/context/AuthContext";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { storage, db } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { notifyAdminsClient } from "@/lib/notifyClient";
 import { Loader2, UploadCloud, Camera } from "lucide-react";
@@ -19,7 +19,17 @@ const driverSchema = z.object({
   lastName: z.string().min(2, "Last name is required"),
   middleName: z.string().optional(),
   phone: z.string().min(10, "Valid phone number required"),
-  age: z.string().refine((val) => parseInt(val) >= 19, {
+  dateOfBirth: z.string().refine((val) => {
+    if (!val) return false;
+    const dob = new Date(val);
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+      age--;
+    }
+    return age >= 19;
+  }, {
     message: "You must be at least 19 years old",
   }),
   identityNumber: z.string().min(5, "Identity number required"),
@@ -76,7 +86,7 @@ export default function DriverRegistration() {
   useEffect(() => {
     if (!loading && !nameSetRef.current && (user || profile)) {
       if (profile?.phone) setValue("phone", profile.phone);
-      if (profile?.age) setValue("age", profile.age);
+      if (profile?.dateOfBirth) setValue("dateOfBirth", profile.dateOfBirth);
       if (profile?.identityNumber) setValue("identityNumber", profile.identityNumber);
       if (profile?.operatingCity) setValue("operatingCity", profile.operatingCity);
       if (profile?.operatingState) setValue("operatingState", profile.operatingState);
@@ -319,13 +329,12 @@ export default function DriverRegistration() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Age</label>
-              {errors.age && <p className="text-brand-accent text-xs mb-1">{errors.age.message}</p>}
+              <label className="block text-sm font-medium mb-1">Date of Birth</label>
+              {errors.dateOfBirth && <p className="text-brand-accent text-xs mb-1">{errors.dateOfBirth.message}</p>}
               <input
-                type="number"
-                {...register("age")}
+                type="date"
+                {...register("dateOfBirth")}
                 className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl"
-                placeholder="25"
               />
             </div>
           </div>
