@@ -301,17 +301,20 @@ export default function DriverProfilePage() {
             {vehicles.map(v => (
               <div key={v.id} className="glass-panel rounded-2xl overflow-hidden group hover:shadow-xl hover:shadow-brand-secondary/10 transition-all duration-300 flex flex-col">
                 <div className="h-40 md:h-48 w-full bg-card-border relative overflow-hidden">
-                  {v.images?.front ? (
-                    <img
-                      src={v.images.front}
-                      alt={`${v.details.make} ${v.details.model}`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-foreground/30">
-                      <Car className="w-12 h-12" />
-                    </div>
-                  )}
+                  {(() => {
+                    const thumbUrl = v.images?.front || v.images?.side || v.images?.exterior || (v.images ? Object.values(v.images).filter(Boolean)[0] : null);
+                    return thumbUrl ? (
+                      <img
+                        src={thumbUrl as string}
+                        alt={`${v.details.make} ${v.details.model}`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-foreground/30">
+                        <Car className="w-12 h-12" />
+                      </div>
+                    );
+                  })()}
                   <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-black/60 backdrop-blur-md px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold shadow-sm text-white border border-white/10 capitalize">
                     {v.category}
                   </div>

@@ -253,17 +253,20 @@ export default function CategoryVehicles() {
                             <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent pointer-events-none z-0" />
                           )}
                           <div className="h-32 md:h-48 w-full bg-card-border relative overflow-hidden group/img">
-                            {v.images?.front ? (
-                              <img
-                                src={v.images.front}
-                                alt={`${v.details.make} ${v.details.model}`}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-foreground/30">
-                                <Car className="w-8 h-8 md:w-12 md:h-12" />
-                              </div>
-                            )}
+                            {(() => {
+                              const thumbUrl = v.images?.front || v.images?.side || v.images?.exterior || (v.images ? Object.values(v.images).filter(Boolean)[0] : null);
+                              return thumbUrl ? (
+                                <img
+                                  src={thumbUrl as string}
+                                  alt={`${v.details.make} ${v.details.model}`}
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-foreground/30">
+                                  <Car className="w-8 h-8 md:w-12 md:h-12" />
+                                </div>
+                              );
+                            })()}
 
                             {/* Badges */}
                             <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-black/60 backdrop-blur-md px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold shadow-sm text-white border border-white/10">

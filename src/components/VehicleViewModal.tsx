@@ -189,17 +189,20 @@ export default function VehicleViewModal({ vehicle, allVehicles, onClose, onView
                 <div key={v.id} className="min-w-[280px] w-[280px] md:min-w-[320px] md:w-[320px] flex-shrink-0 snap-start glass-panel rounded-2xl overflow-hidden group hover:shadow-xl hover:shadow-brand-secondary/10 transition-all duration-300 flex flex-col">
                   {/* Similar card design as the main category page */}
                   <div className="h-40 w-full bg-card-border relative overflow-hidden group/img">
-                    {v.images?.front ? (
-                      <img
-                        src={v.images.front}
-                        alt={`${v.details.make} ${v.details.model}`}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-foreground/30">
-                        <Car className="w-10 h-10" />
-                      </div>
-                    )}
+                    {(() => {
+                      const thumbUrl = v.images?.front || v.images?.side || v.images?.exterior || (v.images ? Object.values(v.images).filter(Boolean)[0] : null);
+                      return thumbUrl ? (
+                        <img
+                          src={thumbUrl as string}
+                          alt={`${v.details.make} ${v.details.model}`}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-foreground/30">
+                          <Car className="w-10 h-10" />
+                        </div>
+                      );
+                    })()}
                     
                     <div className="absolute top-2 right-2 bg-background/80 backdrop-blur-md px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm">
                       {v.details.payload ? `${v.details.payload} Tons` : v.details.seats ? `${v.details.seats} Seats` : v.details.capacity ? `${v.details.capacity} Cap.` : "Standard"}

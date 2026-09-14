@@ -367,7 +367,14 @@ export default function BidForJobsPage() {
                           className={`w-full flex items-center gap-3 p-2 rounded-xl transition-all duration-200 border-2 text-left ${!isApproved ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700' : selectedVehicle === vehicle.id ? 'border-brand-secondary bg-brand-secondary/5 shadow-sm' : 'border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 hover:border-brand-secondary/30'}`}
                         >
                           <div className="w-12 h-12 bg-white dark:bg-slate-800 rounded-lg overflow-hidden shrink-0 shadow-sm border border-slate-100 dark:border-slate-700 relative">
-                            {vehicle.images?.front ? <img src={vehicle.images.front} className="w-full h-full object-cover" /> : <Car className="w-5 h-5 m-3 opacity-30 text-slate-500" />}
+                            {(() => {
+                              const thumbUrl = vehicle.images?.front || vehicle.images?.side || vehicle.images?.exterior || (vehicle.images ? Object.values(vehicle.images).filter(Boolean)[0] : null);
+                              return thumbUrl ? (
+                                <img src={thumbUrl as string} className="w-full h-full object-cover" />
+                              ) : (
+                                <Car className="w-5 h-5 m-3 opacity-30 text-slate-500" />
+                              );
+                            })()}
                           </div>
                           <div className="flex-1 overflow-hidden">
                             <p className="font-bold text-xs text-slate-900 dark:text-white truncate">{vehicle.details?.make} {vehicle.details?.model}</p>
