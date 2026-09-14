@@ -270,7 +270,7 @@ export default function CategoryVehicles() {
 
                             {/* Badges */}
                             <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-black/60 backdrop-blur-md px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold shadow-sm text-white border border-white/10">
-                              {v.details.payload ? `${v.details.payload} Tons` : v.details.seats ? `${v.details.seats} Seats` : v.details.capacity ? `${v.details.capacity} Cap.` : "Standard"}
+                              {v.details.payloadCapacity ? `${v.details.payloadCapacity} Tons` : v.details.seats ? `${v.details.seats} Seats` : v.details.totalCapacity ? `${v.details.totalCapacity} Cap.` : "Standard"}
                             </div>
 
                             {getVIPBadge(v.driverVipStars) && (
@@ -319,21 +319,28 @@ export default function CategoryVehicles() {
                                 </>
                               )}
 
-                              {v.details.seats && (
+                              {v.details.seats && !["airplane", "ship", "motorbike", "keke", "truck"].includes(v.category) && (
                                 <>
                                   <span className="opacity-50">•</span>
                                   <span>{v.details.seats} Seats</span>
                                 </>
                               )}
 
-                              {v.details.payloadCapacity && (
+                              {v.details.totalCapacity && ["airplane", "ship"].includes(v.category) && (
+                                <>
+                                  <span className="opacity-50">•</span>
+                                  <span>{v.details.totalCapacity} Cap.</span>
+                                </>
+                              )}
+
+                              {v.details.payloadCapacity && ["truck"].includes(v.category) && (
                                 <>
                                   <span className="opacity-50">•</span>
                                   <span>{v.details.payloadCapacity} T Payload</span>
                                 </>
                               )}
 
-                              {v.details.ac !== undefined && (
+                              {v.details.ac !== undefined && !["airplane", "ship", "motorbike", "keke", "truck"].includes(v.category) && (
                                 <>
                                   <span className="opacity-50">•</span>
                                   <span>{v.details.ac ? "AC" : "No AC"}</span>

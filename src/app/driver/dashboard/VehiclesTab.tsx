@@ -736,21 +736,28 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
                       </>
                     )}
 
-                    {v.details.seats && (
+                    {v.details.seats && !["airplane", "ship", "motorbike", "keke", "truck"].includes(v.category) && (
                       <>
                         <span className="opacity-50">•</span>
                         <span>{v.details.seats} Seats</span>
                       </>
                     )}
 
-                    {v.details.payloadCapacity && (
+                    {v.details.totalCapacity && ["airplane", "ship"].includes(v.category) && (
+                      <>
+                        <span className="opacity-50">•</span>
+                        <span>{v.details.totalCapacity} Cap.</span>
+                      </>
+                    )}
+
+                    {v.details.payloadCapacity && ["truck"].includes(v.category) && (
                       <>
                         <span className="w-1 h-1 rounded-full bg-foreground/30"></span>
                         <span>{v.details.payloadCapacity} T Payload</span>
                       </>
                     )}
 
-                    {v.details.ac !== undefined && (
+                    {v.details.ac !== undefined && !["airplane", "ship", "motorbike", "keke", "truck"].includes(v.category) && (
                       <>
                         <span className="w-1 h-1 rounded-full bg-foreground/30"></span>
                         <span>{v.details.ac ? "AC" : "No AC"}</span>

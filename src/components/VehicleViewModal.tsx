@@ -131,26 +131,28 @@ export default function VehicleViewModal({ vehicle, allVehicles, onClose, onView
                     <span className="text-[10px] text-foreground/50 uppercase block">Color</span>
                     <span className="font-bold">{vehicle.details.color || "N/A"}</span>
                   </div>
-                  <div className="bg-card-border/30 p-3 rounded-xl border border-card-border/50">
-                    <span className="text-[10px] text-foreground/50 uppercase block">Air Conditioning</span>
-                    <span className="font-bold">{vehicle.details.ac ? "Yes" : "No"}</span>
-                  </div>
-                  {vehicle.details.seats && (
+                  {vehicle.details.ac !== undefined && !["airplane", "ship", "motorbike", "keke", "truck"].includes(vehicle.category) && (
+                    <div className="bg-card-border/30 p-3 rounded-xl border border-card-border/50">
+                      <span className="text-[10px] text-foreground/50 uppercase block">Air Conditioning</span>
+                      <span className="font-bold">{vehicle.details.ac ? "Yes" : "No"}</span>
+                    </div>
+                  )}
+                  {vehicle.details.seats && !["airplane", "ship", "motorbike", "keke", "truck"].includes(vehicle.category) && (
                     <div className="bg-card-border/30 p-3 rounded-xl border border-card-border/50">
                       <span className="text-[10px] text-foreground/50 uppercase block">Seats</span>
                       <span className="font-bold">{vehicle.details.seats}</span>
                     </div>
                   )}
-                  {vehicle.details.payload && (
+                  {vehicle.details.payloadCapacity && ["truck"].includes(vehicle.category) && (
                     <div className="bg-card-border/30 p-3 rounded-xl border border-card-border/50">
                       <span className="text-[10px] text-foreground/50 uppercase block">Payload</span>
-                      <span className="font-bold">{vehicle.details.payload} Tons</span>
+                      <span className="font-bold">{vehicle.details.payloadCapacity} Tons</span>
                     </div>
                   )}
-                  {vehicle.details.capacity && (
+                  {vehicle.details.totalCapacity && ["airplane", "ship"].includes(vehicle.category) && (
                     <div className="bg-card-border/30 p-3 rounded-xl border border-card-border/50">
                       <span className="text-[10px] text-foreground/50 uppercase block">Capacity</span>
-                      <span className="font-bold">{vehicle.details.capacity}</span>
+                      <span className="font-bold">{vehicle.details.totalCapacity}</span>
                     </div>
                   )}
                 </div>
@@ -205,7 +207,7 @@ export default function VehicleViewModal({ vehicle, allVehicles, onClose, onView
                     })()}
                     
                     <div className="absolute top-2 right-2 bg-background/80 backdrop-blur-md px-2 py-0.5 rounded-full text-[10px] font-bold shadow-sm">
-                      {v.details.payload ? `${v.details.payload} Tons` : v.details.seats ? `${v.details.seats} Seats` : v.details.capacity ? `${v.details.capacity} Cap.` : "Standard"}
+                      {v.details.payloadCapacity ? `${v.details.payloadCapacity} Tons` : v.details.seats ? `${v.details.seats} Seats` : v.details.totalCapacity ? `${v.details.totalCapacity} Cap.` : "Standard"}
                     </div>
                     
                     {getVIPBadge(v.driverVipStars) && (
