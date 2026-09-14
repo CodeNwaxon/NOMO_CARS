@@ -24,6 +24,7 @@ import { useAuth } from "@/context/AuthContext";
 import { collection, getDocs, doc, getDoc, query, where, limit, startAfter } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { getVIPBadge, hasValidTicket } from "@/lib/constants";
+import { toast } from "react-hot-toast";
 
 const categories = [
   { name: "Dispatch Rider", id: "motorbike", icon: Bike, color: "text-orange-500", bg: "bg-orange-500/10", hoverBorder: "hover:border-orange-500/50", hoverShadow: "hover:shadow-orange-500/20" },
@@ -127,11 +128,17 @@ export default function PassengerCategories() {
       
       const res = await fetch(`/api/drivers/search?q=${encodeURIComponent(qLower)}&offset=${currentOffset}&limit=40`, { signal });
       
-      if (!res.ok) {
-        throw new Error("Failed to search drivers");
+      let json;
+      try {
+        json = await res.json();
+      } catch (e) {
+        throw new Error("Invalid response from server");
+      }
+
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || "Failed to search drivers");
       }
       
-      const json = await res.json();
       const results = json.drivers || [];
 
       if (loadMore) {
@@ -145,6 +152,7 @@ export default function PassengerCategories() {
     } catch (error: any) {
       if (error?.name !== "AbortError") {
         console.error("Error searching drivers:", error);
+        toast.error(error.message || "Failed to search drivers. Check configuration.");
       }
     } finally {
       setIsSearching(false);

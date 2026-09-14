@@ -394,16 +394,15 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
           <h2 className="text-lg md:text-2xl font-bold mb-1 capitalize w-full truncate px-2">{isEditing ? formData.username : getDisplayName()}</h2>
           <p className="text-xs md:text-sm text-foreground/60 mb-4 w-full truncate px-2">{user.email}</p>
 
-          <div className="flex flex-col items-center gap-1 bg-card-border/50 px-4 py-2 rounded-xl mb-6 shadow-inner relative">
-            <button 
-              onClick={() => setShowLevelInfo(true)} 
-              className="absolute top-2 right-2 p-1 text-foreground/40 hover:text-brand-primary transition-colors"
-              title="How to level up?"
-            >
-              <Info className="w-4 h-4" />
-            </button>
+          <div className="flex flex-col items-center gap-1 bg-card-border/50 px-4 py-2 rounded-xl mb-6 shadow-inner">
             <div className="flex items-center gap-1 mt-1">
-              <span className="mr-1 font-bold text-sm md:text-base text-brand-primary">{Math.min(5, Math.floor((profile?.jobsWon || 0) / 2))}</span>
+              <button 
+                onClick={() => setShowLevelInfo(true)} 
+                className="mr-1 p-1 font-bold text-[#DAA520] hover:text-yellow-600 dark:text-blue-500 dark:hover:text-white transition-colors"
+                title="How to level up?"
+              >
+                <Info className="w-4 h-4 md:w-5 md:h-5" strokeWidth={3} />
+              </button>
               {renderStars(Math.min(5, Math.floor((profile?.jobsWon || 0) / 2)))}
               <span className="ml-1.5 md:ml-2 font-bold text-xs md:text-sm uppercase text-brand-primary">
                 Level

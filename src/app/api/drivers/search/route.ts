@@ -104,7 +104,8 @@ export async function GET(request: NextRequest) {
 
       const searchStr = normalizeSearchText(`${data.username || ""} ${data.firstName || ""} ${data.lastName || ""} ${data.operatingState || ""} ${data.operatingCity || ""}`);
 
-      if (searchStr.includes(qLower)) {
+      const hasAllTerms = searchTerms.every((term) => searchStr.includes(term));
+      if (hasAllTerms) {
         // Strip sensitive fields
         delete data.balance;
         delete data.walletBalance;

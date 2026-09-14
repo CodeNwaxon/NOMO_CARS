@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { db } from "@/lib/firebase";
 import { collection, query, where, getDocs, orderBy, onSnapshot } from "firebase/firestore";
+import { toast } from "react-hot-toast";
 
 export interface AppNotification {
   id: string;
@@ -195,6 +196,15 @@ export const NotificationProvider = ({ children }: { children: React.ReactNode }
       });
 
       if (newNotifs.length > 0) {
+        if (!isInitialLoad) {
+          newNotifs.forEach(notif => {
+            toast.success(notif.title || "New Notification", {
+              icon: "🔔",
+              duration: 5000,
+            });
+          });
+        }
+        
         setNotifications(prev => {
           const existingIds = new Set(prev.map(n => n.id));
           const uniqueNew = newNotifs.filter(n => !existingIds.has(n.id));
