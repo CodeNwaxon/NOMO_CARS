@@ -1,6 +1,6 @@
 import { initializeApp, getApps, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import { getAuth } from 'firebase-admin/auth';
+
 
 let initializationError: unknown = null;
 
@@ -71,7 +71,4 @@ export const getAdminDb = () => {
   return getFirestore();
 };
 
-export const getAdminAuth = () => {
-  ensureAdminInitialized();
-  return getAuth();
-};
+
