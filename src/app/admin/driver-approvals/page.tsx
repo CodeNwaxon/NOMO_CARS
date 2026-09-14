@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { collection, query, where, getDocs, updateDoc, doc, setDoc, getDoc, deleteDoc, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Loader2, ArrowLeft, CheckCircle, XCircle, UserCheck, ShieldAlert, Check, Search, Car } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle, XCircle, UserCheck, ShieldAlert, Check, Search, Car, Phone, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 import ImageViewerOverlay from "@/components/ImageViewerOverlay";
@@ -278,16 +278,16 @@ export default function ManageDriversPage() {
                 (d.operatingCity || "").toLowerCase().includes(searchQuery.toLowerCase())
               )
               .map(driver => (
-              <div key={driver.id} className="bg-white dark:bg-gray-800 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col relative overflow-hidden">
+              <div key={driver.id} className="bg-white dark:bg-gray-800 rounded-2xl p-4 md:p-5 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col relative overflow-hidden">
                 {driver.isDisabled && (
-                  <div className="absolute top-0 left-0 w-full bg-red-500 text-white text-xs font-bold py-1 text-center">
+                  <div className="absolute top-0 left-0 w-full bg-red-500 text-white text-[10px] md:text-xs font-bold py-1 text-center">
                     ACCOUNT DISABLED
                   </div>
                 )}
                 
-                <div className={`flex items-center gap-4 mb-4 ${driver.isDisabled ? "mt-4 opacity-75" : ""}`}>
+                <div className={`flex flex-col sm:flex-row items-center sm:items-start gap-3 md:gap-4 mb-4 ${driver.isDisabled ? "mt-4 opacity-75" : ""}`}>
                   <div 
-                    className="w-16 h-16 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex-shrink-0 cursor-pointer group relative"
+                    className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex-shrink-0 cursor-pointer group relative shadow-md"
                     onClick={() => {
                       const imgs = [driver.displayImage, driver.identityImage].filter(Boolean) as string[];
                       if (imgs.length > 0) {
@@ -298,36 +298,65 @@ export default function ManageDriversPage() {
                     {driver.displayImage ? (
                       <>
                         <img src={driver.displayImage} alt="Profile" className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-[10px] font-bold">
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-[10px] md:text-xs font-bold">
                           VIEW
                         </div>
                       </>
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No Img</div>
+                      <div className="w-full h-full flex items-center justify-center text-gray-400 text-[10px] md:text-xs font-medium">No Img</div>
                     )}
                   </div>
-                  <div>
-                    <h3 className="font-bold text-lg text-gray-900 dark:text-white truncate">
-                      {driver.firstName || "Unknown"} {driver.lastName || ""}
+                  <div className="flex-1 min-w-0 w-full text-center sm:text-left">
+                    <h3 className="font-bold text-sm md:text-lg text-gray-900 dark:text-white truncate">
+                      {driver.firstName || "Unknown"} {driver.middleName ? driver.middleName + " " : ""}{driver.lastName || ""}
                     </h3>
-                    <p className="text-xs text-gray-500 truncate">{driver.email}</p>
-                    <p className="text-xs font-semibold text-brand-primary mt-1 uppercase tracking-wider">{driver.operatingCity || "No City"}</p>
+                    <p className="text-[10px] md:text-xs text-gray-500 truncate mb-1">{driver.email}</p>
+                    <p className="text-[10px] md:text-xs font-semibold text-brand-primary uppercase tracking-wider bg-brand-primary/10 inline-block px-2 py-0.5 rounded-full">
+                      {driver.operatingState ? `${driver.operatingState}, ` : ""}{driver.operatingCity || "No City"}
+                    </p>
                   </div>
                 </div>
 
-                <div className={`space-y-2 mb-6 text-sm text-gray-600 dark:text-gray-400 flex-1 ${driver.isDisabled ? "opacity-75" : ""}`}>
-                  <p><strong>Phone:</strong> {driver.phone || "N/A"}</p>
-                  <p><strong>Identity No:</strong> {driver.identityNumber || "N/A"}</p>
-                  {driver.identityImage ? (
-                    <button 
-                      onClick={() => setViewerState({ isOpen: true, images: [driver.identityImage], initialIndex: 0, singleMode: true })}
-                      className="text-brand-primary text-xs hover:bg-brand-primary/10 px-2 py-1 -ml-2 rounded-md transition-colors inline-block mt-1 font-medium"
-                    >
-                      View Identity Document
-                    </button>
-                  ) : (
-                    <p className="text-xs text-red-500 mt-2">No identity document uploaded</p>
-                  )}
+                <div className={`space-y-3 mb-6 text-xs md:text-sm text-gray-600 dark:text-gray-400 flex-1 ${driver.isDisabled ? "opacity-75" : ""}`}>
+                  {/* Phone Row */}
+                  <div className="flex items-center gap-2 bg-gray-50 dark:bg-gray-900/50 p-2 md:p-3 rounded-lg border border-gray-100 dark:border-gray-700">
+                    <span className="font-bold text-gray-700 dark:text-gray-300">Phone:</span>
+                    <span className="text-[11px] md:text-sm font-medium">{driver.phone || "N/A"}</span>
+                    {driver.phone && (
+                      <div className="flex items-center gap-1.5 ml-auto">
+                        <a href={`tel:${driver.phone}`} className="p-1.5 md:p-2 bg-blue-100 text-blue-600 rounded-lg hover:bg-blue-200 transition-colors shadow-sm" title="Call Driver">
+                          <Phone className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        </a>
+                        {driver.whatsappEnabled !== false && (
+                          <a href={`https://wa.me/${driver.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer" className="p-1.5 md:p-2 bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors shadow-sm" title="WhatsApp Driver">
+                            <MessageCircle className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* DOB and Identity */}
+                  <div className="flex flex-row items-center justify-between gap-2 px-1">
+                    <div>
+                      <p className="font-bold text-[10px] md:text-xs text-gray-500 mb-0.5">Date of Birth</p>
+                      <p className="text-[11px] md:text-sm font-semibold">{driver.dateOfBirth || "N/A"}</p>
+                    </div>
+                    
+                    <div className="text-right flex flex-col items-end">
+                      <p className="font-bold text-[10px] md:text-xs text-gray-500 mb-0.5">Identity No: {driver.identityNumber || "N/A"}</p>
+                      {driver.identityImage ? (
+                        <button 
+                          onClick={() => setViewerState({ isOpen: true, images: [driver.identityImage], initialIndex: 0, singleMode: true })}
+                          className="text-brand-primary text-[10px] md:text-xs hover:bg-brand-primary text-white bg-brand-primary/90 px-2 py-1 md:px-3 md:py-1.5 rounded-md transition-colors font-semibold shadow-sm"
+                        >
+                          View ID Document
+                        </button>
+                      ) : (
+                        <p className="text-[10px] md:text-xs text-red-500 font-medium">No ID uploaded</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="mt-2 mb-4">
