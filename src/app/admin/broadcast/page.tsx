@@ -75,19 +75,11 @@ export default function BroadcastPage() {
   }, [user, authLoading, router]);
 
 
-  // Handle Image Upload for Broadcast Form
-  const handleBroadcastImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBroadcastImage = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
-    const toastId = toast.loading("Uploading image...");
-    try {
-      const url = await uploadImageToCloudinary(file);
-      setBroadcastForm(prev => ({ ...prev, image: url }));
-      toast.success("Image uploaded", { id: toastId });
-    } catch (err) {
-      console.error(err);
-      toast.error("Upload failed", { id: toastId });
-    }
+    const previewUrl = URL.createObjectURL(file);
+    setBroadcastForm(prev => ({ ...prev, image: previewUrl, _imageFile: file } as any));
   };
 
 
@@ -102,8 +94,20 @@ export default function BroadcastPage() {
     setSendingBroadcast(true);
     const toastId = toast.loading("Broadcasting message...");
     try {
+      let finalImageUrl = broadcastForm.image;
+      
+      const fileToUpload = (broadcastForm as any)._imageFile;
+      if (fileToUpload) {
+        finalImageUrl = await uploadImageToCloudinary(fileToUpload);
+      }
+
       const newBroadcast = {
-        ...broadcastForm,
+        title: broadcastForm.title,
+        message: broadcastForm.message,
+        image: finalImageUrl,
+        url: broadcastForm.url,
+        urlLabel: broadcastForm.urlLabel,
+        audience: broadcastForm.audience,
         createdAt: new Date().toISOString(),
         sentBy: user?.uid
       };

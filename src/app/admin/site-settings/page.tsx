@@ -58,6 +58,9 @@ export default function SiteSettingsPage() {
   const driverImageInputRef = useRef<HTMLInputElement>(null);
   const passengerImageInputRef = useRef<HTMLInputElement>(null);
 
+  // Store files to upload only after password verification
+  const [pendingUploads, setPendingUploads] = useState<Record<string, File>>({});
+
   useEffect(() => {
     if (!authLoading && !user) {
       router.push("/driver/login");
@@ -120,18 +123,13 @@ export default function SiteSettingsPage() {
     setIsDirty(isSiteDirty || isAboutDirty || isFaqDirty || isPolicyDirty);
   }, [siteConfig, aboutConfig, faqConfig, policyConfig, originalSiteConfig, originalAboutConfig, originalFaqConfig, originalPolicyConfig]);
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: keyof typeof siteConfig) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, field: keyof typeof siteConfig) => {
     if (!e.target.files || e.target.files.length === 0) return;
     const file = e.target.files[0];
-    const toastId = toast.loading("Uploading image...");
-    try {
-      const url = await uploadImageToCloudinary(file);
-      setSiteConfig((prev) => ({ ...prev, [field]: url }));
-      toast.success("Image uploaded successfully", { id: toastId });
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to upload image", { id: toastId });
-    }
+    
+    const previewUrl = URL.createObjectURL(file);
+    setSiteConfig((prev) => ({ ...prev, [field]: previewUrl }));
+    setPendingUploads((prev) => ({ ...prev, [field]: file }));
   };
 
   const handleDiscard = () => {
@@ -167,7 +165,23 @@ export default function SiteSettingsPage() {
         return;
       }
 
-      await setDoc(doc(db, "adminSettings", "siteConfig"), siteConfig);
+      // Password is correct, now upload any pending images
+      let updatedSiteConfig = { ...siteConfig };
+      for (const [field, file] of Object.entries(pendingUploads)) {
+        try {
+          const url = await uploadImageToCloudinary(file);
+          updatedSiteConfig = { ...updatedSiteConfig, [field]: url };
+        } catch (err) {
+          console.error(err);
+          toast.error(`Failed to upload ${field}`, { id: toastId });
+          setSaving(false);
+          return; // Abort save if upload fails
+        }
+      }
+
+      await setDoc(doc(db, "adminSettings", "siteConfig"), updatedSiteConfig);
+      setSiteConfig(updatedSiteConfig); // update local state with final URLs
+      setPendingUploads({}); // clear pending uploads
       await setDoc(doc(db, "adminSettings", "about"), aboutConfig);
       await setDoc(doc(db, "adminSettings", "faq"), { items: faqConfig });
       await setDoc(doc(db, "adminSettings", "policy"), { items: policyConfig });
