@@ -10,6 +10,7 @@ import Link from "next/link";
 import { toast } from "react-hot-toast";
 import ImageViewerOverlay from "@/components/ImageViewerOverlay";
 import { sendApprovalEmail } from "@/actions/notify";
+import { deleteImagesFromCloudinary } from "@/lib/cloudinary";
 
 export default function ManageVehiclesPage() {
   const { user, loading: authLoading } = useAuth();
@@ -141,10 +142,35 @@ export default function ManageVehiclesPage() {
           }
         }
       } else {
+        if (v?.images) {
+          try {
+            const urlsToDelete = [
+              v.images.front,
+              v.images.back,
+              v.images.side,
+              v.images.interior,
+              v.images.document
+            ].filter(Boolean) as string[];
+            
+            if (urlsToDelete.length > 0) {
+              await deleteImagesFromCloudinary(urlsToDelete);
+            }
+          } catch (err) {
+            console.error("Failed to delete vehicle images from Cloudinary:", err);
+          }
+        }
+
         await updateDoc(doc(db, "vehicles", vehicleId), { 
           isApproved: false, 
           isRejected: true, 
-          rejectionReason: rejectionReason.trim() 
+          rejectionReason: rejectionReason.trim(),
+          images: {
+            front: "",
+            back: "",
+            side: "",
+            interior: "",
+            document: ""
+          }
         });
         setVehicles(vehicles.filter(v => v.id !== vehicleId));
         toast.success("Vehicle application rejected.", { id: toastId });

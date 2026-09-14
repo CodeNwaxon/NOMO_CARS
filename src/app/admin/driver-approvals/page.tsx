@@ -11,6 +11,7 @@ import { toast } from "react-hot-toast";
 import ImageViewerOverlay from "@/components/ImageViewerOverlay";
 import DriverVehiclesModal from "@/components/DriverVehiclesModal";
 import { sendApprovalEmail } from "@/actions/notify";
+import { deleteImagesFromCloudinary } from "@/lib/cloudinary";
 
 export default function ManageDriversPage() {
   const { user, loading: authLoading } = useAuth();
@@ -129,10 +130,20 @@ export default function ManageDriversPage() {
           console.error("Post-approval notification error (driver still approved):", notifyErr);
         }
       } else {
+        const targetDriver = drivers.find(d => d.id === driverId);
+        if (targetDriver?.identityImage) {
+          try {
+            await deleteImagesFromCloudinary([targetDriver.identityImage]);
+          } catch (err) {
+            console.error("Failed to delete identity image from Cloudinary:", err);
+          }
+        }
+
         await updateDoc(doc(db, "users", driverId), { 
           isApproved: false, 
           isRejected: true, 
-          rejectionReason: rejectionReason.trim() 
+          rejectionReason: rejectionReason.trim(),
+          identityImage: ""
         });
         setDrivers(drivers.filter(d => d.id !== driverId));
         toast.success("Driver application rejected.", { id: toastId });
