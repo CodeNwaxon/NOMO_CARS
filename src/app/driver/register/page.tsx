@@ -139,7 +139,13 @@ export default function DriverRegistration() {
     if (!loading && !user) {
       router.replace("/");
     } else if (profile?.role === "driver") {
-      router.replace("/driver/dashboard");
+      if (profile.isApproved) {
+        router.replace("/driver/dashboard");
+      } else if (!profile.isRejected) {
+        // Pending drivers go to awaiting-approval
+        router.replace("/driver/awaiting-approval");
+      }
+      // If rejected, let them stay on the registration page to reapply
     }
   }, [user, profile, loading, router]);
 
@@ -172,6 +178,8 @@ export default function DriverRegistration() {
         identityImage: imageUrl,
         role: "driver",
         isApproved: false,
+        isRejected: false,
+        rejectionReason: null,
         driverCreatedAt: serverTimestamp(),
       });
 

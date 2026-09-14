@@ -33,52 +33,90 @@ export default function AwaitingApproval() {
       <div className="glass-panel max-w-lg w-full rounded-3xl p-4 md:p-10 z-10 text-center relative overflow-hidden">
         <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-brand-secondary to-brand-primary"></div>
 
-        <div className="md:w-24 md:h-24 w-16 h-16 bg-brand-secondary/5 border-2 border-brand-secondary/30 rounded-full flex items-center justify-center mx-auto mb-8 relative">
-          {/* Orbiting ball */}
-          <div className="absolute inset-0 rounded-full animate-[spin_3s_linear_infinite]">
-            <div className="w-2.5 h-2.5 bg-brand-secondary rounded-full absolute -top-1 left-1/2 -translate-x-1/2 shadow-lg shadow-brand-secondary/60"></div>
-          </div>
+        {profile?.isRejected ? (
+          <>
+            <div className="md:w-24 md:h-24 w-16 h-16 bg-red-500/10 border-2 border-red-500/30 rounded-full flex items-center justify-center mx-auto mb-8 relative">
+              <div className="absolute inset-0 rounded-full animate-[spin_3s_linear_infinite]">
+                <div className="w-2.5 h-2.5 bg-red-500 rounded-full absolute -top-1 left-1/2 -translate-x-1/2 shadow-lg shadow-red-500/60"></div>
+              </div>
+              <CheckCircle className="hidden" /> {/* just to import checkcircle, wait, I will use XCircle */}
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500 relative z-10">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="15" y1="9" x2="9" y2="15"></line>
+                <line x1="9" y1="9" x2="15" y2="15"></line>
+              </svg>
+            </div>
+            
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">Application Rejected</h1>
+            <p className="text-xs md:text-sm text-foreground/80 mb-6 leading-relaxed">
+              Unfortunately, your driver application was not approved.
+              <br/><br/>
+              <span className="font-bold text-red-500">Reason: {profile?.rejectionReason || "Please review your details and try again."}</span>
+            </p>
 
-          <Clock className="w-10 h-10 text-brand-secondary animate-pulse relative z-10" />
-          <div className="absolute -bottom-2 -right-2 bg-background rounded-full p-1 z-20">
-            <CheckCircle className="w-6 h-6 text-brand-primary" />
-          </div>
-        </div>
+            <div className="flex flex-col gap-3">
+              <Link
+                href="/driver/register"
+                className="text-white inline-flex items-center justify-center w-full py-4 bg-brand-primary rounded-xl font-medium hover:bg-brand-primary/90 transition-colors shadow-lg shadow-brand-primary/20"
+              >
+                Reapply
+              </Link>
+              <Link
+                href="/"
+                className="text-foreground/70 inline-flex items-center justify-center w-full py-3 bg-transparent rounded-xl font-medium hover:text-foreground transition-colors"
+              >
+                Cancel
+              </Link>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="md:w-24 md:h-24 w-16 h-16 bg-brand-secondary/5 border-2 border-brand-secondary/30 rounded-full flex items-center justify-center mx-auto mb-8 relative">
+              <div className="absolute inset-0 rounded-full animate-[spin_3s_linear_infinite]">
+                <div className="w-2.5 h-2.5 bg-brand-secondary rounded-full absolute -top-1 left-1/2 -translate-x-1/2 shadow-lg shadow-brand-secondary/60"></div>
+              </div>
+              <Clock className="w-10 h-10 text-brand-secondary animate-pulse relative z-10" />
+              <div className="absolute -bottom-2 -right-2 bg-background rounded-full p-1 z-20">
+                <CheckCircle className="w-6 h-6 text-brand-primary" />
+              </div>
+            </div>
 
-        <h1 className="text-2xl md:text-3xl font-bold mb-2">Awaiting Approval</h1>
-        <p className="text-xs md:text-sm text-foreground/80 mb-6 leading-relaxed">
-          Thank you for registering with Nomo Cars, {profile?.firstName}! Our team is currently reviewing your application and documents. 
-          <br/><br/>
-          <span className="font-bold text-brand-primary">Approval typically happens immediately, but may take up to a maximum of 48 hours.</span>
-        </p>
+            <h1 className="text-2xl md:text-3xl font-bold mb-2">Awaiting Approval</h1>
+            <p className="text-xs md:text-sm text-foreground/80 mb-6 leading-relaxed">
+              Thank you for registering with Nomo Cars, {profile?.firstName}! Our team is currently reviewing your application and documents. 
+              <br/><br/>
+              <span className="font-bold text-brand-primary">Approval typically happens immediately, but may take up to a maximum of 48 hours.</span>
+            </p>
 
-        <div className="bg-black/5 dark:bg-white/5 rounded-2xl p-3 md:p-4 mb-4 md:mb-6 text-sm text-foreground/80 text-left shadow-inner">
-          <p className="font-bold mb-3 text-foreground flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-brand-primary"></span>
-            What happens next?
-          </p>
-          <ul className="space-y-3">
-            <li className="flex items-start gap-2">
-              <span className="text-brand-secondary mt-0.5">•</span>
-              <span>We verify your identity and documents.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-brand-secondary mt-0.5">•</span>
-              <span>You will receive an email once approved.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <span className="text-brand-secondary mt-0.5">•</span>
-              <span>You can then access your dashboard to add vehicles.</span>
-            </li>
-          </ul>
-        </div>
+            <div className="bg-black/5 dark:bg-white/5 rounded-2xl p-3 md:p-4 mb-4 md:mb-6 text-sm text-foreground/80 text-left shadow-inner">
+              <p className="font-bold mb-3 text-foreground flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-primary"></span>
+                What happens next?
+              </p>
+              <ul className="space-y-3">
+                <li className="flex items-start gap-2">
+                  <span className="text-brand-secondary mt-0.5">•</span>
+                  <span>We verify your identity and documents.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-brand-secondary mt-0.5">•</span>
+                  <span>You will receive an email once approved.</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-brand-secondary mt-0.5">•</span>
+                  <span>You can then access your dashboard to add vehicles.</span>
+                </li>
+              </ul>
+            </div>
 
-        <Link
-          href="/"
-          className="text-white inline-flex items-center justify-center w-full py-4 bg-gradient-to-r from-brand-secondary to-brand-primary rounded-xl font-medium hover:bg-card-bg transition-colors"
-        >
-          Return to Home
-        </Link>
+            <Link
+              href="/"
+              className="text-white inline-flex items-center justify-center w-full py-4 bg-gradient-to-r from-brand-secondary to-brand-primary rounded-xl font-medium hover:bg-card-bg transition-colors"
+            >
+              Return to Home
+            </Link>
+          </>
+        )}
       </div>
     </div>
   );

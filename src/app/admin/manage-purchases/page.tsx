@@ -167,9 +167,9 @@ export default function ManagePurchasesPage() {
       // 1. Verify Password against adminSettings/ceo
       const ceoRef = doc(db, "adminSettings", "ceo");
       const ceoSnap = await getDoc(ceoRef);
-      const correctPassword = ceoSnap.exists() ? ceoSnap.data().password : null;
+      const currentPassword = (ceoSnap.exists() && ceoSnap.data().password) ? ceoSnap.data().password : "prince1234";
 
-      if (masterPassword !== correctPassword) {
+      if (masterPassword !== currentPassword) {
         toast.error("Incorrect master password!");
         setVerifying(false);
         return;

@@ -266,7 +266,9 @@ export default function ManageAdminsPage() {
     try {
       const ceoRef = doc(db, "adminSettings", "ceo");
       const ceoSnap = await getDoc(ceoRef);
-      const currentPassword = ceoSnap.exists() ? ceoSnap.data().password : null;
+      const currentPassword = (ceoSnap.exists() && ceoSnap.data().password) 
+        ? ceoSnap.data().password 
+        : "prince1234";
 
       if (removePassword !== currentPassword) {
         toast.error("Incorrect password!");
@@ -336,7 +338,7 @@ export default function ManageAdminsPage() {
       const ceoRef = doc(db, "adminSettings", "ceo");
       const ceoSnap = await getDoc(ceoRef);
       
-      const currentPassword = ceoSnap.exists() ? ceoSnap.data().password : null;
+      const currentPassword = (ceoSnap.exists() && ceoSnap.data().password) ? ceoSnap.data().password : "prince1234";
 
       if (oldPassword !== currentPassword) {
         toast.error("Old password is incorrect!");

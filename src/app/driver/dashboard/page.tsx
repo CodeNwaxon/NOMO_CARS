@@ -31,7 +31,7 @@ export default function DriverDashboard() {
         router.push("/");
       } else if (profile?.role !== "driver") {
         router.push("/driver/register");
-      } else if (!profile?.isApproved && !profile?.isRejected) {
+      } else if (!profile?.isApproved) {
         router.push("/driver/awaiting-approval");
       } else if (profile?.isApproved) {
         // Enforce limits lazily on background load
@@ -42,7 +42,7 @@ export default function DriverDashboard() {
     }
   }, [user, profile, loading, router]);
 
-  if (loading || !user || !profile || (!profile.isApproved && !profile.isRejected)) {
+  if (loading || !user || !profile || !profile.isApproved) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="w-12 h-12 text-brand-primary animate-spin" />
