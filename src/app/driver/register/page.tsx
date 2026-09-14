@@ -275,7 +275,7 @@ export default function DriverRegistration() {
               <label className="block text-sm font-medium mb-1">First Name</label>
               <input
                 {...register("firstName")}
-                className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl"
+                className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl capitalize"
                 placeholder="Emeka"
               />
               {errors.firstName && <p className="text-brand-accent text-xs mt-1">{errors.firstName.message}</p>}
@@ -285,7 +285,7 @@ export default function DriverRegistration() {
               <label className="block text-sm font-medium mb-1">Middle Name (Optional)</label>
               <input
                 {...register("middleName")}
-                className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl"
+                className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl capitalize"
                 placeholder="Hassan"
               />
               {errors.middleName && <p className="text-brand-accent text-xs mt-1">{errors.middleName.message}</p>}
@@ -296,7 +296,7 @@ export default function DriverRegistration() {
             <label className="block text-sm font-medium mb-1">Last Name</label>
             <input
               {...register("lastName")}
-              className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl"
+              className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl capitalize"
               placeholder="Adeyemi"
             />
             {errors.lastName && <p className="text-brand-accent text-xs mt-1">{errors.lastName.message}</p>}

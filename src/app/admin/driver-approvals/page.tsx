@@ -307,7 +307,7 @@ export default function ManageDriversPage() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0 w-full text-center sm:text-left">
-                    <h3 className="font-bold text-sm md:text-lg text-gray-900 dark:text-white truncate">
+                    <h3 className="font-bold text-sm md:text-lg text-gray-900 dark:text-white truncate capitalize">
                       {driver.firstName || "Unknown"} {driver.middleName ? driver.middleName + " " : ""}{driver.lastName || ""}
                     </h3>
                     <p className="text-[10px] md:text-xs text-gray-500 truncate mb-1">{driver.email}</p>
