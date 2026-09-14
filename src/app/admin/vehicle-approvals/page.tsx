@@ -182,7 +182,7 @@ export default function ManageVehiclesPage() {
     try {
       const ceoRef = doc(db, "adminSettings", "ceo");
       const ceoSnap = await getDoc(ceoRef);
-      const currentPassword = (ceoSnap.exists() && ceoSnap.data().password) ? ceoSnap.data().password : "prince1234";
+      const currentPassword = (ceoSnap.exists() && ceoSnap.data().password) ? ceoSnap.data().password : process.env.NEXT_PUBLIC_DEFAULT_CEO_PASSWORD;
 
       if (adminPassword !== currentPassword) {
         toast.error("Incorrect master password!", { id: toastId });
