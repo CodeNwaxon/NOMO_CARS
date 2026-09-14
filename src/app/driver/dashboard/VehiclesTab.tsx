@@ -694,7 +694,7 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
                       setImageViewerLoadingId(v.id);
                       setTimeout(() => {
                         const allImages = [
-                          ...(v.images ? [v.images.front, v.images.back, v.images.side, v.images.interior].filter(Boolean) as string[] : []),
+                          ...(v.images ? Object.values(v.images).filter(Boolean) as string[] : []),
                           ...(v.documents ? Object.values(v.documents) as string[] : []) // Driver can see their documents!
                         ];
                         setViewerState({

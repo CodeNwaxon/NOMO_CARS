@@ -94,7 +94,7 @@ export default function DriverVehiclesModal({ driverId, driverName, onClose }: D
                           <button
                             onClick={() => {
                               const allImages = [
-                                ...(vehicle.images ? [vehicle.images.front, vehicle.images.back, vehicle.images.side, vehicle.images.interior].filter(Boolean) as string[] : []),
+                                ...(vehicle.images ? Object.values(vehicle.images).filter(Boolean) as string[] : []),
                                 ...(vehicle.documents ? Object.values(vehicle.documents) as string[] : [])
                               ];
                               setViewerState({

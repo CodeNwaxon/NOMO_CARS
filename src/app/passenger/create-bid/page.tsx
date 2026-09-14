@@ -612,7 +612,7 @@ export default function CreateBidPage() {
                               const imgs = bid.vehicleImages || bid.vehicleDetails?.images || {};
                               const docs = bid.vehicleDocuments || bid.vehicleDetails?.documents || {};
                               const allImages = [
-                                ...[imgs.front, imgs.back, imgs.side, imgs.interior].filter(Boolean) as string[],
+                                ...(imgs ? Object.values(imgs).filter(Boolean) as string[] : []),
                                 ...Object.values(docs) as string[]
                               ];
                               setViewerState({
