@@ -348,9 +348,10 @@ export default function CategoryVehicles() {
                               )}
                             </div>
 
-                            <div className="mb-1 md:mb-4 mt-1">
-                              <Link href={`/driver/profile/${v.driverId}`} className="capitalize text-[12px] md:text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 hover:underline inline-block truncate mb-0.5 transition-colors">
-                                {v.driverName}&apos;s Profile
+                            <div className="mb-1 md:mb-4 mt-1 w-full">
+                              <Link href={`/driver/profile/${v.driverId}`} className="capitalize text-[12px] md:text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 hover:underline flex items-center mb-0.5 transition-colors w-full max-w-full">
+                                <span className="truncate">{v.driverName}</span>
+                                <span className="flex-shrink-0 whitespace-nowrap">&nbsp;Profile</span>
                               </Link>
                             </div>
 
