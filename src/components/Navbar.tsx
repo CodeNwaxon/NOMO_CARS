@@ -46,7 +46,12 @@ export function Navbar() {
 
   const handleDashboardRedirect = () => {
     if (profile?.role === "driver") {
-      router.push("/driver/dashboard");
+      if (profile.isApproved) {
+        router.push("/driver/dashboard");
+      } else {
+        // Pending drivers go to passenger dashboard
+        router.push("/passenger/dashboard");
+      }
     } else {
       router.push("/passenger/dashboard");
     }

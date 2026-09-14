@@ -518,13 +518,13 @@ export default function PassengerDashboard() {
 
         {/* Action Buttons */}
         <div className="px-2 mt-10 flex flex-row items-center gap-2 md:gap-4 justify-center w-full">
-          {profile?.role !== "driver" && (
+          {profile?.isApproved !== true && (
             <Link
-              href="/driver/register?from=dashboard"
+              href={profile?.role === "driver" && profile?.isApproved !== true ? "/driver/awaiting-approval" : "/driver/register?from=dashboard"}
               className="flex-1 sm:flex-none sm:w-auto px-2 py-3 md:px-8 md:py-4 bg-brand-primary text-white text-xs md:text-base font-bold rounded-md md:rounded-xl shadow-lg hover:bg-brand-primary/90 transition-all flex items-center justify-center gap-1 md:gap-2 hover:scale-105 whitespace-nowrap"
             >
               <CarFront className="w-3.5 h-3.5 md:w-5 md:h-5" />
-              Become a Driver
+              {profile?.role === "driver" && profile?.isApproved !== true ? "Driver Status" : "Become a Driver"}
             </Link>
           )}
           <Link
