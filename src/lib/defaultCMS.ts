@@ -32,8 +32,16 @@ export const DEFAULT_FAQ_CONFIG = [
     answer: "Simply sign in as a passenger, browse our available transport categories (like Dispatch Riders, Cars, or Buses), select a vehicle, and follow the prompts to complete your booking."
   },
   {
+    question: "How does the bidding system work?",
+    answer: "Passengers can create a custom job request outlining their transport needs, destination, and budget. Available drivers can view these requests and submit their own competitive bids. You then choose the driver and bid that best suits your needs!"
+  },
+  {
+    question: "What happens if I default on an accepted bid?",
+    answer: "Nomo Cars takes trust and reliability seriously. If a driver accepts a job and fails to show up, or a passenger maliciously abandons a confirmed booking, their accounts will be penalized. Repeated defaults will result in immediate suspension or a permanent ban."
+  },
+  {
     question: "How can I register as a driver?",
-    answer: "Navigate to the Driver Portal from the home page. Sign in with Google, fill out your vehicle or logistic company details, and submit them for review. Once approved, you can start earning."
+    answer: "Navigate to the Driver Portal from the home page. Sign in with Google, fill out your vehicle or logistic company details, and submit them for review. Once approved, you can start bidding on jobs and earning."
   },
   {
     question: "Are the vehicles inspected before approval?",
@@ -41,11 +49,11 @@ export const DEFAULT_FAQ_CONFIG = [
   },
   {
     question: "How is the pricing calculated?",
-    answer: "Pricing is dynamically calculated based on distance, vehicle category, and current demand. You will always see an estimated fare before confirming your booking."
+    answer: "Pricing is dynamically calculated based on distance, vehicle category, and current demand. For custom jobs, the pricing is determined directly through the transparent bidding process between you and the driver."
   },
   {
     question: "What payment methods are accepted?",
-    answer: "We accept all major credit/debit cards and various digital wallets depending on your region. Payment is seamlessly handled within the platform."
+    answer: "We accept all major credit/debit cards and various digital wallets depending on your region. Payment is seamlessly handled within the platform via Paystack."
   }
 ];
 
@@ -61,8 +69,28 @@ export const DEFAULT_POLICY_CONFIG = [
     ]
   },
   {
+    icon: "Scale",
+    title: "2. Bidding & Job Creation",
+    description: "Our transparent bidding system empowers passengers and drivers to negotiate fair rates. All bids are considered binding agreements once officially accepted on the platform.",
+    bulletins: [
+      "Passengers must provide accurate descriptions, locations, and budgets when creating a job request.",
+      "Drivers must only submit bids for jobs they are fully capable of fulfilling on time.",
+      "Once a passenger accepts a bid, both parties are expected to honor the agreement."
+    ]
+  },
+  {
+    icon: "AlertTriangle",
+    title: "3. Defaulters Policy",
+    description: "To maintain the integrity of our logistics network, we enforce strict rules against defaulting on confirmed agreements.",
+    bulletins: [
+      "Failure to fulfill an accepted bid without providing a valid, documented emergency reason will result in penalties.",
+      "Drivers who frequently fail to show up for accepted jobs will face demotions in ranking, temporary suspension, or permanent removal.",
+      "Passengers who repeatedly cancel confirmed bids maliciously will have their access restricted."
+    ]
+  },
+  {
     icon: "Lock",
-    title: "2. Privacy Policy",
+    title: "4. Privacy Policy",
     description: "We are committed to safeguarding your personal information. When you use Nomo Cars, we collect data necessary to provide and improve our services.",
     bulletins: [
       "Location Data: Used strictly for matching you with nearby rides or passengers and tracking active journeys for safety.",
@@ -70,14 +98,8 @@ export const DEFAULT_POLICY_CONFIG = [
     ]
   },
   {
-    icon: "FileText",
-    title: "3. Data Usage & Cookies",
-    description: "Nomo Cars utilizes cookies and similar tracking technologies to enhance user experience, remember preferences, and analyze app traffic. You can manage your cookie preferences through your browser settings.",
-    bulletins: []
-  },
-  {
     icon: "CheckCircle",
-    title: "4. Compliance & Safety",
+    title: "5. Compliance & Safety",
     description: "Safety is built into every ride. We strictly verify drivers and monitor trips. Any violation of our terms, including inappropriate behavior or fraudulent activity, will result in immediate account termination.",
     bulletins: []
   }
