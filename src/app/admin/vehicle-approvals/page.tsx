@@ -142,36 +142,46 @@ export default function ManageVehiclesPage() {
           }
         }
       } else {
+        const urlsToDelete: string[] = [];
+        const emptyImages: Record<string, string> = {};
+        const emptyDocs: Record<string, string> = {};
+
         if (v?.images) {
-          try {
-            const urlsToDelete = [
-              v.images.front,
-              v.images.back,
-              v.images.side,
-              v.images.interior,
-              v.images.document
-            ].filter(Boolean) as string[];
-            
-            if (urlsToDelete.length > 0) {
-              await deleteImagesFromCloudinary(urlsToDelete);
+          Object.entries(v.images).forEach(([key, url]) => {
+            if (typeof url === 'string' && url) {
+              urlsToDelete.push(url);
+              emptyImages[key] = "";
             }
+          });
+        }
+        
+        if (v?.documents) {
+          Object.entries(v.documents).forEach(([key, url]) => {
+            if (typeof url === 'string' && url) {
+              urlsToDelete.push(url);
+              emptyDocs[key] = "";
+            }
+          });
+        }
+
+        if (urlsToDelete.length > 0) {
+          try {
+            await deleteImagesFromCloudinary(urlsToDelete);
           } catch (err) {
-            console.error("Failed to delete vehicle images from Cloudinary:", err);
+            console.error("Failed to delete vehicle media from Cloudinary:", err);
           }
         }
 
-        await updateDoc(doc(db, "vehicles", vehicleId), { 
+        const updateData: any = {
           isApproved: false, 
           isRejected: true, 
           rejectionReason: rejectionReason.trim(),
-          images: {
-            front: "",
-            back: "",
-            side: "",
-            interior: "",
-            document: ""
-          }
-        });
+        };
+
+        if (Object.keys(emptyImages).length > 0) updateData.images = emptyImages;
+        if (Object.keys(emptyDocs).length > 0) updateData.documents = emptyDocs;
+
+        await updateDoc(doc(db, "vehicles", vehicleId), updateData);
         setVehicles(vehicles.filter(v => v.id !== vehicleId));
         toast.success("Vehicle application rejected.", { id: toastId });
 
