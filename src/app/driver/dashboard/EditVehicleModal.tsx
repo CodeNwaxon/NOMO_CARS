@@ -33,8 +33,10 @@ const getFieldConfig = (category: string) => {
       cockpit: isSpecial,
     },
     docs: {
-      show: !isSpecial,
+      show: true,
       roadWorthiness: !isTwoWheeler && !isSpecial,
+      licenseLabel: isSpecial ? "Operating License" : "Driver's License",
+      registrationLabel: isSpecial ? "Vessel/Aircraft Reg." : "Vehicle Reg.",
     },
   };
 };
@@ -50,7 +52,7 @@ const imageLabels: Record<string, string> = {
 };
 
 const docLabels: Record<string, string> = {
-  license: "Driver's License",
+  license: "Driver's License", // Fallback, we will use dynamic from config
   insurance: "Insurance",
   registration: "Vehicle Reg.",
   roadWorthiness: "Road Worthiness",
@@ -442,6 +444,12 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-50 dark:bg-slate-900/50 p-4 rounded-2xl">
                 {activeDocs.map((key) => {
+                  const docLabels: Record<string, string> = {
+                    license: (config.docs as any).licenseLabel || "Driver's License",
+                    insurance: "Insurance",
+                    registration: (config.docs as any).registrationLabel || "Vehicle Reg.",
+                    roadWorthiness: "Road Worthiness",
+                  };
                   const currentUrl = updatedDocs[key];
                   const isUploading = uploadingImage === `docs_${key}`;
 

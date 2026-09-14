@@ -181,8 +181,18 @@ export default function CategoryVehicles() {
 
             return locMatches && destMatches;
           }).sort((a, b) => {
+            // Prioritize owners/drivers who uploaded an operating license (especially for ships/airplanes)
+            const hasLicenseA = a.documents?.license ? 1 : 0;
+            const hasLicenseB = b.documents?.license ? 1 : 0;
+            if (hasLicenseA !== hasLicenseB) {
+              return hasLicenseB - hasLicenseA;
+            }
+
+            // Then fallback to VIP stars
             const vipDiff = (b.driverVipStars || 0) - (a.driverVipStars || 0);
             if (vipDiff !== 0) return vipDiff;
+            
+            // Then fallback to experience/jobs won
             const levelA = Math.floor((a.driverJobsWon || 0) / 2);
             const levelB = Math.floor((b.driverJobsWon || 0) / 2);
             return levelB - levelA;

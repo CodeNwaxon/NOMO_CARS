@@ -69,8 +69,10 @@ const getFieldConfig = (category: string) => {
       cockpit: isSpecial, // Interior for planes/ships
     },
     docs: {
-      show: !isSpecial,
+      show: true,
       roadWorthiness: !isTwoWheeler && !isSpecial,
+      licenseLabel: isSpecial ? "Operating License" : "Driver's License",
+      registrationLabel: isSpecial ? "Vessel/Aircraft Reg." : "Vehicle Reg.",
     }
   };
 };
@@ -240,7 +242,8 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
 
     // Validate active documents
     if (config.docs.show) {
-      if (!docs.license || !docs.insurance || !docs.registration || (config.docs.roadWorthiness && !docs.roadWorthiness)) {
+      const isSpecial = ["airplane", "ship"].includes(selectedCategory);
+      if ((!isSpecial && !docs.license) || !docs.insurance || !docs.registration || (config.docs.roadWorthiness && !docs.roadWorthiness)) {
         toast.error("Please upload all required documents.");
         return;
       }
@@ -554,9 +557,16 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
                 Verification Documents
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 p-4 md:p-5 rounded-2xl bg-foreground/[0.02]">
-                {renderFileInput("docs", "license", "Driver's License")}
+                <div className="flex flex-col gap-1">
+                  {renderFileInput("docs", "license", (config.docs as any).licenseLabel || "Driver's License")}
+                  {["airplane", "ship"].includes(selectedCategory) && (
+                    <p className="text-[10px] text-green-600 dark:text-green-400 font-bold leading-tight mt-1 px-1">
+                      *Optional, but boosts ranking above VIPs!
+                    </p>
+                  )}
+                </div>
                 {renderFileInput("docs", "insurance", "Insurance")}
-                {renderFileInput("docs", "registration", "Vehicle Reg.")}
+                {renderFileInput("docs", "registration", (config.docs as any).registrationLabel || "Vehicle Reg.")}
                 {config.docs.roadWorthiness && renderFileInput("docs", "roadWorthiness", "Road Worthiness")}
               </div>
             </div>
