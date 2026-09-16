@@ -74,6 +74,7 @@ export default function ReportUserOverlay({ reportedUserId, reportedUserRole, on
       const newIncident = {
         reporterId: user.uid,
         reporterName: profile.username || profile.firstName || "Unknown User",
+        reporterFullName: [profile.firstName, profile.middleName, profile.lastName].filter(Boolean).join(" ") || "Unknown",
         reporterEmail: user.email || "",
         reporterImage: profile.displayImage || user.photoURL || "",
         reporterPhone: phone.trim() || profile.phone || "",
@@ -85,6 +86,7 @@ export default function ReportUserOverlay({ reportedUserId, reportedUserRole, on
         reportedUserId,
         reportedUserEmail: reportedUserData?.email || "",
         reportedUserName: reportedUserData?.username || reportedUserData?.firstName || "Unknown",
+        reportedUserFullName: [reportedUserData?.firstName, reportedUserData?.middleName, reportedUserData?.lastName].filter(Boolean).join(" ") || "Unknown",
         reportedUserImage: reportedUserData?.displayImage || "",
         reportedUserRole,
         reportedUserPhone: reportedUserData?.phone || "",

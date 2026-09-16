@@ -11,7 +11,7 @@ import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { toast } from "react-hot-toast";
-import { checkUsernameUnique } from "@/lib/userUtils";
+import { checkUsernameUnique, generateUsernameSuggestions, checkPhoneUnique } from "@/lib/userUtils";
 import ShareOverlay from "@/components/ShareOverlay";
 import { websiteLink, getVIPBadge, freeTicketPlanDays, buildDriverSearchTokens } from "@/lib/constants";
 
@@ -69,6 +69,44 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
   const [uploadingImage, setUploadingImage] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  const [usernameError, setUsernameError] = useState("");
+  const [usernameChecking, setUsernameChecking] = useState(false);
+  const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
+  const hasNoUsername = !profile?.username;
+
+  // Debounced username uniqueness check
+  useEffect(() => {
+    if (!isEditing) return;
+    const currentUsername = profile?.username || "";
+    const newUsername = formData.username?.trim();
+
+    if (!newUsername || newUsername === currentUsername) {
+      setUsernameError("");
+      setUsernameChecking(false);
+      return;
+    }
+
+    setUsernameChecking(true);
+    const timer = setTimeout(async () => {
+      try {
+        const isUnique = await checkUsernameUnique(newUsername, userId);
+        if (!isUnique) {
+          setUsernameError("Username already taken");
+          setUsernameSuggestions(generateUsernameSuggestions(newUsername));
+        } else {
+          setUsernameError("");
+          setUsernameSuggestions([]);
+        }
+      } catch {
+        setUsernameError("");
+      } finally {
+        setUsernameChecking(false);
+      }
+    }, 600);
+
+    return () => clearTimeout(timer);
+  }, [formData.username, isEditing, profile?.username, userId]);
 
   const [startTicketCollection, setStartTicketCollection] = useState(true);
   const [ticketCollectionStartedAt, setTicketCollectionStartedAt] = useState<string | null>(null);
@@ -157,10 +195,21 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
 
       setLoading(true);
 
+      // Check phone uniqueness if phone changed
+      if (formattedPhone && formattedPhone !== (profile?.phone || "")) {
+        const phoneUnique = await checkPhoneUnique(formattedPhone, userId);
+        if (!phoneUnique) {
+          toast.error("This phone number is already linked to another account.");
+          setLoading(false);
+          return;
+        }
+      }
+
       const currentUsername = profile?.username || profile?.firstName || user?.displayName?.split(" ")[0] || "";
       if (formData.username && formData.username !== currentUsername) {
         const isUnique = await checkUsernameUnique(formData.username, userId);
         if (!isUnique) {
+          setUsernameError("Username already taken");
           toast.error("Username is already taken. Please choose another one.");
           setLoading(false);
           return;
@@ -491,17 +540,51 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
 
           <div className="space-y-4 md:space-y-6">
             <div>
-              <label className="block text-xs md:text-sm font-medium text-foreground/70 mb-1.5 md:mb-2">Display Name (Username)</label>
+              <label className="block text-xs md:text-sm font-medium text-foreground/70 mb-1.5 md:mb-2">
+                Display Name (Username)
+                {hasNoUsername && !isEditing && (
+                  <span className="ml-2 text-green-500 text-[10px] font-bold animate-pulse">← Set your unique username!</span>
+                )}
+              </label>
               {isEditing ? (
-                <input
-                  type="text"
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  className="w-full px-3 py-2.5 md:px-4 md:py-3 rounded-xl bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm text-sm md:text-base placeholder:text-slate-400"
-                  placeholder="E.g. FastRider99"
-                />
+                <div>
+                  <input
+                    type="text"
+                    value={formData.username}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                    className={`w-full px-3 py-2.5 md:px-4 md:py-3 rounded-xl bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm text-sm md:text-base placeholder:text-slate-400 ${hasNoUsername ? "pulse-green" : ""}`}
+                    placeholder="E.g. FastRider99"
+                  />
+                  {usernameError && (
+                    <p className="text-red-500 text-xs mt-1 font-semibold">{usernameError}</p>
+                  )}
+                  {usernameChecking && (
+                    <p className="text-foreground/50 text-xs mt-1">Checking availability...</p>
+                  )}
+                  {usernameSuggestions.length > 0 && usernameError && (
+                    <div className="mt-2">
+                      <p className="text-[10px] md:text-xs text-foreground/50 mb-1.5">Try one of these:</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {usernameSuggestions.map((s) => (
+                          <button
+                            key={s}
+                            type="button"
+                            onClick={() => {
+                              setFormData({ ...formData, username: s });
+                              setUsernameError("");
+                              setUsernameSuggestions([]);
+                            }}
+                            className="px-2.5 py-1 text-[10px] md:text-xs font-semibold bg-brand-primary/10 text-brand-primary border border-brand-primary/20 rounded-full hover:bg-brand-primary hover:text-white transition-colors cursor-pointer"
+                          >
+                            {s}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               ) : (
-                <div className="flex items-center gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-card-border/30 rounded-xl">
+                <div className={`flex items-center gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-card-border/30 rounded-xl ${hasNoUsername ? "pulse-green" : ""}`}>
                   <User className="w-4 h-4 md:w-5 md:h-5 text-brand-primary" />
                   <span className="font-medium text-sm md:text-base">{getDisplayName()}</span>
                 </div>

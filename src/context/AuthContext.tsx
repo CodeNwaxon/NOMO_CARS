@@ -144,7 +144,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const newProfile: UserProfile = {
           role: "passenger", // Default role, they can upgrade to driver later
           email: result.user.email || "",
-          username: result.user.displayName || "User",
+          username: "",
           displayImage: result.user.photoURL || "",
           firstName: result.user.displayName || "",
           rating: 5.0,

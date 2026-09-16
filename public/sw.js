@@ -12,6 +12,19 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Listen for data cleanup requests (triggered when PWA is uninstalled)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'CLEAR_ALL_DATA') {
+    event.waitUntil(
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames.map((cacheName) => caches.delete(cacheName))
+        );
+      })
+    );
+  }
+});
+
 self.addEventListener('fetch', (event) => {
   // Only cache static assets, let everything else go to the network
   const url = new URL(event.request.url);

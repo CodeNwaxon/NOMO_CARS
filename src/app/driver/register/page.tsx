@@ -13,6 +13,7 @@ import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { notifyAdminsClient } from "@/lib/notifyClient";
 import { Loader2, UploadCloud, Camera } from "lucide-react";
 import { buildDriverSearchTokens } from "@/lib/constants";
+import { checkPhoneUnique } from "@/lib/userUtils";
 
 const driverSchema = z.object({
   firstName: z.string().min(2, "First name is required"),
@@ -171,6 +172,14 @@ export default function DriverRegistration() {
       setIsSubmitting(true);
       setUploadError("");
 
+      // 0. Check phone uniqueness before proceeding
+      const phoneUnique = await checkPhoneUnique(data.phone, user.uid);
+      if (!phoneUnique) {
+        setUploadError("This phone number is already linked to another account.");
+        setIsSubmitting(false);
+        return;
+      }
+
       // 1. Upload Images to Cloudinary
       const imageUrl = await uploadImageToCloudinary(idFile);
 
@@ -183,7 +192,7 @@ export default function DriverRegistration() {
       const docRef = doc(db, "users", user.uid);
       await updateDoc(docRef, {
         ...data,
-        searchTokens: buildDriverSearchTokens(data.firstName, data.middleName, data.lastName, data.operatingCity, data.operatingState),
+        searchTokens: buildDriverSearchTokens(data.firstName, data.middleName, data.lastName, profile?.username || user?.displayName || "", data.operatingCity, data.operatingState),
         displayImage: finalPhotoURL,
         identityImage: imageUrl,
         role: "driver",

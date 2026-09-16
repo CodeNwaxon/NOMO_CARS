@@ -65,6 +65,28 @@ export default function InstallPrompt() {
       // A new event means the browser considers this web app installable again.
       // This clears a stale marker left behind after the installed app was removed.
       localStorage.removeItem("pwa_installed");
+
+      // Clear all app-specific data so fresh-install detection works correctly
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (
+          key.startsWith("notifications_") ||
+          key.startsWith("lastBroadcastCheck_") ||
+          key.startsWith("seenNotifIds_") ||
+          key === "pwa_prompt_dismissed"
+        )) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => localStorage.removeItem(key));
+      sessionStorage.clear();
+
+      // Tell service worker to clear caches
+      if (navigator.serviceWorker?.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: "CLEAR_ALL_DATA" });
+      }
+
       setDeferredPrompt(e);
       showPrompt();
     };

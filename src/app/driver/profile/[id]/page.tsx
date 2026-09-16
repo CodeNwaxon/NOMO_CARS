@@ -394,7 +394,7 @@ export default function DriverProfilePage() {
       {!isOwnProfile && (
         <ChatButton
           driverId={driverId}
-          driverName={driver.firstName || driver.username || "Driver"}
+          driverName={driver.username || driver.firstName || "Driver"}
           driverImage={driver.displayImage || ""}
           driverTicketExpiry={driver.ticketExpiry}
           driverVipStars={driver.vipStars}
