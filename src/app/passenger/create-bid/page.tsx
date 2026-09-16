@@ -41,8 +41,6 @@ export default function CreateBidPage() {
   const [assignedDriverInfo, setAssignedDriverInfo] = useState<any>(null);
   const [assignedDriverLoading, setAssignedDriverLoading] = useState(false);
   const [chatOverlayData, setChatOverlayData] = useState<any>(null);
-
-  const bidsCache = useRef<Record<string, any[]>>({});
   const assignedDriverCache = useRef<Record<string, any>>({});
 
   const openAssignedDriver = async (request: any) => {
@@ -174,12 +172,6 @@ export default function CreateBidPage() {
   const durationLabel = `${requestDurationDays} ${requestDurationDays === 1 ? 'day' : 'days'}`;
 
   const openBidders = async (request: any) => {
-    if (bidsCache.current[request.id]) {
-      setBidders(bidsCache.current[request.id]);
-      setSelectedRequest(request);
-      return;
-    }
-
     const snapshot = await getDocs(collection(db, "requests", request.id, "bids"));
     const biddersData: any[] = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
 
@@ -219,7 +211,6 @@ export default function CreateBidPage() {
       return amtA - amtB;
     });
 
-    bidsCache.current[request.id] = sortedBidders;
     setBidders(sortedBidders);
     setSelectedRequest(request);
   };
