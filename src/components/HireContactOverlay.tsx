@@ -51,9 +51,9 @@ export default function HireContactOverlay({ driverId, vehicleName, onClose }: H
     onClose();
   };
 
-  const hasPhone = driverData?.phone && driverData.phone.trim().length > 0;
-  // Based on user prompt: "we have set up whatsApp toggle on both drivers and passengers dasshboard check for it."
-  const isWhatsAppEnabled = driverData?.whatsappEnabled && hasPhone;
+  const canViewPhone = Boolean(user && driverData?.hasContactAccess);
+  const hasPhone = Boolean(driverData?.phone && driverData.phone.trim().length > 0);
+  const isWhatsAppEnabled = Boolean(driverData?.whatsappEnabled && hasPhone && canViewPhone);
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -88,7 +88,30 @@ export default function HireContactOverlay({ driverId, vehicleName, onClose }: H
           </div>
         ) : (
           <div className="flex flex-col gap-3">
-            {hasPhone ? (
+            {!user ? (
+              <button 
+                onClick={() => toast.error("Please login to view contact")}
+                className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-gray-500 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 transition-colors cursor-pointer w-full"
+              >
+                <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+                  <Phone className="w-5 h-5 opacity-50" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-sm md:text-base font-medium">Login Required</span>
+                  <span className="text-[10px] md:text-xs">Sign in to view phone number</span>
+                </div>
+              </button>
+            ) : !driverData?.hasContactAccess ? (
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 text-gray-500 border border-gray-200 dark:border-gray-700 cursor-not-allowed">
+                <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+                  <ShieldOff className="w-5 h-5 opacity-50" />
+                </div>
+                <div className="flex flex-col text-left">
+                  <span className="text-sm md:text-base font-medium">Phone Hidden</span>
+                  <span className="text-[10px] md:text-xs">Driver is currently unavailable</span>
+                </div>
+              </div>
+            ) : hasPhone ? (
               <a 
                 href={`tel:${driverData.phone}`}
                 onClick={onClose}

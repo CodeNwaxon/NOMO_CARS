@@ -41,22 +41,19 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const searchTerms = qLower.split(" ").filter((term) => term.length >= 2);
+    const searchTerms = qLower.split(" ").filter((term) => term.length > 0);
     if (searchTerms.length === 0) {
       return NextResponse.json({ success: true, drivers: [], hasMore: false }, { status: 200 });
     }
 
-    // Query indexed prefixes instead of scanning every user document.
-    const candidateSnapshots = await Promise.all(
-      searchTerms.map((term) => (
-        adminDb.collection("users").where("searchTokens", "array-contains", term).get()
-      ))
-    );
+    // Fetch all drivers and filter in-memory.
+    // This ensures that older drivers who don't have usernames in their searchTokens
+    // can still be found accurately, and guarantees fully case-insensitive substring matches.
+    const allDriversSnapshot = await adminDb.collection("users").where("role", "==", "driver").get();
+    
     const candidates = new Map<string, Record<string, any>>();
-    candidateSnapshots.forEach((snapshot) => {
-      snapshot.forEach((driverDoc) => {
-        candidates.set(driverDoc.id, driverDoc.data());
-      });
+    allDriversSnapshot.forEach((driverDoc) => {
+      candidates.set(driverDoc.id, driverDoc.data());
     });
 
     const matchedDrivers: any[] = [];
@@ -102,7 +99,11 @@ export async function GET(request: NextRequest) {
         return; // Skip if ticket is not valid
       }
 
-      const searchStr = normalizeSearchText(`${data.username || ""} ${data.firstName || ""} ${data.lastName || ""} ${data.operatingState || ""} ${data.operatingCity || ""}`);
+      // As requested: drivers are only searchable by their active display name.
+      // If they have a username, search ONLY targets the username.
+      // If they don't have a username, search targets their first name.
+      const nameToSearch = data.username ? data.username : (data.firstName || "");
+      const searchStr = normalizeSearchText(`${nameToSearch} ${data.operatingState || ""} ${data.operatingCity || ""}`);
 
       const hasAllTerms = searchTerms.every((term) => searchStr.includes(term));
       if (hasAllTerms) {
