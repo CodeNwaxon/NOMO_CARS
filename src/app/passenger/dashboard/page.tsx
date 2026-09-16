@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import {
-  User, Phone, Star, Camera, Check, X, LogOut, MessageCircle, MapPin, Car, CarFront, Share2, Crown, ArrowLeft
+  User, Phone, Star, Camera, Check, X, LogOut, MessageCircle, MapPin, Car, CarFront, Share2, Crown, ArrowLeft, Loader2
 } from "lucide-react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -64,10 +64,11 @@ export default function PassengerDashboard() {
   const [usernameChecking, setUsernameChecking] = useState(false);
   const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
   const hasNoUsername = !profile?.username;
+  const [savingUsername, setSavingUsername] = useState(false);
 
   // Debounced username uniqueness check
   useEffect(() => {
-    if (!isEditing || !user) return;
+    if (!user || (!isEditing && !hasNoUsername)) return;
     const currentUsername = profile?.username || "";
     const newUsername = formData.username?.trim();
 
@@ -178,6 +179,27 @@ export default function PassengerDashboard() {
     if (googleName) return googleName.split(" ")[0];
     if (currentName) return currentName.split(" ")[0];
     return "User";
+  };
+
+  const handleSaveUsernameOnly = async () => {
+    if (!formData.username || !user) return;
+    setSavingUsername(true);
+    try {
+      const isUnique = await checkUsernameUnique(formData.username, user.uid);
+      if (!isUnique) {
+        setUsernameError("Username already taken");
+        toast.error("Username is already taken. Please choose another one.");
+        setSavingUsername(false);
+        return;
+      }
+      await updateDoc(doc(db, "users", user.uid), { username: formData.username });
+      await refreshProfile();
+      toast.success("Username saved successfully!");
+    } catch (err) {
+      toast.error("Failed to save username");
+    } finally {
+      setSavingUsername(false);
+    }
   };
 
   const handleSave = async () => {
@@ -499,15 +521,26 @@ export default function PassengerDashboard() {
                     <span className="ml-2 text-green-500 text-[10px] font-bold animate-pulse">← Set your unique username!</span>
                   )}
                 </label>
-                {isEditing ? (
+                {isEditing || hasNoUsername ? (
                   <div>
-                    <input
-                      type="text"
-                      value={formData.username}
-                      onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                      className={`w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 ${hasNoUsername ? "pulse-green" : ""}`}
-                      placeholder="E.g. FastRider99"
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={formData.username}
+                        onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                        className={`w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 ${hasNoUsername ? "pulse-green" : ""}`}
+                        placeholder="E.g. FastRider99"
+                      />
+                      {hasNoUsername && (
+                        <button
+                          onClick={handleSaveUsernameOnly}
+                          disabled={savingUsername || !formData.username.trim() || !!usernameError || usernameChecking}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 bg-brand-primary text-white font-bold rounded-lg px-3 py-1.5 text-xs sm:text-sm hover:bg-brand-primary/90 transition-colors disabled:opacity-50"
+                        >
+                          {savingUsername ? <Loader2 className="w-4 h-4 animate-spin" /> : "Add"}
+                        </button>
+                      )}
+                    </div>
                     {usernameError && (
                       <p className="text-red-500 text-xs mt-1 font-semibold">{usernameError}</p>
                     )}
