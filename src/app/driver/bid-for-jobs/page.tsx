@@ -136,6 +136,7 @@ export default function BidForJobsPage() {
           title: "New Bid Received",
           message: `${profile?.username || profile?.firstName || "A driver"} placed a bid of ₦${numericAmount.toLocaleString()} on your ${selectedRequest.category} request.`,
           createdAt: Date.now(),
+          expiresAt: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
           link: `/passenger/create-bid?tab=browse&highlight=${selectedRequest.id}`
         });
       }

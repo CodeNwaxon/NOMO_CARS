@@ -232,6 +232,7 @@ export default function CreateBidPage() {
         title: "Bid Accepted!",
         message: `Your bid was accepted for a ${selectedRequest.category} request to ${selectedRequest.destinationCity || "the passenger's destination"}.`,
         createdAt: Date.now(),
+        expiresAt: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
         link: "/driver/bid-for-jobs"
       });
     }

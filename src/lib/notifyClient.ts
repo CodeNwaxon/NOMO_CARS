@@ -29,6 +29,7 @@ export async function notifyAdminsClient(title: string, message: string, link: s
         message,
         read: false,
         createdAt: Date.now(),
+        expiresAt: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
         link
       });
     });

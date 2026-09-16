@@ -101,6 +101,7 @@ export async function notifyAdmins(title: string, message: string, link: string)
         message,
         read: false,
         createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
         link
       });
     });

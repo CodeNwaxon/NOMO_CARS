@@ -48,14 +48,14 @@ export default function BroadcastPage() {
         const hSnap = await getDocs(hQuery);
         
         const now = new Date();
-        const sixtyDaysMs = 60 * 24 * 60 * 60 * 1000;
+        const oneEightyDaysMs = 180 * 24 * 60 * 60 * 1000;
         const hData: any[] = [];
         
         for (const d of hSnap.docs) {
           const data = d.data();
           const createdAt = new Date(data.createdAt).getTime();
           
-          if (now.getTime() - createdAt > sixtyDaysMs) {
+          if (now.getTime() - createdAt > oneEightyDaysMs) {
             // Auto delete old broadcast
             deleteDoc(doc(db, "broadcasts", d.id)).catch(console.error);
           } else {
@@ -109,6 +109,7 @@ export default function BroadcastPage() {
         urlLabel: broadcastForm.urlLabel,
         audience: broadcastForm.audience,
         createdAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
         sentBy: user?.uid
       };
 

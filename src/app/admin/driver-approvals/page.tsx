@@ -124,6 +124,7 @@ export default function ManageDriversPage() {
             message: `Your driver account has been approved! You can now start adding vehicles.`,
             read: false,
             createdAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
             link: "/driver/dashboard"
           });
         } catch (notifyErr) {
@@ -155,6 +156,7 @@ export default function ManageDriversPage() {
           message: `Your driver application was rejected. Reason: ${rejectionReason.trim()}`,
           read: false,
           createdAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
           link: "/driver/dashboard"
         });
       }

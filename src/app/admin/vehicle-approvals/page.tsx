@@ -135,6 +135,7 @@ export default function ManageVehiclesPage() {
               message: `Your ${v.details?.make} ${v.details?.model} has been approved and is now live!`,
               read: false,
               createdAt: new Date().toISOString(),
+              expiresAt: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
               link: "/driver/dashboard?tab=vehicles"
             });
           } catch (notifyErr) {
@@ -193,6 +194,7 @@ export default function ManageVehiclesPage() {
             message: `Your ${v.details?.make} ${v.details?.model} application was rejected. Reason: ${rejectionReason.trim()}`,
             read: false,
             createdAt: new Date().toISOString(),
+            expiresAt: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
             link: "/driver/dashboard?tab=vehicles"
           });
         }
