@@ -33,6 +33,29 @@ export const checkUsernameUnique = async (username: string, currentUserId?: stri
 };
 
 /**
+ * Validates the format of a username according to specific rules:
+ * - Minimum 2 characters
+ * - Must contain at least one letter (prevents "22", "@@", "@&")
+ * - No number can appear twice (e.g. prevents "A22" or "1A1")
+ */
+export const validateUsernameFormat = (username: string): string | null => {
+  if (!username) return "Username is required.";
+  if (username.length < 2) return "Username must be at least 2 characters.";
+  
+  // Must contain at least one letter
+  if (!/[a-zA-Z]/.test(username)) {
+    return "Username must contain at least one letter.";
+  }
+
+  // No number can appear twice
+  if (/([0-9]).*\1/.test(username)) {
+    return "The same number cannot appear twice in a username.";
+  }
+
+  return null;
+};
+
+/**
  * Generate username suggestions when the desired username is taken.
  * Mixes random numbers and special characters (-, @, _) into various
  * positions of the base name to produce 5 unique-looking alternatives.

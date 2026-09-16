@@ -11,7 +11,7 @@ import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { toast } from "react-hot-toast";
-import { checkUsernameUnique, generateUsernameSuggestions, checkPhoneUnique } from "@/lib/userUtils";
+import { checkUsernameUnique, generateUsernameSuggestions, checkPhoneUnique, validateUsernameFormat } from "@/lib/userUtils";
 import ShareOverlay from "@/components/ShareOverlay";
 import { websiteLink, getVIPBadge } from "@/lib/constants";
 import { useChat } from "@/context/ChatContext";
@@ -81,6 +81,12 @@ export default function PassengerDashboard() {
     setUsernameChecking(true);
     const timer = setTimeout(async () => {
       try {
+        const validationError = validateUsernameFormat(newUsername);
+        if (validationError) {
+          setUsernameError(validationError);
+          return;
+        }
+
         const isUnique = await checkUsernameUnique(newUsername, user.uid);
         if (!isUnique) {
           setUsernameError("Username already taken");
@@ -183,6 +189,14 @@ export default function PassengerDashboard() {
 
   const handleSaveUsernameOnly = async () => {
     if (!formData.username || !user) return;
+
+    const validationError = validateUsernameFormat(formData.username);
+    if (validationError) {
+      setUsernameError(validationError);
+      toast.error(validationError);
+      return;
+    }
+
     setSavingUsername(true);
     try {
       const isUnique = await checkUsernameUnique(formData.username, user.uid);
@@ -231,9 +245,16 @@ export default function PassengerDashboard() {
         }
       }
 
-      // Check username uniqueness
+      // Check username validation and uniqueness
       const currentUsername = profile?.username && profile.username !== user?.displayName ? profile.username : (user?.displayName?.split(" ")[0] || "");
       if (formData.username && formData.username !== currentUsername) {
+        const validationError = validateUsernameFormat(formData.username);
+        if (validationError) {
+          toast.error(validationError);
+          setLoading(false);
+          return;
+        }
+
         const isUnique = await checkUsernameUnique(formData.username, user.uid);
         if (!isUnique) {
           setUsernameError("Username already taken");

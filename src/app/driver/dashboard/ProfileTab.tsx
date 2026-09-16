@@ -11,7 +11,7 @@ import { doc, updateDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { toast } from "react-hot-toast";
-import { checkUsernameUnique, generateUsernameSuggestions, checkPhoneUnique } from "@/lib/userUtils";
+import { checkUsernameUnique, generateUsernameSuggestions, checkPhoneUnique, validateUsernameFormat } from "@/lib/userUtils";
 import ShareOverlay from "@/components/ShareOverlay";
 import { websiteLink, getVIPBadge, freeTicketPlanDays, buildDriverSearchTokens } from "@/lib/constants";
 
@@ -91,6 +91,12 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
     setUsernameChecking(true);
     const timer = setTimeout(async () => {
       try {
+        const validationError = validateUsernameFormat(newUsername);
+        if (validationError) {
+          setUsernameError(validationError);
+          return;
+        }
+
         const isUnique = await checkUsernameUnique(newUsername, userId);
         if (!isUnique) {
           setUsernameError("Username already taken");
@@ -174,6 +180,14 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
 
   const handleSaveUsernameOnly = async () => {
     if (!formData.username || !userId) return;
+
+    const validationError = validateUsernameFormat(formData.username);
+    if (validationError) {
+      setUsernameError(validationError);
+      toast.error(validationError);
+      return;
+    }
+
     setSavingUsername(true);
     try {
       const isUnique = await checkUsernameUnique(formData.username, userId);
@@ -229,6 +243,13 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
 
       const currentUsername = profile?.username || profile?.firstName || user?.displayName?.split(" ")[0] || "";
       if (formData.username && formData.username !== currentUsername) {
+        const validationError = validateUsernameFormat(formData.username);
+        if (validationError) {
+          toast.error(validationError);
+          setLoading(false);
+          return;
+        }
+
         const isUnique = await checkUsernameUnique(formData.username, userId);
         if (!isUnique) {
           setUsernameError("Username already taken");
