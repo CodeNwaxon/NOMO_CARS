@@ -28,6 +28,7 @@ interface UserProfile {
   whatsappEnabled?: boolean;
   points?: number;
   vipStars?: number;
+  passengerStars?: number;
   vipExpiry?: string;
   ticketExpiry?: string;
   lastTicketPrice?: number;

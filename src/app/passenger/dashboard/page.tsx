@@ -412,9 +412,20 @@ export default function PassengerDashboard() {
             <h2 className="text-xl md:text-2xl font-bold mb-1 capitalize w-full truncate px-2">{isEditing ? formData.username : getDisplayName()}</h2>
             <p className="text-sm text-foreground/60 mb-4 w-full truncate px-2">{user.email}</p>
 
-            <div className="flex items-center gap-1 bg-card-border/50 px-4 py-2 rounded-full mb-6 shadow-inner">
-              {renderStars(profile?.rating || 5.0)}
-              <span className="ml-2 font-bold text-sm">{(profile?.rating || 5.0).toFixed(1)}</span>
+            <div className="flex flex-col items-center gap-2 mb-6">
+              <div className="flex items-center gap-1 bg-card-border/50 px-4 py-2 rounded-full shadow-inner">
+                {renderStars(profile?.rating || 5.0)}
+                <span className="ml-2 font-bold text-sm">{(profile?.rating || 5.0).toFixed(1)}</span>
+              </div>
+              
+              {(profile?.passengerStars || 0) > 0 && (
+                <div className="flex items-center gap-1.5 bg-yellow-500/10 border border-yellow-500/30 px-3 py-1 rounded-full shadow-sm">
+                  <Star className="w-3.5 h-3.5 text-yellow-500 fill-yellow-500" />
+                  <span className="font-bold text-xs text-yellow-600 dark:text-yellow-400">
+                    {profile?.passengerStars} Permanent Star{(profile?.passengerStars || 0) > 1 ? 's' : ''}
+                  </span>
+                </div>
+              )}
             </div>
 
             {!isEditing ? (
@@ -725,7 +736,8 @@ export default function PassengerDashboard() {
         <ShareOverlay
           onClose={() => setShowShareOverlay(false)}
           referralLink={`${websiteLink}/?ref=${user.uid}`}
-          points={profile.points || 0}
+          points={profile?.points || 0}
+          userRole={profile?.role}
         />
       )}
     </div>

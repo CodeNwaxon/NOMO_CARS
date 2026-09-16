@@ -14,6 +14,8 @@ interface PassengerServicesModalProps {
   onClose: () => void;
 }
 
+const servicesCache: Record<string, any[]> = {};
+
 export default function PassengerServicesModal({ vehicleId, vehicleName, driverId, onClose }: PassengerServicesModalProps) {
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,12 +24,20 @@ export default function PassengerServicesModal({ vehicleId, vehicleName, driverI
 
   useEffect(() => {
     const fetchServices = async () => {
+      if (servicesCache[vehicleId]) {
+        setServices(servicesCache[vehicleId]);
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
       try {
         const q = query(collection(db, "vehicleServices"), where("vehicleId", "==", vehicleId));
         const snapshot = await getDocs(q);
         const fetched: any[] = [];
         snapshot.forEach(doc => fetched.push({ id: doc.id, ...doc.data() }));
+        
+        servicesCache[vehicleId] = fetched;
         setServices(fetched);
       } catch (error) {
         console.error("Error fetching services:", error);

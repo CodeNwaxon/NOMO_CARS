@@ -13,6 +13,8 @@ import VehicleViewModal from "@/components/VehicleViewModal";
 import HireContactOverlay from "@/components/HireContactOverlay";
 import ImageViewerOverlay from "@/components/ImageViewerOverlay";
 
+const categoryCache: Record<string, any[]> = {};
+
 export default function CategoryVehicles() {
   const params = useParams();
   const category = (params.category as string).replace("%20", " ");
@@ -49,6 +51,12 @@ export default function CategoryVehicles() {
     }
 
     const fetchCategoryVehicles = async () => {
+      if (categoryCache[category]) {
+        setVehicles(categoryCache[category]);
+        setLoading(false);
+        return;
+      }
+      
       try {
         const res = await fetch(`/api/vehicles?category=${encodeURIComponent(category)}`);
         if (!res.ok) throw new Error("Failed to fetch vehicles");
@@ -63,6 +71,7 @@ export default function CategoryVehicles() {
             return !v.isSuspendedByLimit && !v.driverIsDisabled && hasValidTicket(v.driverTicketExpiry, dynamicStartTicketCollection, v.driverCreatedAt, dynamicTicketCollectionStartedAt);
           });
 
+        categoryCache[category] = vehiclesWithDrivers;
         setVehicles(vehiclesWithDrivers);
       } catch (error) {
         console.error("Error fetching vehicles:", error);

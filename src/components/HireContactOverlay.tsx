@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { X, Phone, MessageSquare, MessageCircle, Loader2 } from "lucide-react";
+import { X, Phone, MessageSquare, MessageCircle, Loader2, ShieldOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "react-hot-toast";

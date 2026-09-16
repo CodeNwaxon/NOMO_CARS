@@ -40,6 +40,17 @@ export async function POST(request: Request) {
 
       const updates: any = { points: currentPoints };
 
+      // Track exact referral count and award passenger stars
+      let referralCount = referrerData.referralCount || 0;
+      referralCount += 1;
+      updates.referralCount = referralCount;
+
+      if (referrerData.role !== 'driver') {
+        if (referralCount % 10 === 0) {
+          updates.passengerStars = (referrerData.passengerStars || 0) + 1;
+        }
+      }
+
       if (earnedStars > 0) {
         const currentVipStars = referrerData.vipStars || 0;
         const currentExpiry = referrerData.vipExpiry || 0;

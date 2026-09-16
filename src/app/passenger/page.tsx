@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Bike,
   Car,
@@ -23,7 +23,7 @@ import {
 import { useAuth } from "@/context/AuthContext";
 import { collection, getDocs, doc, getDoc, query, where, limit, startAfter } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { getVIPBadge, hasValidTicket } from "@/lib/constants";
+import { getVIPBadge, hasValidTicket, hasValidContactTicket } from "@/lib/constants";
 import { toast } from "react-hot-toast";
 
 const categories = [
@@ -51,15 +51,34 @@ export default function PassengerCategories() {
   const [lastVisibleDoc, setLastVisibleDoc] = useState<any>(null);
   const [hasMoreSearch, setHasMoreSearch] = useState(false);
 
+  const [favoritesLoaded, setFavoritesLoaded] = useState(false);
+  const searchCache = useRef<Record<string, any>>({});
 
   const [requestDurationDays, setRequestDurationDays] = useState(14);
+  const [startTicketCollection, setStartTicketCollection] = useState(true);
+  const [ticketCollectionStartedAt, setTicketCollectionStartedAt] = useState<Date | null>(null);
 
   useEffect(() => {
     const fetchAdminSettings = async () => {
       try {
         const pricingSnap = await getDoc(doc(db, "adminSettings", "pricing"));
-        if (pricingSnap.exists() && pricingSnap.data().requestDurationDays !== undefined) {
-          setRequestDurationDays(Number(pricingSnap.data().requestDurationDays));
+        if (pricingSnap.exists()) {
+          const data = pricingSnap.data();
+          if (data.requestDurationDays !== undefined) {
+            setRequestDurationDays(Number(data.requestDurationDays));
+          }
+          if (data.startTicketCollection !== undefined) {
+            setStartTicketCollection(data.startTicketCollection);
+          }
+          if (data.ticketCollectionStartedAt) {
+            if (typeof data.ticketCollectionStartedAt === 'object' && data.ticketCollectionStartedAt._seconds) {
+              setTicketCollectionStartedAt(new Date(data.ticketCollectionStartedAt._seconds * 1000));
+            } else if (typeof data.ticketCollectionStartedAt === 'object' && typeof data.ticketCollectionStartedAt.toDate === 'function') {
+              setTicketCollectionStartedAt(data.ticketCollectionStartedAt.toDate());
+            } else {
+              setTicketCollectionStartedAt(new Date(data.ticketCollectionStartedAt));
+            }
+          }
         }
       } catch (err) {
         console.error("Error fetching admin settings:", err);
@@ -71,6 +90,7 @@ export default function PassengerCategories() {
   useEffect(() => {
     const fetchFavorites = async () => {
       if (!user) return;
+      if (favoritesLoaded) return;
       try {
         setLoadingContacts(true);
         const favSnap = await getDocs(collection(db, "users", user.uid, "favorites"));
@@ -84,6 +104,7 @@ export default function PassengerCategories() {
 
         const drivers = (await Promise.all(driverPromises)).filter(Boolean);
         setFavoriteDrivers(drivers);
+        setFavoritesLoaded(true);
       } catch (err) {
         console.error("Error fetching favorites:", err);
       } finally {
@@ -94,7 +115,7 @@ export default function PassengerCategories() {
     if (showContactsModal) {
       fetchFavorites();
     }
-  }, [user, showContactsModal]);
+  }, [user, showContactsModal, favoritesLoaded]);
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -122,24 +143,37 @@ export default function PassengerCategories() {
     setIsSearching(true);
     try {
       const qLower = searchQuery.toLowerCase();
-      
+
       // Calculate offset based on current results if loading more
       const currentOffset = loadMore ? searchResults.length : 0;
-      
+      const cacheKey = `${qLower}_${currentOffset}`;
+
+      if (searchCache.current[cacheKey]) {
+        if (loadMore) {
+          setSearchResults(prev => [...prev, ...searchCache.current[cacheKey].data]);
+        } else {
+          setSearchResults(searchCache.current[cacheKey].data);
+        }
+        setHasMoreSearch(searchCache.current[cacheKey].hasMore);
+        setIsSearching(false);
+        return;
+      }
+
       const res = await fetch(`/api/drivers/search?q=${encodeURIComponent(qLower)}&offset=${currentOffset}&limit=40`, { signal });
-      
+
       let json;
       try {
         json = await res.json();
       } catch (e) {
+        if (signal?.aborted) return;
         throw new Error("Invalid response from server");
       }
 
       if (!res.ok || !json.success) {
         throw new Error(json.error || "Failed to search drivers");
       }
-      
-      const results = json.drivers || [];
+
+      const results = json.drivers || json.data || [];
 
       if (loadMore) {
         setSearchResults(prev => [...prev, ...results]);
@@ -148,6 +182,11 @@ export default function PassengerCategories() {
       }
 
       setHasMoreSearch(json.hasMore);
+
+      searchCache.current[cacheKey] = {
+        data: results,
+        hasMore: json.hasMore
+      };
 
     } catch (error: any) {
       if (error?.name !== "AbortError") {
@@ -247,11 +286,11 @@ export default function PassengerCategories() {
                             {[1, 2, 3, 4, 5].map((star) => (
                               <Star
                                 key={star}
-                                className={`w-2 h-2 md:w-3 md:h-3 ${star <= Math.round(Number(driver.rating || 5.0)) ? "text-yellow-500 fill-yellow-500" : "text-gray-300 dark:text-gray-600 fill-gray-300 dark:fill-gray-600"}`}
+                                className={`w-2 h-2 md:w-3 md:h-3 ${star <= Math.min(5, Math.floor((driver.jobsWon || 0) / 2)) ? "text-yellow-500 fill-yellow-500" : "text-gray-300 dark:text-gray-600 fill-gray-300 dark:fill-gray-600"}`}
                               />
                             ))}
                             <span className="text-[9px] md:text-[10px] font-medium text-gray-500 dark:text-gray-400 ml-1">
-                              ({Number(driver.rating || 5.0).toFixed(1)})
+                              Level {Math.min(5, Math.floor((driver.jobsWon || 0) / 2))}
                             </span>
                           </div>
 
@@ -332,7 +371,7 @@ export default function PassengerCategories() {
                 </p>
               ) : (
                 favoriteDrivers.map(driver => {
-                  const hasTicket = driver.ticketExpiry ? new Date(driver.ticketExpiry) > new Date() : false;
+                  const hasContactAccess = hasValidContactTicket(driver.ticketExpiry, startTicketCollection, driver.driverCreatedAt || driver.createdAt, ticketCollectionStartedAt);
 
                   return (
                     <div key={driver.id} className="flex items-center gap-3 p-3 glass-panel rounded-xl border border-card-border hover:border-brand-primary/30 transition-all text-left">
@@ -358,7 +397,7 @@ export default function PassengerCategories() {
                             </span>
                           )}
                         </h4>
-                        {hasTicket && driver.phone ? (
+                        {hasContactAccess && driver.phone ? (
                           <div className="flex flex-col mt-0.5 gap-1">
                             <p className="text-xs text-foreground/60 flex items-center gap-1">
                               <Phone className="w-3 h-3 text-brand-primary" /> {driver.phone}
@@ -367,11 +406,11 @@ export default function PassengerCategories() {
                               {[1, 2, 3, 4, 5].map((star) => (
                                 <Star
                                   key={star}
-                                  className={`w-2.5 h-2.5 ${star <= Math.round(Number(driver.rating || 5.0)) ? "text-yellow-500 fill-yellow-500" : "text-gray-300 dark:text-gray-600 fill-gray-300 dark:fill-gray-600"}`}
+                                  className={`w-2.5 h-2.5 ${star <= Math.min(5, Math.floor((driver.jobsWon || 0) / 2)) ? "text-yellow-500 fill-yellow-500" : "text-gray-300 dark:text-gray-600 fill-gray-300 dark:fill-gray-600"}`}
                                 />
                               ))}
                               <span className="text-[9px] font-medium text-gray-500 dark:text-gray-400 ml-1">
-                                ({Number(driver.rating || 5.0).toFixed(1)})
+                                Level {Math.min(5, Math.floor((driver.jobsWon || 0) / 2))}
                               </span>
                             </div>
                           </div>

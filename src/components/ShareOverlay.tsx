@@ -8,9 +8,10 @@ interface ShareOverlayProps {
   onClose: () => void;
   referralLink: string;
   points: number;
+  userRole?: string;
 }
 
-export default function ShareOverlay({ onClose, referralLink, points }: ShareOverlayProps) {
+export default function ShareOverlay({ onClose, referralLink, points, userRole }: ShareOverlayProps) {
   const handleCopy = () => {
     navigator.clipboard.writeText(referralLink);
     toast.success("Referral link copied!");
@@ -114,6 +115,14 @@ export default function ShareOverlay({ onClose, referralLink, points }: ShareOve
               Every user that joins through your link earns you <span className="font-bold text-brand-primary">2 points</span>.
               Collect <span className="font-bold text-amber-500">{pointsPerStar} points</span> to earn a VIP star for free.
             </p>
+            {userRole !== 'driver' && (
+              <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
+                <p className="text-xs text-yellow-600 dark:text-yellow-400 font-medium">
+                  <Star className="inline w-3.5 h-3.5 mr-1 mb-0.5 fill-yellow-500" />
+                  <span className="font-bold">Passenger Bonus:</span> For every 10 users you refer, you also earn a <span className="font-bold">Permanent Passenger Star</span> that never expires!
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Progress Bar Section */}

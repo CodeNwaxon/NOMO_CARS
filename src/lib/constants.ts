@@ -32,30 +32,74 @@ export function buildDriverSearchTokens(...values: unknown[]) {
  * @param driverTicketExpiry The driver's ticket expiry date from their profile.
  * @returns true if the driver has a valid ticket, or if ticket collection is paused, or if within the free plan days.
  */
+export function parseDateInput(dateInput: any): Date | null {
+  if (!dateInput) return null;
+  if (dateInput instanceof Date) return dateInput;
+  if (typeof dateInput === 'string' || typeof dateInput === 'number') {
+    const d = new Date(dateInput);
+    return isNaN(d.getTime()) ? null : d;
+  }
+  if (typeof dateInput === 'object') {
+    if (typeof dateInput.toDate === 'function') return dateInput.toDate();
+    if (dateInput.seconds) return new Date(dateInput.seconds * 1000);
+    if (dateInput._seconds) return new Date(dateInput._seconds * 1000);
+  }
+  return null;
+}
+
 export function hasValidTicket(
-  driverTicketExpiry?: string | null,
+  driverTicketExpiry?: any,
   startTicketCollection: boolean = true,
-  driverCreatedAt?: string | Date | null,
-  ticketCollectionStartedAt?: string | Date | null
+  driverCreatedAt?: any,
+  ticketCollectionStartedAt?: any
 ): boolean {
   if (!startTicketCollection) return true;
 
   // Check if they have an active ticket manually purchased
   if (driverTicketExpiry) {
-    const expiryDate = new Date(driverTicketExpiry);
-    if (expiryDate > new Date()) return true;
+    const expiryDate = parseDateInput(driverTicketExpiry);
+    if (expiryDate && expiryDate > new Date()) return true;
   }
 
   // Calculate the personal free period using the driver's registration date
   // Fall back to now if somehow ticketCollectionStartedAt is missing
-  const defaultStart = ticketCollectionStartedAt ? new Date(ticketCollectionStartedAt) : new Date();
-  const driverStart = driverCreatedAt ? new Date(driverCreatedAt) : defaultStart;
+  const defaultStart = parseDateInput(ticketCollectionStartedAt) || new Date();
+  const driverStart = parseDateInput(driverCreatedAt) || defaultStart;
 
   // The effective start date for their 90 days is whichever is later: when they joined, or when the button was turned on.
   const effectiveStartDate = new Date(Math.max(driverStart.getTime(), defaultStart.getTime()));
   const freePeriodEnd = new Date(effectiveStartDate.getTime() + freeTicketPlanDays * 24 * 60 * 60 * 1000);
 
   if (new Date() < freePeriodEnd) return true;
+
+  return false;
+}
+
+/**
+ * Checks if a driver has contact access based on the 60-day free trial rule or a valid paid ticket.
+ */
+export const contactFreeTicketDays = 60;
+
+export function hasValidContactTicket(
+  driverTicketExpiry?: any,
+  startTicketCollection: boolean = true,
+  driverCreatedAt?: any,
+  ticketCollectionStartedAt?: any
+): boolean {
+  if (!startTicketCollection) return true;
+
+  if (driverTicketExpiry) {
+    const expiryDate = parseDateInput(driverTicketExpiry);
+    if (expiryDate && expiryDate > new Date()) return true;
+  }
+
+  const defaultStart = parseDateInput(ticketCollectionStartedAt) || new Date();
+  const driverStart = parseDateInput(driverCreatedAt) || defaultStart;
+
+  const effectiveStartDate = new Date(Math.max(driverStart.getTime(), defaultStart.getTime()));
+  const contactFreePeriodEnd = new Date(effectiveStartDate.getTime() + contactFreeTicketDays * 24 * 60 * 60 * 1000);
+
+  if (new Date() < contactFreePeriodEnd) return true;
 
   return false;
 }

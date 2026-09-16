@@ -239,6 +239,7 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
         whatsappEnabled: formData.whatsappEnabled,
         operatingCity: formData.operatingCity,
         operatingState: formData.operatingState,
+        passengerStars: 0, // Reset passenger stars when updating driver profile
         searchTokens: buildDriverSearchTokens(formData.firstName, formData.middleName, formData.lastName, formData.username, formData.operatingCity, formData.operatingState),
       });
 
@@ -827,6 +828,7 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
           onClose={() => setShowShareOverlay(false)}
           referralLink={`${websiteLink}/?ref=${user.uid}`}
           points={profile?.points || 0}
+          userRole={profile?.role}
         />
       )}
 
