@@ -272,6 +272,28 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
     try {
       setIsSubmitting(true);
 
+      // Check for duplicate plate/registration in the same category
+      let isDuplicate = false;
+      const plateVariants = data.plateNumber ? [data.plateNumber.trim(), data.plateNumber.trim().toUpperCase(), data.plateNumber.trim().toLowerCase()] : [];
+      if (plateVariants.length > 0) {
+        const qPlate = query(collection(db, "vehicles"), where("details.plateNumber", "in", plateVariants));
+        const snap = await getDocs(qPlate);
+        isDuplicate = snap.docs.some(d => d.data().category === selectedCategory);
+      }
+
+      const regVariants = data.registrationNumber ? [data.registrationNumber.trim(), data.registrationNumber.trim().toUpperCase(), data.registrationNumber.trim().toLowerCase()] : [];
+      if (!isDuplicate && regVariants.length > 0) {
+        const qReg = query(collection(db, "vehicles"), where("details.registrationNumber", "in", regVariants));
+        const snap = await getDocs(qReg);
+        isDuplicate = snap.docs.some(d => d.data().category === selectedCategory);
+      }
+
+      if (isDuplicate) {
+        toast.error(`A ${selectedCategory} with this plate/registration number already exists.`);
+        setIsSubmitting(false);
+        return;
+      }
+
       // Upload docs concurrently
       const docUploads = Object.entries(docs)
         .filter(([key, file]) => file !== null && (key !== "roadWorthiness" || config.docs.roadWorthiness) && config.docs.show)
@@ -303,8 +325,8 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
       if (config.details.ac) detailsToSave.ac = data.ac;
       if (config.details.payload) detailsToSave.payloadCapacity = data.payload;
       if (config.details.capacity) detailsToSave.totalCapacity = data.capacity;
-      if (config.details.plateNumber) detailsToSave.plateNumber = data.plateNumber;
-      if (config.details.registrationNumber) detailsToSave.registrationNumber = data.registrationNumber;
+      if (config.details.plateNumber) detailsToSave.plateNumber = data.plateNumber?.trim().toUpperCase();
+      if (config.details.registrationNumber) detailsToSave.registrationNumber = data.registrationNumber?.trim().toUpperCase();
 
       // Save to firestore
       const vehicleData = {

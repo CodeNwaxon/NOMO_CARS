@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
 import { X, Loader2, Camera, Save, ImageIcon } from "lucide-react";
@@ -137,6 +137,30 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
     try {
       setSaving(true);
 
+      // Check for duplicate plate/registration in the same category
+      let isDuplicate = false;
+      const selectedCategory = vehicle.category;
+      
+      const plateVariants = form.plateNumber ? [form.plateNumber.trim(), form.plateNumber.trim().toUpperCase(), form.plateNumber.trim().toLowerCase()] : [];
+      if (plateVariants.length > 0) {
+        const qPlate = query(collection(db, "vehicles"), where("details.plateNumber", "in", plateVariants));
+        const snap = await getDocs(qPlate);
+        isDuplicate = snap.docs.some(d => d.data().category === selectedCategory && d.id !== vehicle.id);
+      }
+
+      const regVariants = form.registrationNumber ? [form.registrationNumber.trim(), form.registrationNumber.trim().toUpperCase(), form.registrationNumber.trim().toLowerCase()] : [];
+      if (!isDuplicate && regVariants.length > 0) {
+        const qReg = query(collection(db, "vehicles"), where("details.registrationNumber", "in", regVariants));
+        const snap = await getDocs(qReg);
+        isDuplicate = snap.docs.some(d => d.data().category === selectedCategory && d.id !== vehicle.id);
+      }
+
+      if (isDuplicate) {
+        toast.error(`A ${selectedCategory} with this plate/registration number already exists.`);
+        setSaving(false);
+        return;
+      }
+
       const detailsToSave: any = {
         make: form.make,
         model: form.model,
@@ -148,8 +172,8 @@ export default function EditVehicleModal({ vehicle, onClose, onSaved }: EditVehi
       if (config.details.ac) detailsToSave.ac = form.ac;
       if (config.details.payload) detailsToSave.payloadCapacity = form.payloadCapacity;
       if (config.details.capacity) detailsToSave.totalCapacity = form.totalCapacity;
-      if (config.details.plateNumber) detailsToSave.plateNumber = form.plateNumber;
-      if (config.details.registrationNumber) detailsToSave.registrationNumber = form.registrationNumber;
+      if (config.details.plateNumber) detailsToSave.plateNumber = form.plateNumber?.trim().toUpperCase();
+      if (config.details.registrationNumber) detailsToSave.registrationNumber = form.registrationNumber?.trim().toUpperCase();
 
       const editedFields: string[] = vehicle.editedFields || [];
       const editedChanges: { label: string; oldValue: string; newValue: string }[] = [];
