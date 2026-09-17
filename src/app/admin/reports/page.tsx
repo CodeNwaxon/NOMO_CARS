@@ -36,6 +36,7 @@ interface UserReport {
   reportedUserImage: string;
   reportedUserRole: string;
   reportedUserPhone: string;
+  reportedUserFullName?: string;
   incidents: Incident[];
 }
 
@@ -400,6 +401,9 @@ export default function ReportsPage() {
                     </div>
                     <div>
                       <h3 className="font-bold text-gray-900 dark:text-white text-lg leading-tight truncate w-full pr-2">{report.reportedUserName}</h3>
+                      {report.reportedUserFullName && (
+                        <p className="text-xs text-gray-500 mb-0.5">{report.reportedUserFullName}</p>
+                      )}
                       <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">{report.reportedUserRole}</p>
                     </div>
                   </div>
@@ -438,11 +442,16 @@ export default function ReportsPage() {
           <div className="bg-white dark:bg-gray-900 w-full max-w-2xl max-h-[90vh] rounded md:rounded-3xl shadow-2xl flex flex-col overflow-hidden border border-gray-100 dark:border-gray-800">
             <div className="px-2 py-4 md:p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
               <div>
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-red-500" />
-                  Incidents for {selectedReport.reportedUserName}
+                <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                  <span className="truncate">Incidents for {selectedReport.reportedUserName}</span>
                 </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                {selectedReport.reportedUserFullName && (
+                  <p className="text-xs font-semibold text-gray-500 ml-7">
+                    {selectedReport.reportedUserFullName}
+                  </p>
+                )}
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 ml-7">
                   Review all flags submitted against this user.
                 </p>
               </div>

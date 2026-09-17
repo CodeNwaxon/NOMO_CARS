@@ -312,6 +312,7 @@ export default function ManageDriversPage() {
                     <h3 className="font-bold text-sm md:text-lg text-gray-900 dark:text-white truncate capitalize">
                       {driver.firstName || "Unknown"} {driver.middleName ? driver.middleName + " " : ""}{driver.lastName || ""}
                     </h3>
+                    <p className="text-[11px] md:text-sm font-bold text-[#daa520] truncate mb-0.5">@{driver.username || driver.firstName}</p>
                     <p className="text-[10px] md:text-xs text-gray-500 truncate mb-1">{driver.email}</p>
                     <p className="text-[10px] md:text-xs font-semibold text-brand-primary uppercase tracking-wider bg-brand-primary/10 inline-block px-2 py-0.5 rounded-full">
                       {driver.operatingState ? `${driver.operatingState}, ` : ""}{driver.operatingCity || "No City"}

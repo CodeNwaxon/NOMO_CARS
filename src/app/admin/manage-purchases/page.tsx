@@ -35,6 +35,7 @@ interface PricingConfig {
     dailyBids?: number; 
     createBidLimit?: number; 
   }>;
+  coinPackages?: Array<{ coins: number; price: number; }>;
 }
 
 export default function ManagePurchasesPage() {
@@ -60,6 +61,11 @@ export default function ManagePurchasesPage() {
     vip: [
       { stars: 1, durationDays: 30, price: 5000, label: "1 Star VIP", maxCars: 2, maxRoutesPerCar: 2, dailyBids: 3, createBidLimit: 3 },
       { stars: 2, durationDays: 30, price: 10000, label: "2 Star VIP", maxCars: 3, maxRoutesPerCar: 3, dailyBids: 5, createBidLimit: 5 }
+    ],
+    coinPackages: [
+      { coins: 10, price: 100 },
+      { coins: 20, price: 150 },
+      { coins: 50, price: 200 }
     ]
   });
 
@@ -115,7 +121,12 @@ export default function ManagePurchasesPage() {
           pointsPerStar: data.pointsPerStar ?? 20,
           nonVipLimits: data.nonVipLimits || { maxCars: 1, maxRoutesPerCar: 1, dailyBids: 1, createBidLimit: 1 },
           tickets: data.tickets || [],
-          vip: loadedVips.sort((a: any, b: any) => a.stars - b.stars)
+          vip: loadedVips.sort((a: any, b: any) => a.stars - b.stars),
+          coinPackages: data.coinPackages || [
+            { coins: 10, price: 100 },
+            { coins: 20, price: 150 },
+            { coins: 50, price: 200 }
+          ]
         });
       }
     } catch (error) {
@@ -157,7 +168,7 @@ export default function ManagePurchasesPage() {
         return;
       }
       if (sortedVip[i].price >= sortedVip[i + 1].price) {
-        toast.error(`Invalid Pricing: ${sortedVip[i + 1].stars} Star VIP (₦${sortedVip[i + 1].price.toLocaleString()}) must cost MORE than ${sortedVip[i].stars} Star VIP (₦${sortedVip[i].price.toLocaleString()}).`);
+        toast.error(`Invalid Pricing: ${sortedVip[i + 1].stars} Star VIP (Γéª${sortedVip[i + 1].price.toLocaleString()}) must cost MORE than ${sortedVip[i].stars} Star VIP (Γéª${sortedVip[i].price.toLocaleString()}).`);
         return;
       }
     }
@@ -224,6 +235,14 @@ export default function ManagePurchasesPage() {
     setPricing({ ...pricing, tickets: newTickets });
   };
 
+  const updateCoinPackage = (index: number, field: string, value: string | number) => {
+    const newPkgs = pricing.coinPackages ? [...pricing.coinPackages] : [];
+    if (newPkgs[index]) {
+      newPkgs[index] = { ...newPkgs[index], [field]: Number(value) };
+      setPricing({ ...pricing, coinPackages: newPkgs });
+    }
+  };
+
   const updateVip = (index: number, field: string, value: string | number) => {
     const newVip = [...pricing.vip];
     newVip[index] = { ...newVip[index], [field]: value };
@@ -247,8 +266,8 @@ export default function ManagePurchasesPage() {
       vipErrors[sortedVipRefs[i].originalIndex] = `Duplicate Star Level`;
       vipErrors[sortedVipRefs[i + 1].originalIndex] = `Duplicate Star Level`;
     } else if (sortedVipRefs[i].price >= sortedVipRefs[i + 1].price) {
-      vipErrors[sortedVipRefs[i + 1].originalIndex] = `Must cost MORE than ${sortedVipRefs[i].stars} Star VIP (₦${sortedVipRefs[i].price.toLocaleString()})`;
-      vipErrors[sortedVipRefs[i].originalIndex] = `Must cost LESS than ${sortedVipRefs[i + 1].stars} Star VIP (₦${sortedVipRefs[i + 1].price.toLocaleString()})`;
+      vipErrors[sortedVipRefs[i + 1].originalIndex] = `Must cost MORE than ${sortedVipRefs[i].stars} Star VIP (Γéª${sortedVipRefs[i].price.toLocaleString()})`;
+      vipErrors[sortedVipRefs[i].originalIndex] = `Must cost LESS than ${sortedVipRefs[i + 1].stars} Star VIP (Γéª${sortedVipRefs[i + 1].price.toLocaleString()})`;
     }
   }
 
@@ -337,7 +356,7 @@ export default function ManagePurchasesPage() {
                   <input type="text" inputMode="numeric" value={ticket.durationDays || ""} onChange={(e) => updateTicket(index, "durationDays", e.target.value ? parseInt(e.target.value.replace(/\D/g, ""), 10) : 0)} className="w-full bg-white dark:bg-slate-950 border-none text-slate-900 dark:text-slate-100 rounded-xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-brand-primary focus:outline-none transition-all" />
                 </div>
                 <div className="w-full md:w-1/3">
-                  <label className="block text-xs font-bold text-foreground/60 mb-1 uppercase tracking-wider">Price (₦)</label>
+                  <label className="block text-xs font-bold text-foreground/60 mb-1 uppercase tracking-wider">Price (Γéª)</label>
                   <input 
                     type="text" 
                     value={ticket.price ? ticket.price.toLocaleString() : ""} 
@@ -378,7 +397,7 @@ export default function ManagePurchasesPage() {
                     <input type="text" inputMode="numeric" value={vipObj.durationDays || ""} onChange={(e) => updateVip(index, "durationDays", e.target.value ? parseInt(e.target.value.replace(/\D/g, ""), 10) : 0)} className="w-full bg-white dark:bg-slate-950 border-none text-slate-900 dark:text-slate-100 rounded-xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-brand-primary focus:outline-none transition-all" />
                   </div>
                   <div className="w-full md:w-1/4">
-                    <label className={`block text-xs font-bold uppercase tracking-wider mb-1 ${vipErrors[index] ? 'text-red-500' : 'text-foreground/60'}`}>Price (₦)</label>
+                    <label className={`block text-xs font-bold uppercase tracking-wider mb-1 ${vipErrors[index] ? 'text-red-500' : 'text-foreground/60'}`}>Price (Γéª)</label>
                     <input 
                       type="text" 
                       value={vipObj.price ? vipObj.price.toLocaleString() : ""} 
@@ -467,6 +486,38 @@ export default function ManagePurchasesPage() {
                 </div>
               </div>
             ))}
+
+            {/* Game Coin Packages */}
+            <div className="glass-panel p-4 md:p-6 rounded-lg md:rounded-xl border border-card-border/50 shadow-sm mt-6">
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2"><div className="w-6 h-6 rounded-full bg-amber-100 flex items-center justify-center text-amber-500 font-bold text-xs">C</div> Game Coin Packages</h2>
+              <p className="text-sm text-foreground/60 mb-6">Set the Naira prices for Game Coins.</p>
+              
+              <div className="space-y-4">
+                {pricing.coinPackages?.map((pkg, index) => (
+                  <div key={index} className="flex gap-4 items-center bg-background/50 p-4 rounded-xl border border-card-border">
+                    <div className="flex-1">
+                      <label className="block text-xs font-bold text-foreground/60 mb-1">Coins</label>
+                      <input 
+                        type="number" 
+                        value={pkg.coins}
+                        disabled
+                        className="w-full bg-background border border-card-border rounded-lg px-3 py-2 text-sm opacity-50 cursor-not-allowed"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <label className="block text-xs font-bold text-foreground/60 mb-1">Price (₦)</label>
+                      <input 
+                        type="number" 
+                        value={pkg.price}
+                        onChange={(e) => updateCoinPackage(index, 'price', e.target.value)}
+                        className="w-full bg-background border border-card-border rounded-lg px-3 py-2 text-sm focus:ring-1 focus:ring-brand-primary outline-none"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -510,7 +561,7 @@ export default function ManagePurchasesPage() {
                           {txn.type || "Unknown"}
                         </span>
                       </td>
-                      <td className="p-3 font-bold text-slate-900 dark:text-white">₦{txn.amount ? txn.amount.toLocaleString() : '0'}</td>
+                      <td className="p-3 font-bold text-slate-900 dark:text-white">Γéª{txn.amount ? txn.amount.toLocaleString() : '0'}</td>
                       <td className="p-3 text-slate-500 font-mono text-xs">{txn.reference || txn.id}</td>
                       <td className="p-3 text-right">
                         <Link 

@@ -7,12 +7,13 @@ import { getAdminDb } from "@/lib/firebaseAdmin";
 export async function createPendingPayment(payment: {
   reference: string;
   userId: string;
-  type: "ticket" | "vip";
+  type: "ticket" | "vip" | "game_coins";
   amount: number;
-  planName: string;
+  planName?: string;
   planDays?: number;
   planStars?: number;
   planPrice: number;
+  planCoins?: number;
   userEmail?: string;
 }) {
   try {
