@@ -344,7 +344,7 @@ export default function PassengerCategories() {
                 </Link>
               );
             })}
-            
+
             {/* Games Card */}
             <div onClick={() => setShowGameModal(true)} className="group block cursor-pointer">
               <div className={`glass-panel rounded-lg md:rounded-2xl p-4 md:p-8 flex flex-col items-center justify-center text-center transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-fuchsia-500/20 border-2 border-transparent hover:border-fuchsia-500/50 h-full`}>
@@ -361,8 +361,8 @@ export default function PassengerCategories() {
       </div>
 
       {showContactsModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-          <div className="bg-background dark:bg-[#0f172a] bg-[#f8fafc] border border-card-border rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl relative zoom-in-95 duration-200">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-3 animate-in fade-in duration-200">
+          <div className="bg-background dark:bg-[#0f172a] bg-[#f8fafc] border border-card-border rounded-3xl p-4 md:p-6 max-w-sm w-full text-center shadow-2xl relative zoom-in-95 duration-200">
             <button
               onClick={() => setShowContactsModal(false)}
               className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-card-border/50 text-foreground/50 hover:bg-card-border hover:text-foreground transition-all"
