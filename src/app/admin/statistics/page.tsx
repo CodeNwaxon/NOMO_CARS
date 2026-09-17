@@ -167,7 +167,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-4 pb-20 px-3 md:px-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-4 pb-20 px-3">
       <div className="max-w-7xl mx-auto relative">
         <div className="flex flex-col md:flex-row md:items-start justify-between mb-6 gap-3">
           <div>
@@ -240,7 +240,7 @@ export default function AdminPage() {
         <h2 className="text-lg md:text-xl font-bold mb-3 flex items-center gap-2 mt-8">
           <Car className="w-5 h-5 text-brand-primary" /> Vehicle Statistics
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-6 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
           {Object.entries(vehicleStats).map(([category, data]) => (
             <div key={category} className="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 shadow-sm transition-all hover:shadow-md">
               <h3 className="font-bold text-sm md:text-base mb-3 text-gray-800 dark:text-gray-200">{category} <span className="text-xs font-normal text-gray-400 ml-1">({data.total})</span></h3>
