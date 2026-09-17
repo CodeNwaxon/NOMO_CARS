@@ -147,7 +147,7 @@ export default function AboutPage() {
                 <div className="glass-panel w-full  rounded-2xl p-6 flex flex-col items-center text-center md:items-start md:text-left border border-white/20 shadow-xl relative overflow-hidden group">
                   <div className="absolute inset-0 bg-gradient-to-br from-brand-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
-                  <div className="relative w-55 h-70 md:w-56 mb-5 rounded-2xl overflow-hidden shadow-lg border-2 border-white/50 dark:border-slate-700/50 mx-auto md:mx-0">
+                  <div className="relative w-65 h-72 md:w-full md:h-90 mb-5 rounded-2xl overflow-hidden shadow-lg border-2 border-white/50 dark:border-slate-700/50 mx-auto md:mx-0">
                     <Image
                       src={ceoData.image}
                       alt="Nomo Cars CEO"
@@ -190,7 +190,7 @@ export default function AboutPage() {
                 <div className="glass-panel w-full max-w-[320px] rounded-2xl p-6 flex flex-col items-center text-center md:items-start md:text-left border border-white/20 shadow-xl relative overflow-hidden group">
                   <div className="absolute inset-0 bg-gradient-to-br from-brand-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
 
-                  <div className="relative w-40 h-40 md:w-56 md:h-56 mb-5 rounded-2xl overflow-hidden shadow-lg border-2 border-white/50 dark:border-slate-700/50 mx-auto md:mx-0">
+                  <div className="relative w-full h-72 mb-5 rounded-2xl overflow-hidden shadow-lg border-2 border-white/50 dark:border-slate-700/50 mx-auto md:mx-0">
                     <Image
                       src={ceoData.image}
                       alt="Nomo Cars CEO"
