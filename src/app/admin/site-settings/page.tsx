@@ -205,7 +205,12 @@ export default function SiteSettingsPage() {
 
 
 
-  const addFaq = () => setFaqConfig([...faqConfig, { question: "", answer: "" }]);
+  const addFaq = () => {
+    setFaqConfig([...faqConfig, { question: "", answer: "" }]);
+    setTimeout(() => {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }, 100);
+  };
   const updateFaq = (idx: number, field: string, val: string) => {
     const newFaq = [...faqConfig];
     newFaq[idx] = { ...newFaq[idx], [field]: val };
@@ -215,7 +220,12 @@ export default function SiteSettingsPage() {
     setFaqConfig(faqConfig.filter((_, i) => i !== idx));
   };
 
-  const addPolicy = () => setPolicyConfig([...policyConfig, { icon: "Shield", title: "", description: "", bulletins: [] }]);
+  const addPolicy = () => {
+    setPolicyConfig([...policyConfig, { icon: "Shield", title: "", description: "", bulletins: [] }]);
+    setTimeout(() => {
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }, 100);
+  };
   const updatePolicy = (idx: number, field: string, val: any) => {
     const newPol = [...policyConfig];
     newPol[idx] = { ...newPol[idx], [field]: val };
@@ -482,7 +492,7 @@ export default function SiteSettingsPage() {
 
               {faqConfig.map((faq, idx) => (
                 <div key={idx} className="bg-gray-50 dark:bg-gray-900/50 p-3 md:p-5 rounded-2xl border border-gray-100 dark:border-gray-800 relative group">
-                  <button onClick={() => removeFaq(idx)} className="absolute top-4 right-4 p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors opacity-0 group-hover:opacity-100">
+                  <button onClick={() => removeFaq(idx)} className="absolute top-4 right-4 p-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors opacity-100 md:opacity-0 md:group-hover:opacity-100">
                     <Trash2 className="w-4 h-4" />
                   </button>
                   <label className="block text-sm font-bold text-gray-700 dark:text-gray-300 mb-2">Question {idx + 1}</label>

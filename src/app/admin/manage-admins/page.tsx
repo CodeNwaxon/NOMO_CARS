@@ -45,7 +45,7 @@ export default function ManageAdminsPage() {
     image: "",
     phone: "",
     email: "",
-    message: ""
+    message: "Welcome to Nomo Cars! Our mission is to revolutionize the transportation landscape by providing a secure, reliable, and highly efficient platform for all our users. We understand that trust is the foundation of our business, which is why we continuously invest in top-tier security measures, rigorous driver vetting, and a seamless user experience. We are deeply committed to ensuring that every journey you take with us exceeds your expectations. Thank you for placing your trust in Nomo Cars. Together, we are driving towards a brighter, more connected future."
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>("");
@@ -60,6 +60,9 @@ export default function ManageAdminsPage() {
   const [adminToRemove, setAdminToRemove] = useState<string | null>(null);
   const [removePassword, setRemovePassword] = useState("");
   const [verifyingRemove, setVerifyingRemove] = useState(false);
+
+  const [showContactPasswordModal, setShowContactPasswordModal] = useState(false);
+  const [contactPassword, setContactPassword] = useState("");
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -90,7 +93,7 @@ export default function ManageAdminsPage() {
           image: data.image || "",
           phone: data.phone || "",
           email: data.email || "",
-          message: data.message || ""
+          message: data.message || "Welcome to Nomo Cars! Our mission is to revolutionize the transportation landscape by providing a secure, reliable, and highly efficient platform for all our users. We understand that trust is the foundation of our business, which is why we continuously invest in top-tier security measures, rigorous driver vetting, and a seamless user experience. We are deeply committed to ensuring that every journey you take with us exceeds your expectations. Thank you for placing your trust in Nomo Cars. Together, we are driving towards a brighter, more connected future."
         });
         setImagePreview(data.image || "");
       }
@@ -298,9 +301,30 @@ export default function ManageAdminsPage() {
     }
   };
 
-  const saveContactInfo = async () => {
+  const initiateSaveContactInfo = () => {
+    setShowContactPasswordModal(true);
+    setContactPassword("");
+  };
+
+  const confirmSaveContactInfo = async () => {
+    if (!contactPassword) {
+      toast.error("Please enter the master password");
+      return;
+    }
     setSavingContact(true);
     try {
+      const ceoRef = doc(db, "adminSettings", "ceo");
+      const ceoSnap = await getDoc(ceoRef);
+      const currentPassword = (ceoSnap.exists() && ceoSnap.data().password) 
+        ? ceoSnap.data().password 
+        : process.env.NEXT_PUBLIC_DEFAULT_CEO_PASSWORD;
+
+      if (contactPassword !== currentPassword) {
+        toast.error("Incorrect password!");
+        setSavingContact(false);
+        return;
+      }
+
       let finalImageUrl = contactInfo.image;
       
       if (imageFile) {
@@ -318,7 +342,8 @@ export default function ManageAdminsPage() {
       setContactInfo(dataToSave);
       setImagePreview(finalImageUrl);
       setImageFile(null); // Clear file so we don't re-upload
-      
+      setShowContactPasswordModal(false);
+      setContactPassword("");
       toast.success("CEO Contact Info updated!");
     } catch (error) {
       console.error("Error saving contact info:", error);
@@ -612,12 +637,13 @@ export default function ManageAdminsPage() {
                     value={contactInfo.message}
                     onChange={(e) => setContactInfo({...contactInfo, message: e.target.value})}
                     rows={8}
+                    placeholder="Welcome to Nomo Cars! Our mission is to revolutionize the transportation landscape by providing a secure, reliable, and highly efficient platform for all our users. We understand that trust is the foundation of our business, which is why we continuously invest in top-tier security measures, rigorous driver vetting, and a seamless user experience. We are deeply committed to ensuring that every journey you take with us exceeds your expectations. Thank you for placing your trust in Nomo Cars. Together, we are driving towards a brighter, more connected future."
                     className="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary focus:outline-none transition-all resize-none"
                   />
                 </div>
 
                 <button 
-                  onClick={saveContactInfo}
+                  onClick={initiateSaveContactInfo}
                   disabled={savingContact}
                   className="w-full bg-brand-primary text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-md hover:bg-brand-primary/90 transition"
                 >
@@ -670,6 +696,60 @@ export default function ManageAdminsPage() {
         </div>
 
       </div>
+
+      {/* CEO Contact Info Password Modal */}
+      {showContactPasswordModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Lock className="w-5 h-5 text-brand-primary" /> Verify Master Password
+              </h3>
+              <button 
+                onClick={() => setShowContactPasswordModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                You are about to save changes to the CEO About Page Info. Please enter the master password to confirm.
+              </p>
+              
+              <div>
+                <input 
+                  type="password"
+                  value={contactPassword}
+                  onChange={(e) => setContactPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && confirmSaveContactInfo()}
+                  placeholder="Master Password"
+                  className="w-full bg-slate-50 dark:bg-slate-950 border border-gray-200 dark:border-slate-800 rounded-xl px-4 py-3 focus:ring-2 focus:ring-brand-primary focus:outline-none transition-all"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button 
+                  onClick={() => setShowContactPasswordModal(false)}
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={confirmSaveContactInfo}
+                  disabled={savingContact}
+                  className="px-4 py-2 rounded-xl text-sm font-bold bg-brand-primary hover:bg-brand-primary/90 text-white shadow-md transition flex items-center gap-2"
+                >
+                  {savingContact ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  Save Info
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Remove Admin Modal */}
       {adminToRemove && (

@@ -81,6 +81,14 @@ export default function CreateBidPage() {
     setAssignedDriverLoading(false);
   };
 
+const NIGERIAN_STATES = [
+  "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno",
+  "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT - Abuja", "Gombe",
+  "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos",
+  "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto",
+  "Taraba", "Yobe", "Zamfara"
+];
+
   const today = new Date().toISOString().split("T")[0];
 
   const loadRequests = async () => {
@@ -354,7 +362,10 @@ export default function CreateBidPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Current State</label>
-                  <input disabled={isLocked} placeholder="E.g. Lagos" value={form.currentState} onChange={(e) => setForm({ ...form, currentState: e.target.value })} className={`${inputStyle} ${isLocked ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-900' : ''}`} />
+                  <select disabled={isLocked} value={form.currentState} onChange={(e) => setForm({ ...form, currentState: e.target.value })} className={`${inputStyle} ${isLocked ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-900' : ''}`}>
+                    <option value="" disabled>Select State</option>
+                    {NIGERIAN_STATES.map(state => <option key={state} value={state}>{state}</option>)}
+                  </select>
                 </div>
               </div>
 
@@ -365,7 +376,10 @@ export default function CreateBidPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Destination State</label>
-                  <input disabled={isLocked} placeholder="E.g. Lagos" value={form.destinationState} onChange={(e) => setForm({ ...form, destinationState: e.target.value })} className={`${inputStyle} ${isLocked ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-900' : ''}`} />
+                  <select disabled={isLocked} value={form.destinationState} onChange={(e) => setForm({ ...form, destinationState: e.target.value })} className={`${inputStyle} ${isLocked ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-900' : ''}`}>
+                    <option value="" disabled>Select State</option>
+                    {NIGERIAN_STATES.map(state => <option key={state} value={state}>{state}</option>)}
+                  </select>
                 </div>
               </div>
 

@@ -189,7 +189,7 @@ export default function AdminPage() {
           </div>
           <div className="flex gap-1 items-center">
             <div className="text-xs text-gray-500 font-semibold uppercase tracking-wider">Visitors:</div>
-            <div className="text-md md:text-xl font-bold text-gray-900 dark:text-white leading-none">{stats.visitors.toLocaleString()}000000</div>
+            <div className="text-md md:text-xl font-bold text-gray-900 dark:text-white leading-none">{stats.visitors.toLocaleString()}</div>
           </div>
         </div>
 
