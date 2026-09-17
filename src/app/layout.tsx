@@ -11,6 +11,7 @@ import { Toaster } from "react-hot-toast";
 import ReferralHandler from "@/components/ReferralHandler";
 import VisitorTracker from "@/components/VisitorTracker";
 import InstallPrompt from "@/components/InstallPrompt";
+import MaintenanceGuard from "@/components/MaintenanceGuard";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -63,9 +64,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <NotificationProvider>
               <ChatProvider>
                 <Toaster position="top-center" />
-                <Navbar />
-                {children}
-                <InstallPrompt />
+                <MaintenanceGuard>
+                  <Navbar />
+                  {children}
+                  <InstallPrompt />
+                </MaintenanceGuard>
               </ChatProvider>
             </NotificationProvider>
           </AuthProvider>

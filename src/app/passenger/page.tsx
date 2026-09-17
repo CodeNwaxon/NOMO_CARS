@@ -18,13 +18,15 @@ import {
   User,
   Star,
   Info,
-  Loader2
+  Loader2,
+  Gamepad2
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { collection, getDocs, doc, getDoc, query, where, limit, startAfter } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { getVIPBadge, hasValidTicket, hasValidContactTicket } from "@/lib/constants";
 import { toast } from "react-hot-toast";
+import WordGameModal from "@/components/WordGameModal";
 
 const categories = [
   { name: "Dispatch Rider", id: "motorbike", icon: Bike, color: "text-orange-500", bg: "bg-orange-500/10", hoverBorder: "hover:border-orange-500/50", hoverShadow: "hover:shadow-orange-500/20" },
@@ -44,6 +46,7 @@ export default function PassengerCategories() {
   const [showHowToBidModal, setShowHowToBidModal] = useState(false);
   const [favoriteDrivers, setFavoriteDrivers] = useState<any[]>([]);
   const [loadingContacts, setLoadingContacts] = useState(false);
+  const [showGameModal, setShowGameModal] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -341,6 +344,18 @@ export default function PassengerCategories() {
                 </Link>
               );
             })}
+            
+            {/* Games Card */}
+            <div onClick={() => setShowGameModal(true)} className="group block cursor-pointer">
+              <div className={`glass-panel rounded-lg md:rounded-2xl p-4 md:p-8 flex flex-col items-center justify-center text-center transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-fuchsia-500/20 border-2 border-transparent hover:border-fuchsia-500/50 h-full`}>
+                <div className={`w-16 h-16 rounded-full bg-fuchsia-500/10 flex items-center justify-center mb-2 group-hover:scale-110 group-hover:bg-fuchsia-500/20 transition-all duration-300`}>
+                  <Gamepad2 className={`w-8 h-8 text-fuchsia-500`} />
+                </div>
+                <h3 className="font-bold text-lg mb-1">Games</h3>
+                <p className="text-[10px] md:text-xs text-foreground/60 mb-3">Are you bored? Have some fun!</p>
+                <div className="bg-fuchsia-500 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-md group-hover:bg-fuchsia-600 transition-colors">Play Now!</div>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -496,6 +511,10 @@ export default function PassengerCategories() {
             </button>
           </div>
         </div>
+      )}
+
+      {showGameModal && (
+        <WordGameModal onClose={() => setShowGameModal(false)} />
       )}
     </div>
   );

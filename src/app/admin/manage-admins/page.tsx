@@ -64,6 +64,14 @@ export default function ManageAdminsPage() {
   const [showContactPasswordModal, setShowContactPasswordModal] = useState(false);
   const [contactPassword, setContactPassword] = useState("");
 
+  // Maintenance State
+  const [maintenanceSettings, setMaintenanceSettings] = useState({ isActive: false, mode: "all" });
+  const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
+  const [maintenancePassword, setMaintenancePassword] = useState("");
+  const [maintenanceTargetState, setMaintenanceTargetState] = useState(false);
+  const [maintenanceTargetMode, setMaintenanceTargetMode] = useState("all");
+  const [savingMaintenance, setSavingMaintenance] = useState(false);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
@@ -96,6 +104,14 @@ export default function ManageAdminsPage() {
           message: data.message || "Welcome to Nomo Cars! Our mission is to revolutionize the transportation landscape by providing a secure, reliable, and highly efficient platform for all our users. We understand that trust is the foundation of our business, which is why we continuously invest in top-tier security measures, rigorous driver vetting, and a seamless user experience. We are deeply committed to ensuring that every journey you take with us exceeds your expectations. Thank you for placing your trust in Nomo Cars. Together, we are driving towards a brighter, more connected future."
         });
         setImagePreview(data.image || "");
+      }
+
+      // Load Maintenance
+      const maintRef = doc(db, "adminSettings", "maintenance");
+      const maintSnap = await getDoc(maintRef);
+      if (maintSnap.exists()) {
+        const mData = maintSnap.data();
+        setMaintenanceSettings({ isActive: mData.isActive || false, mode: mData.mode || "all" });
       }
 
       // Load Admins
@@ -304,6 +320,48 @@ export default function ManageAdminsPage() {
   const initiateSaveContactInfo = () => {
     setShowContactPasswordModal(true);
     setContactPassword("");
+  };
+
+  const initiateMaintenanceToggle = () => {
+    setMaintenanceTargetState(!maintenanceSettings.isActive);
+    setMaintenanceTargetMode(maintenanceSettings.mode || "all");
+    setMaintenancePassword("");
+    setShowMaintenanceModal(true);
+  };
+
+  const confirmMaintenanceToggle = async () => {
+    if (!maintenancePassword) {
+      toast.error("Please enter the master password");
+      return;
+    }
+    setSavingMaintenance(true);
+    try {
+      const ceoRef = doc(db, "adminSettings", "ceo");
+      const ceoSnap = await getDoc(ceoRef);
+      const currentPassword = (ceoSnap.exists() && ceoSnap.data().password) 
+        ? ceoSnap.data().password 
+        : process.env.NEXT_PUBLIC_DEFAULT_CEO_PASSWORD;
+
+      if (maintenancePassword !== currentPassword) {
+        toast.error("Incorrect password!");
+        setSavingMaintenance(false);
+        return;
+      }
+
+      await setDoc(doc(db, "adminSettings", "maintenance"), {
+        isActive: maintenanceTargetState,
+        mode: maintenanceTargetMode
+      }, { merge: true });
+
+      setMaintenanceSettings({ isActive: maintenanceTargetState, mode: maintenanceTargetMode });
+      setShowMaintenanceModal(false);
+      toast.success(`Maintenance mode turned ${maintenanceTargetState ? "ON" : "OFF"}!`);
+    } catch (e) {
+      console.error(e);
+      toast.error("Failed to update maintenance settings.");
+    } finally {
+      setSavingMaintenance(false);
+    }
   };
 
   const confirmSaveContactInfo = async () => {
@@ -653,6 +711,40 @@ export default function ManageAdminsPage() {
               </div>
             </div>
 
+            {/* Site Maintenance Section */}
+            <div className="glass-panel p-4 md:p-6 rounded-lg md:rounded-xl border border-card-border/50 shadow-sm">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4">
+                <div>
+                  <h2 className="text-xl font-bold flex items-center gap-2">
+                    <Shield className="w-5 h-5" /> Site Maintenance Mode
+                  </h2>
+                  <p className="text-sm text-foreground/60 mt-1">
+                    Lock down the site and show a maintenance page to visitors.
+                  </p>
+                </div>
+                
+                <button 
+                  onClick={initiateMaintenanceToggle}
+                  className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 shadow-sm ${
+                    maintenanceSettings.isActive 
+                      ? "bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800" 
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
+                  }`}
+                >
+                  {maintenanceSettings.isActive ? "Maintenance is ON" : "Maintenance is OFF"}
+                </button>
+              </div>
+              
+              {maintenanceSettings.isActive && (
+                <div className="bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-xl p-4 flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                  <span className="text-sm text-red-700 dark:text-red-400 font-medium">
+                    Site is currently blocked for {maintenanceSettings.mode === "all" ? "everyone (including admins)" : "regular users (admins can still access)"}.
+                  </span>
+                </div>
+              )}
+            </div>
+
             {/* Password Section */}
             <div className="glass-panel p-4 md:p-6 rounded-lg md:rounded-xl border border-card-border/50 shadow-sm">
               <h2 className="text-xl font-bold mb-6 flex items-center gap-2"><Lock className="w-5 h-5"/> Master Password</h2>
@@ -699,7 +791,7 @@ export default function ManageAdminsPage() {
 
       {/* CEO Contact Info Password Modal */}
       {showContactPasswordModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -744,6 +836,99 @@ export default function ManageAdminsPage() {
                 >
                   {savingContact ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                   Save Info
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Maintenance Toggle Modal */}
+      {showMaintenanceModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Shield className="w-5 h-5 text-brand-primary" /> 
+                Turn {maintenanceTargetState ? "ON" : "OFF"} Maintenance
+              </h3>
+              <button 
+                onClick={() => setShowMaintenanceModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-5">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                You are about to turn {maintenanceTargetState ? "ON" : "OFF"} site maintenance mode. Please enter the master password to confirm.
+              </p>
+              
+              {maintenanceTargetState && (
+                <div className="space-y-3 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
+                  <h4 className="font-bold text-sm mb-2">Select Lock Level:</h4>
+                  
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name="maintenanceMode" 
+                      value="all" 
+                      checked={maintenanceTargetMode === "all"}
+                      onChange={() => setMaintenanceTargetMode("all")}
+                      className="w-4 h-4 text-brand-primary border-gray-300 focus:ring-brand-primary"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold">All Users (Including Admins)</span>
+                      <span className="text-xs text-gray-500">Only the CEO can access the site.</span>
+                    </div>
+                  </label>
+                  
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name="maintenanceMode" 
+                      value="users" 
+                      checked={maintenanceTargetMode === "users"}
+                      onChange={() => setMaintenanceTargetMode("users")}
+                      className="w-4 h-4 text-brand-primary border-gray-300 focus:ring-brand-primary"
+                    />
+                    <div className="flex flex-col">
+                      <span className="text-sm font-bold">Regular Users Only</span>
+                      <span className="text-xs text-gray-500">Admins can still access the admin dashboard.</span>
+                    </div>
+                  </label>
+                </div>
+              )}
+
+              <div>
+                <input 
+                  type="password"
+                  value={maintenancePassword}
+                  onChange={(e) => setMaintenancePassword(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && confirmMaintenanceToggle()}
+                  placeholder="Master Password"
+                  className="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary focus:outline-none transition-all"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button 
+                  onClick={() => setShowMaintenanceModal(false)}
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                >
+                  Cancel
+                </button>
+                <button 
+                  onClick={confirmMaintenanceToggle}
+                  disabled={savingMaintenance}
+                  className={`px-4 py-2 rounded-xl text-sm font-bold shadow-md transition flex items-center gap-2 text-white ${
+                    maintenanceTargetState ? "bg-red-500 hover:bg-red-600" : "bg-brand-primary hover:bg-brand-primary/90"
+                  }`}
+                >
+                  {savingMaintenance ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                  Confirm
                 </button>
               </div>
             </div>
