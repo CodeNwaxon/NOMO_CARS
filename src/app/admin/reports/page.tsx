@@ -52,6 +52,7 @@ export default function ReportsPage() {
 
   const [unreadHelp, setUnreadHelp] = useState(0);
   const [unreadReports, setUnreadReports] = useState(0);
+  const [newReportIds, setNewReportIds] = useState<Set<string>>(new Set());
 
   const [selectedReport, setSelectedReport] = useState<UserReport | null>(null);
 
@@ -219,7 +220,10 @@ export default function ReportsPage() {
         const currentSeenReports = new Set(data.seenReports || []);
         const currentSeenHelp = new Set(data.seenHelpMessages || []);
 
-        setUnreadReports(reports.filter(r => !currentSeenReports.has(r.id)).length);
+        const newReports = reports.filter(r => !currentSeenReports.has(r.id));
+        setNewReportIds(new Set(newReports.map(r => r.id)));
+        setUnreadReports(newReports.length);
+        
         setUnreadHelp(messages.filter(m => !currentSeenHelp.has(m.id)).length);
 
       } catch (err) {
@@ -410,7 +414,7 @@ export default function ReportsPage() {
 
                   <button
                     onClick={() => setSelectedReport(report)}
-                    className="w-full py-3 px-4 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-red-600 hover:text-white transition-all border border-red-100 dark:border-red-900/30 group"
+                    className={`w-full py-3 px-4 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-xl font-medium flex items-center justify-center gap-2 hover:bg-red-600 hover:text-white transition-all border border-red-100 dark:border-red-900/30 group ${newReportIds.has(report.id) ? "animate-pulse ring-2 ring-red-500/50 shadow-lg shadow-red-500/20" : ""}`}
                   >
                     <Flag className="w-4 h-4" />
                     Flagged <span className="font-black text-lg group-hover:text-white transition-colors">{report.incidents?.length || 0}</span> times
