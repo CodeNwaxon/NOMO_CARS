@@ -34,6 +34,10 @@ export default function DriverProfilePage() {
   const [imageViewerLoadingId, setImageViewerLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     const fetchDriverAndVehicles = async () => {
       try {
         const dRes = await fetch(`/api/driver?id=${encodeURIComponent(driverId)}`);

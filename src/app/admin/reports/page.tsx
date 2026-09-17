@@ -49,7 +49,7 @@ export default function ReportsPage() {
 
   const [helpMessages, setHelpMessages] = useState<HelpMessage[]>([]);
   const [userReports, setUserReports] = useState<UserReport[]>([]);
-  
+
   const [unreadHelp, setUnreadHelp] = useState(0);
   const [unreadReports, setUnreadReports] = useState(0);
 
@@ -83,7 +83,7 @@ export default function ReportsPage() {
       if (!incidentToDelete) return;
       const { report, incident } = incidentToDelete;
       const reportRef = doc(db, "reports", report.id);
-      
+
       const newIncidents = report.incidents.filter(i => i !== incident);
 
       if (newIncidents.length === 0) {
@@ -215,7 +215,7 @@ export default function ReportsPage() {
         const notifRef = doc(db, "adminSettings", "notifications");
         const notifSnap = await getDoc(notifRef);
         const data = notifSnap.exists() ? notifSnap.data() : {};
-        
+
         const currentSeenReports = new Set(data.seenReports || []);
         const currentSeenHelp = new Set(data.seenHelpMessages || []);
 
@@ -443,15 +443,15 @@ export default function ReportsPage() {
             <div className="px-2 py-4 md:p-4 border-b border-gray-100 dark:border-gray-800 flex justify-between items-center bg-gray-50 dark:bg-gray-900/50">
               <div>
                 <h3 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0" />
+                  <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
                   <span className="truncate">Incidents for {selectedReport.reportedUserName}</span>
                 </h3>
                 {selectedReport.reportedUserFullName && (
-                  <p className="text-xs font-semibold text-gray-500 ml-7">
+                  <p className="-mt-1 text-xs font-semibold text-gray-500 ml-7">
                     {selectedReport.reportedUserFullName}
                   </p>
                 )}
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1 ml-7">
+                <p className="text-[10px] md:text-sm text-gray-500 dark:text-gray-400 mt-1 ml-7">
                   Review all flags submitted against this user.
                 </p>
               </div>
@@ -508,9 +508,9 @@ export default function ReportsPage() {
                       <span className="font-bold block mb-1 text-gray-900 dark:text-white">Reason:</span>
                       {incident.reason}
                     </div>
-                    <button 
+                    <button
                       onClick={() => setIncidentToDelete({ report: selectedReport, incident })}
-                      className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex flex-shrink-0 items-center justify-center hover:bg-red-600 hover:text-white transition-colors" 
+                      className="w-8 h-8 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 flex flex-shrink-0 items-center justify-center hover:bg-red-600 hover:text-white transition-colors"
                       title="Delete Flag"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -541,16 +541,16 @@ export default function ReportsPage() {
             </div>
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">CEO Authentication Required</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-              {reportToDelete 
-                ? "You are about to delete this entire report and all its flags from the database." 
+              {reportToDelete
+                ? "You are about to delete this entire report and all its flags from the database."
                 : helpToDelete
-                ? "You are about to delete this help message from the database."
-                : "You are about to delete this flag from the database."}
+                  ? "You are about to delete this help message from the database."
+                  : "You are about to delete this flag from the database."}
               {" "}Enter the master password to confirm.
             </p>
-            
-            <input 
-              type="password" 
+
+            <input
+              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && password && (helpToDelete ? handleDeleteHelp() : reportToDelete ? handleDeleteReport() : handleDeleteIncident())}
@@ -558,15 +558,15 @@ export default function ReportsPage() {
               autoFocus
               className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl mb-6 text-center focus:outline-none focus:border-red-500"
             />
-            
+
             <div className="flex gap-3">
-              <button 
+              <button
                 onClick={() => { setIncidentToDelete(null); setReportToDelete(null); setHelpToDelete(null); setPassword(""); }}
                 className="flex-1 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={helpToDelete ? handleDeleteHelp : reportToDelete ? handleDeleteReport : handleDeleteIncident}
                 disabled={isDeleting || !password}
                 className="flex-1 py-2.5 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center"

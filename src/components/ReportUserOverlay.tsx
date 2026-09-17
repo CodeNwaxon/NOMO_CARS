@@ -61,8 +61,8 @@ export default function ReportUserOverlay({ reportedUserId, reportedUserRole, on
       return;
     }
 
-    if (phone.trim() && !/^0\d{10}$/.test(phone.trim())) {
-      toast.error("Phone number must be exactly 11 digits and start with 0.");
+    if (phone.trim() && !/^(0|\+234)\d{10}$/.test(phone.trim())) {
+      toast.error("Phone number must be exactly 11 digits starting with 0, or start with +234.");
       return;
     }
 
