@@ -101,13 +101,17 @@ export async function createVehicleSecure(input: CreateVehicleInput) {
     };
 
     // 6. Save — non-VIPs use their userId as doc ID (enforces single vehicle), VIPs get auto-ID
+    let vehicleId: string;
     if (vipStars < 1) {
       await adminDb.collection("vehicles").doc(userId).set(vehicleData);
+      vehicleId = userId;
     } else {
-      await adminDb.collection("vehicles").add(vehicleData);
+      const docRef = await adminDb.collection("vehicles").add(vehicleData);
+      vehicleId = docRef.id;
     }
 
-    return { success: true };
+    const vehicleName = `${details.make || ""} ${details.model || ""}`.trim() || "Vehicle";
+    return { success: true, vehicleId, vehicleName };
   } catch (err) {
     console.error("Server createVehicleSecure error:", err);
     return { success: false, error: "Server error. Please try again." };

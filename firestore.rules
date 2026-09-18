@@ -60,8 +60,9 @@ service cloud.firestore {
       // Anyone can read services
       allow read: if true;
       
-      // Only authenticated users can create a service
-      allow create: if request.auth != null && request.resource.data.driverId == request.auth.uid;
+      // Route creation is handled by the secure server action (Admin SDK).
+      // Client-side create is denied to prevent malicious writes.
+      allow create: if false;
       
       // Only the service owner can update or delete it
       allow update, delete: if request.auth != null && resource.data.driverId == request.auth.uid;

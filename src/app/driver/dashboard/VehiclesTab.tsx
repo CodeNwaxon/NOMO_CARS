@@ -379,6 +379,12 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
       toast.success("Vehicle submitted for approval!");
       setStep("list");
       fetchVehicles();
+
+      // Automatically open the route modal for the newly registered vehicle
+      if (result.vehicleId && result.vehicleName) {
+        setManagingServicesFor({ id: result.vehicleId, name: result.vehicleName });
+      }
+
     } catch (error) {
       console.error("Error adding vehicle:", error);
       toast.error("Failed to add vehicle.");

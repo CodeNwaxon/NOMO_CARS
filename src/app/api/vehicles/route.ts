@@ -114,7 +114,10 @@ export async function GET(request: NextRequest) {
       v.driverCreatedAt = createdAtStr;
     });
 
-    return NextResponse.json({ success: true, vehicles, dynamicStartTicketCollection, dynamicTicketCollectionStartedAt }, { status: 200 });
+    // CRITICAL: Only return vehicles that have at least one route (service)
+    const vehiclesWithRoutes = vehicles.filter(v => v.services.length > 0);
+
+    return NextResponse.json({ success: true, vehicles: vehiclesWithRoutes, dynamicStartTicketCollection, dynamicTicketCollectionStartedAt }, { status: 200 });
   } catch (error: any) {
     console.error("Error fetching vehicles API:", error);
     const isAdminInitError = error.message?.includes('Firebase Admin') || error.message?.includes('Missing Firebase Admin');

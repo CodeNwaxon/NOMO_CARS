@@ -5,11 +5,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { collection, query, where, getDocs, updateDoc, doc, setDoc, getDoc, deleteDoc, addDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { Loader2, ArrowLeft, CheckCircle, XCircle, UserCheck, ShieldAlert, Check, Search, Car, Phone, MessageCircle } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle, XCircle, UserCheck, ShieldAlert, Check, Search, Car, Phone, MessageCircle, MapPin } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 import ImageViewerOverlay from "@/components/ImageViewerOverlay";
 import DriverVehiclesModal from "@/components/DriverVehiclesModal";
+import AdminDriverRoutesModal from "@/components/AdminDriverRoutesModal";
 import { sendApprovalEmail } from "@/actions/notify";
 import { deleteImagesFromCloudinary } from "@/lib/cloudinary";
 
@@ -35,8 +36,9 @@ export default function ManageDriversPage() {
     singleMode: false
   });
 
-  // Driver Vehicles Modal State
+  // Driver Vehicles and Routes Modal State
   const [selectedDriverForVehicles, setSelectedDriverForVehicles] = useState<{id: string, name: string} | null>(null);
+  const [selectedDriverForRoutes, setSelectedDriverForRoutes] = useState<{id: string, name: string} | null>(null);
 
   // Password prompt state
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false);
@@ -362,12 +364,18 @@ export default function ManageDriversPage() {
                   </div>
                 </div>
 
-                <div className="mt-2 mb-4">
+                <div className="mt-2 mb-4 grid grid-cols-2 gap-2">
                   <button 
                     onClick={() => setSelectedDriverForVehicles({ id: driver.id, name: `${driver.firstName || ''} ${driver.lastName || ''}`.trim() || 'Driver' })}
-                    className="w-full py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex justify-center items-center gap-2 text-sm border border-gray-200 dark:border-gray-700"
+                    className="w-full py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex justify-center items-center gap-1.5 text-xs border border-gray-200 dark:border-gray-700"
                   >
-                    <Car className="w-4 h-4" /> View Registered Vehicles
+                    <Car className="w-3.5 h-3.5" /> Vehicles
+                  </button>
+                  <button 
+                    onClick={() => setSelectedDriverForRoutes({ id: driver.id, name: `${driver.firstName || ''} ${driver.lastName || ''}`.trim() || 'Driver' })}
+                    className="w-full py-2 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors flex justify-center items-center gap-1.5 text-xs border border-gray-200 dark:border-gray-700"
+                  >
+                    <MapPin className="w-3.5 h-3.5" /> Routes
                   </button>
                 </div>
 
@@ -429,6 +437,14 @@ export default function ManageDriversPage() {
           driverId={selectedDriverForVehicles.id}
           driverName={selectedDriverForVehicles.name}
           onClose={() => setSelectedDriverForVehicles(null)}
+        />
+      )}
+
+      {selectedDriverForRoutes && (
+        <AdminDriverRoutesModal
+          driverId={selectedDriverForRoutes.id}
+          driverName={selectedDriverForRoutes.name}
+          onClose={() => setSelectedDriverForRoutes(null)}
         />
       )}
 

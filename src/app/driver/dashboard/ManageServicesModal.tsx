@@ -7,6 +7,7 @@ import { X, Loader2, Plus, MapPin, Trash2, Edit2, CheckCircle2 } from "lucide-re
 import { toast } from "react-hot-toast";
 import { useAuth } from "@/context/AuthContext";
 import { useVIPLimits } from "@/hooks/useVIPLimits";
+import { createRouteSecure } from "@/actions/createRoute";
 
 interface ManageServicesModalProps {
   vehicleId: string;
@@ -64,7 +65,7 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
 
     setSubmitting(true);
     try {
-      await addDoc(collection(db, "vehicleServices"), {
+      const result = await createRouteSecure({
         driverId,
         vehicleId,
         startPoint: formData.startPoint,
@@ -72,9 +73,15 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
         price: formData.price,
         description: formData.description,
         isNegotiable: formData.isNegotiable,
-        createdAt: new Date(),
       });
-      toast.success("Service added successfully");
+
+      if (!result.success) {
+        toast.error(result.error || "Failed to add route.");
+        setSubmitting(false);
+        return;
+      }
+
+      toast.success("Route added successfully");
       setIsAdding(false);
       setFormData({ ...formData, destination: "", price: "", description: "", isNegotiable: false });
       fetchServices();
