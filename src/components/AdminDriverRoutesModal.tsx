@@ -28,7 +28,7 @@ export default function AdminDriverRoutesModal({ driverId, driverName, onClose, 
       const q = query(collection(db, "vehicleServices"), where("driverId", "==", driverId));
       const snap = await getDocs(q);
       const fetchedRoutes = snap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
-      
+
       // 2. Fetch all vehicles for this driver to map vehicle names
       const vq = query(collection(db, "vehicles"), where("driverId", "==", driverId));
       const vsnap = await getDocs(vq);
@@ -39,7 +39,7 @@ export default function AdminDriverRoutesModal({ driverId, driverName, onClose, 
       });
 
       setVehiclesMap(vMap);
-      
+
       // Sort routes by vehicleId to group them visually
       fetchedRoutes.sort((a, b) => {
         if (a.vehicleId < b.vehicleId) return -1;
@@ -59,12 +59,12 @@ export default function AdminDriverRoutesModal({ driverId, driverName, onClose, 
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-2 md:p-8 backdrop-blur-sm">
       <div className="bg-white dark:bg-gray-900 rounded-md md:rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden">
         {/* Header */}
-        <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-900 z-10">
+        <div className="p-4 md:p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-900 z-10">
           <div>
-            <h2 className="text-lg md:text-2xl font-extrabold text-gray-900 dark:text-white leading-tight">
-              Routes for <br className="md:hidden" /> {driverName}
+            <h2 className="text-sm md:text-base font-extrabold text-gray-900 dark:text-white leading-tight">
+              Routes for <br className="md:hidden" /> <span className="text-lg md:text-2xl text-[goldenrod]">{driverName}</span>
             </h2>
-            <p className="text-xs md:text-sm text-gray-500 mt-1 md:mt-2">
+            <p className="text-[10px] md:text-sm text-gray-500 mt-1 md:mt-2">
               All active routes associated with this driver's vehicles.
             </p>
           </div>
@@ -94,9 +94,9 @@ export default function AdminDriverRoutesModal({ driverId, driverName, onClose, 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {routes.map(route => (
                 <div key={route.id} className="relative flex flex-col p-4 bg-slate-50 dark:bg-slate-800/50 border border-gray-200 dark:border-gray-700 rounded-xl hover:-translate-y-1 transition-all shadow-sm hover:shadow-md">
-                  
+
                   <div className="mb-3">
-                    <button 
+                    <button
                       onClick={() => onViewVehicle && onViewVehicle(route.vehicleId)}
                       className="text-[10px] uppercase tracking-wider font-bold text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded-full hover:bg-brand-primary hover:text-white transition-colors"
                       title="View this vehicle's details"

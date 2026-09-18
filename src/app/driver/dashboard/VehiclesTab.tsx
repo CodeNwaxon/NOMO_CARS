@@ -110,6 +110,7 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
   };
 
   const [vehicles, setVehicles] = useState<any[]>([]);
+  const [vehiclesWithRoutes, setVehiclesWithRoutes] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   const [step, setStep] = useState<"list" | "category" | "form">("list");
@@ -270,6 +271,21 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
     }, (error) => {
       console.error("Error listening to vehicles:", error);
       setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [userId]);
+
+  useEffect(() => {
+    const q = query(collection(db, "vehicleServices"), where("driverId", "==", userId));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const withRoutes = new Set<string>();
+      snapshot.forEach(doc => {
+        withRoutes.add(doc.data().vehicleId);
+      });
+      setVehiclesWithRoutes(withRoutes);
+    }, (error) => {
+      console.error("Error listening to vehicle routes:", error);
     });
 
     return () => unsubscribe();
@@ -705,6 +721,9 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
         <div className="px-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {vehicles.map((v) => {
             const displayImage = v.images.exterior || v.images.front || v.images.side;
+            const hasRoutes = vehiclesWithRoutes.has(v.id);
+            const needsRoutes = !hasRoutes && !v.isSuspendedByLimit && !v.isRejected && v.isApproved;
+            
             return (
               <div key={v.id} className={`glass-panel rounded-2xl overflow-hidden group border transition-all shadow-sm ${v.isSuspendedByLimit ? "opacity-60 grayscale border-red-500/30" : "border-card-border/50 hover:border-brand-primary/30 hover:shadow-xl"}`}>
                 <div className="h-40 relative bg-card-border">
@@ -854,7 +873,7 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
                         <button
                           onClick={() => setManagingServicesFor({ id: v.id, name: `${v.details.make} ${v.details.model}` })}
                           disabled={v.isSuspendedByLimit}
-                          className={`w-full py-2 font-bold rounded-lg text-sm transition-colors ${v.isSuspendedByLimit ? "bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed" : "bg-brand-primary/10 text-brand-primary hover:bg-brand-primary hover:text-white"}`}
+                          className={`w-full py-2 font-bold rounded-lg text-sm transition-colors ${v.isSuspendedByLimit ? "bg-gray-200 dark:bg-gray-800 text-gray-400 cursor-not-allowed" : "bg-brand-primary/10 text-brand-primary hover:bg-brand-primary hover:text-white"} ${needsRoutes ? 'ring-2 ring-[goldenrod] animate-[pulse_2s_ease-in-out_infinite] shadow-[0_0_15px_goldenrod]' : ''}`}
                         >
                           Manage Routes & Services
                         </button>
