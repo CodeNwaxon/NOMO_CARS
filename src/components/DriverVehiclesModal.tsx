@@ -9,10 +9,11 @@ import ImageViewerOverlay from "./ImageViewerOverlay";
 interface DriverVehiclesModalProps {
   driverId: string;
   driverName: string;
+  highlightVehicleId?: string;
   onClose: () => void;
 }
 
-export default function DriverVehiclesModal({ driverId, driverName, onClose }: DriverVehiclesModalProps) {
+export default function DriverVehiclesModal({ driverId, driverName, highlightVehicleId, onClose }: DriverVehiclesModalProps) {
   const [loading, setLoading] = useState(true);
   const [vehicles, setVehicles] = useState<any[]>([]);
 
@@ -33,6 +34,17 @@ export default function DriverVehiclesModal({ driverId, driverName, onClose }: D
     fetchDriverVehicles();
   }, [driverId]);
 
+  useEffect(() => {
+    if (!loading && highlightVehicleId) {
+      setTimeout(() => {
+        const el = document.getElementById(`vehicle-${highlightVehicleId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    }
+  }, [loading, highlightVehicleId]);
+
   const fetchDriverVehicles = async () => {
     setLoading(true);
     try {
@@ -48,7 +60,7 @@ export default function DriverVehiclesModal({ driverId, driverName, onClose }: D
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 md:p-8 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-2 md:p-8 backdrop-blur-sm">
       <div className="bg-white dark:bg-gray-900 rounded-md md:rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden">
         {/* Header */}
         <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-900 z-10">
@@ -84,8 +96,16 @@ export default function DriverVehiclesModal({ driverId, driverName, onClose }: D
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {vehicles.map(vehicle => (
-                <div key={vehicle.id} className="bg-white dark:bg-gray-800 rounded-2xl p-1 md:p-2 shadow-sm border border-gray-100 dark:border-gray-700 flex flex-col relative overflow-hidden group">
+              {vehicles.map(vehicle => {
+                const isHighlighted = vehicle.id === highlightVehicleId;
+                return (
+                <div 
+                  key={vehicle.id} 
+                  id={`vehicle-${vehicle.id}`}
+                  className={`bg-white dark:bg-gray-800 rounded-2xl p-1 md:p-2 shadow-sm border flex flex-col relative overflow-hidden group transition-all duration-500 ${
+                    isHighlighted ? 'border-brand-primary ring-4 ring-brand-primary/30 animate-pulse' : 'border-gray-100 dark:border-gray-700'
+                  }`}
+                >
                   <div className="w-full h-32 bg-gray-200 dark:bg-gray-700 rounded-xl overflow-hidden mb-3 relative">
                     {vehicle.images && Object.keys(vehicle.images).length > 0 ? (
                       <>
@@ -160,7 +180,7 @@ export default function DriverVehiclesModal({ driverId, driverName, onClose }: D
                     </div>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           )}
         </div>

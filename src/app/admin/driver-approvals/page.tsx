@@ -37,7 +37,7 @@ export default function ManageDriversPage() {
   });
 
   // Driver Vehicles and Routes Modal State
-  const [selectedDriverForVehicles, setSelectedDriverForVehicles] = useState<{id: string, name: string} | null>(null);
+  const [selectedDriverForVehicles, setSelectedDriverForVehicles] = useState<{id: string, name: string, highlightVehicleId?: string} | null>(null);
   const [selectedDriverForRoutes, setSelectedDriverForRoutes] = useState<{id: string, name: string} | null>(null);
 
   // Password prompt state
@@ -436,6 +436,7 @@ export default function ManageDriversPage() {
         <DriverVehiclesModal
           driverId={selectedDriverForVehicles.id}
           driverName={selectedDriverForVehicles.name}
+          highlightVehicleId={selectedDriverForVehicles.highlightVehicleId}
           onClose={() => setSelectedDriverForVehicles(null)}
         />
       )}
@@ -445,6 +446,11 @@ export default function ManageDriversPage() {
           driverId={selectedDriverForRoutes.id}
           driverName={selectedDriverForRoutes.name}
           onClose={() => setSelectedDriverForRoutes(null)}
+          onViewVehicle={(vehicleId) => {
+            const current = selectedDriverForRoutes;
+            setSelectedDriverForRoutes(null);
+            setSelectedDriverForVehicles({ id: current.id, name: current.name, highlightVehicleId: vehicleId });
+          }}
         />
       )}
 

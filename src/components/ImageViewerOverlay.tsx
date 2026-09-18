@@ -66,9 +66,10 @@ export default function ImageViewerOverlay({ images, initialIndex = 0, singleMod
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/95 p-4 md:p-8">
       <button 
         onClick={onClose}
-        className="absolute top-4 right-4 md:top-6 md:right-6 z-[110] p-2 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-sm transition-colors"
+        className="absolute top-4 right-4 md:top-8 md:right-8 z-[9999] p-2 text-white hover:text-gray-300 transition-colors cursor-pointer"
+        style={{ filter: "drop-shadow(0px 0px 8px rgba(0,0,0,1))" }}
       >
-        <X className="w-6 h-6" />
+        <X className="w-10 h-10 md:w-12 md:h-12" strokeWidth={2.5} />
       </button>
 
       {!singleMode && images.length > 1 && (

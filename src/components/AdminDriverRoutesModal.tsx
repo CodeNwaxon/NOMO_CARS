@@ -9,9 +9,10 @@ interface AdminDriverRoutesModalProps {
   driverId: string;
   driverName: string;
   onClose: () => void;
+  onViewVehicle?: (vehicleId: string) => void;
 }
 
-export default function AdminDriverRoutesModal({ driverId, driverName, onClose }: AdminDriverRoutesModalProps) {
+export default function AdminDriverRoutesModal({ driverId, driverName, onClose, onViewVehicle }: AdminDriverRoutesModalProps) {
   const [loading, setLoading] = useState(true);
   const [routes, setRoutes] = useState<any[]>([]);
   const [vehiclesMap, setVehiclesMap] = useState<Record<string, string>>({});
@@ -55,7 +56,7 @@ export default function AdminDriverRoutesModal({ driverId, driverName, onClose }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-2 md:p-8 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-2 md:p-8 backdrop-blur-sm">
       <div className="bg-white dark:bg-gray-900 rounded-md md:rounded-3xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-2xl relative overflow-hidden">
         {/* Header */}
         <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-900 z-10">
@@ -95,9 +96,13 @@ export default function AdminDriverRoutesModal({ driverId, driverName, onClose }
                 <div key={route.id} className="relative flex flex-col p-4 bg-slate-50 dark:bg-slate-800/50 border border-gray-200 dark:border-gray-700 rounded-xl hover:-translate-y-1 transition-all shadow-sm hover:shadow-md">
                   
                   <div className="mb-3">
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded-full">
+                    <button 
+                      onClick={() => onViewVehicle && onViewVehicle(route.vehicleId)}
+                      className="text-[10px] uppercase tracking-wider font-bold text-brand-primary bg-brand-primary/10 px-2 py-0.5 rounded-full hover:bg-brand-primary hover:text-white transition-colors"
+                      title="View this vehicle's details"
+                    >
                       Vehicle: {vehiclesMap[route.vehicleId] || "Unknown Vehicle"}
-                    </span>
+                    </button>
                   </div>
 
                   <div>
