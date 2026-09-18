@@ -106,12 +106,13 @@ const NIGERIAN_STATES = [
       duration = Number(pData?.vip5RequestDurationDays ?? 30);
     }
     setRequestDurationDays(duration);
-    setRequests(requestSnap.docs.map((item): any => ({ id: item.id, ...item.data() })).sort((a: any, b: any) => Number(b.createdAt || 0) - Number(a.createdAt || 0)));
+    const allDocs = requestSnap.docs.map((item): any => ({ id: item.id, ...item.data() }));
+    setRequests(allDocs.filter((r: any) => r.status !== "deleted").sort((a: any, b: any) => Number(b.createdAt || 0) - Number(a.createdAt || 0)));
     const monthStart = new Date();
     monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
     setQuotaUsed(requestSnap.docs.filter((item) => Number(item.data().createdAt || 0) >= monthStart.getTime()).length);
     setLoading(false);
-    return requestSnap.docs.length > 0;
+    return allDocs.filter((r: any) => r.status !== "deleted").length > 0;
   };
 
   useEffect(() => {
@@ -520,7 +521,7 @@ const NIGERIAN_STATES = [
             <p className="text-center text-xs md:text-sm text-slate-600 dark:text-slate-400 mb-4 md:mb-5">This action cannot be undone. Your bid limit will not be refunded.</p>
             <div className="flex gap-2 md:gap-3">
               <button onClick={() => setDeleteConfirmRequest(null)} className="flex-1 py-1.5 px-3 md:py-2 text-sm font-medium rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Cancel</button>
-              <button onClick={async () => { await deleteDoc(doc(db, "requests", deleteConfirmRequest.id)); setDeleteConfirmRequest(null); await loadRequests(); }} className="flex-1 py-1.5 px-3 md:py-2 text-sm rounded-xl bg-red-500 text-white font-bold shadow-lg shadow-red-500/30 hover:bg-red-600 transition-all hover:-translate-y-0.5">Delete</button>
+              <button onClick={async () => { await updateDoc(doc(db, "requests", deleteConfirmRequest.id), { status: "deleted" }); setDeleteConfirmRequest(null); await loadRequests(); }} className="flex-1 py-1.5 px-3 md:py-2 text-sm rounded-xl bg-red-500 text-white font-bold shadow-lg shadow-red-500/30 hover:bg-red-600 transition-all hover:-translate-y-0.5">Delete</button>
             </div>
           </div>
         </div>}

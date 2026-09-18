@@ -37,6 +37,7 @@ export default function VIPPage() {
   const [fetchingConfig, setFetchingConfig] = useState(true);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     if (!loading && !user) {
       router.push("/");
       return;
