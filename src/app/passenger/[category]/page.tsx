@@ -19,7 +19,7 @@ export default function CategoryVehicles() {
   const params = useParams();
   const category = (params.category as string).replace("%20", " ");
   const router = useRouter();
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const isDriver = profile?.role === "driver";
 
   const getPluralCategory = (cat: string) => {
@@ -365,18 +365,29 @@ export default function CategoryVehicles() {
                             </div>
 
                             <div className="mt-auto flex gap-2 w-full border-t border-card-border pt-2 md:pt-3">
-                              <button
-                                onClick={() => setHiringDriver({ driverId: v.driverId, vehicleName: `${v.details.make} ${v.details.model}` })}
-                                className="flex-2 py-2 md:py-3 text-[10px] md:text-sm bg-brand-primary hover:bg-brand-primary/90 text-white font-bold rounded-lg md:rounded-xl transition-colors flex-grow shadow-lg shadow-brand-primary/20"
-                              >
-                                Hire
-                              </button>
-                              <button
-                                onClick={() => setViewingServicesFor({ id: v.id, name: `${v.details.make} ${v.details.model}`, driverId: v.driverId })}
-                                className="flex-1 py-2 md:py-3 text-[10px] md:text-sm bg-brand-secondary/10 hover:bg-brand-secondary text-brand-secondary hover:text-white font-bold rounded-lg md:rounded-xl transition-colors flex flex-col items-center justify-center"
-                              >
-                                Services
-                              </button>
+                              {user?.uid === v.driverId ? (
+                                <Link
+                                  href="/driver/dashboard"
+                                  className="w-full py-2 md:py-3 text-[10px] md:text-sm bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg md:rounded-xl transition-colors flex items-center justify-center shadow-lg shadow-indigo-600/20"
+                                >
+                                  My Profile
+                                </Link>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => setHiringDriver({ driverId: v.driverId, vehicleName: `${v.details.make} ${v.details.model}` })}
+                                    className="flex-2 py-2 md:py-3 text-[10px] md:text-sm bg-brand-primary hover:bg-brand-primary/90 text-white font-bold rounded-lg md:rounded-xl transition-colors flex-grow shadow-lg shadow-brand-primary/20"
+                                  >
+                                    Hire
+                                  </button>
+                                  <button
+                                    onClick={() => setViewingServicesFor({ id: v.id, name: `${v.details.make} ${v.details.model}`, driverId: v.driverId })}
+                                    className="flex-1 py-2 md:py-3 text-[10px] md:text-sm bg-brand-secondary/10 hover:bg-brand-secondary text-brand-secondary hover:text-white font-bold rounded-lg md:rounded-xl transition-colors flex flex-col items-center justify-center"
+                                  >
+                                    Services
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
