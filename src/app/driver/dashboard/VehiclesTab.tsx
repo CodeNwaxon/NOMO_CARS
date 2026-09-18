@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,6 +12,7 @@ import { toast } from "react-hot-toast";
 import ManageServicesModal from "./ManageServicesModal";
 import EditVehicleModal from "./EditVehicleModal";
 import { notifyAdminsClient } from "@/lib/notifyClient";
+import { createVehicleSecure } from "@/actions/createVehicle";
 import ImageViewerOverlay from "@/components/ImageViewerOverlay";
 import { useVIPLimits } from "@/hooks/useVIPLimits";
 import Link from "next/link";
@@ -198,11 +199,58 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
     front: null, back: null, side: null, interior: null, exterior: null, cargoSpace: null, cockpit: null
   });
   const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
+  const [plateError, setPlateError] = useState("");
+  const [regError, setRegError] = useState("");
 
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<VehicleFormData>({
+  const { register, handleSubmit, watch, formState: { errors }, reset } = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
     defaultValues: { ac: true }
   });
+
+  const watchedPlate = watch("plateNumber");
+  const watchedReg = watch("registrationNumber");
+  const plateCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const regCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounced plate number duplicate check
+  useEffect(() => {
+    if (plateCheckTimer.current) clearTimeout(plateCheckTimer.current);
+    if (!watchedPlate || watchedPlate.trim().length < 3 || !selectedCategory) {
+      setPlateError("");
+      return;
+    }
+    plateCheckTimer.current = setTimeout(async () => {
+      try {
+        const trimmed = watchedPlate.trim();
+        const variants = [trimmed, trimmed.toUpperCase(), trimmed.toLowerCase()];
+        const q = query(collection(db, "vehicles"), where("details.plateNumber", "in", variants));
+        const snap = await getDocs(q);
+        const isDuplicate = snap.docs.some(d => d.data().category === selectedCategory);
+        setPlateError(isDuplicate ? "This plate number is already registered in this category." : "");
+      } catch { setPlateError(""); }
+    }, 800);
+    return () => { if (plateCheckTimer.current) clearTimeout(plateCheckTimer.current); };
+  }, [watchedPlate, selectedCategory]);
+
+  // Debounced registration number duplicate check (airplanes/ships)
+  useEffect(() => {
+    if (regCheckTimer.current) clearTimeout(regCheckTimer.current);
+    if (!watchedReg || watchedReg.trim().length < 3 || !selectedCategory) {
+      setRegError("");
+      return;
+    }
+    regCheckTimer.current = setTimeout(async () => {
+      try {
+        const trimmed = watchedReg.trim();
+        const variants = [trimmed, trimmed.toUpperCase(), trimmed.toLowerCase()];
+        const q = query(collection(db, "vehicles"), where("details.registrationNumber", "in", variants));
+        const snap = await getDocs(q);
+        const isDuplicate = snap.docs.some(d => d.data().category === selectedCategory);
+        setRegError(isDuplicate ? "This registration number is already registered in this category." : "");
+      } catch { setRegError(""); }
+    }, 800);
+    return () => { if (regCheckTimer.current) clearTimeout(regCheckTimer.current); };
+  }, [watchedReg, selectedCategory]);
 
   const fetchVehicles = async () => {
     // Manual refresh is now a no-op since onSnapshot handles updates in real-time
@@ -272,28 +320,6 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
     try {
       setIsSubmitting(true);
 
-      // Check for duplicate plate/registration in the same category
-      let isDuplicate = false;
-      const plateVariants = data.plateNumber ? [data.plateNumber.trim(), data.plateNumber.trim().toUpperCase(), data.plateNumber.trim().toLowerCase()] : [];
-      if (plateVariants.length > 0) {
-        const qPlate = query(collection(db, "vehicles"), where("details.plateNumber", "in", plateVariants));
-        const snap = await getDocs(qPlate);
-        isDuplicate = snap.docs.some(d => d.data().category === selectedCategory);
-      }
-
-      const regVariants = data.registrationNumber ? [data.registrationNumber.trim(), data.registrationNumber.trim().toUpperCase(), data.registrationNumber.trim().toLowerCase()] : [];
-      if (!isDuplicate && regVariants.length > 0) {
-        const qReg = query(collection(db, "vehicles"), where("details.registrationNumber", "in", regVariants));
-        const snap = await getDocs(qReg);
-        isDuplicate = snap.docs.some(d => d.data().category === selectedCategory);
-      }
-
-      if (isDuplicate) {
-        toast.error(`A ${selectedCategory} with this plate/registration number already exists.`);
-        setIsSubmitting(false);
-        return;
-      }
-
       // Upload docs concurrently
       const docUploads = Object.entries(docs)
         .filter(([key, file]) => file !== null && (key !== "roadWorthiness" || config.docs.roadWorthiness) && config.docs.show)
@@ -328,27 +354,25 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
       if (config.details.plateNumber) detailsToSave.plateNumber = data.plateNumber?.trim().toUpperCase();
       if (config.details.registrationNumber) detailsToSave.registrationNumber = data.registrationNumber?.trim().toUpperCase();
 
-      // Save to firestore
-      const vehicleData = {
-        driverId: userId,
+      // Use secure server action instead of direct Firestore write
+      const result = await createVehicleSecure({
+        userId,
         category: selectedCategory,
         details: detailsToSave,
         documents: uploadedDocs,
         images: uploadedImages,
-        isApproved: false,
-        createdAt: new Date(),
-      };
+      });
 
-      if (vipStars < 1) {
-        await setDoc(doc(db, "vehicles", userId), vehicleData);
-      } else {
-        await addDoc(collection(db, "vehicles"), vehicleData);
+      if (!result.success) {
+        toast.error(result.error || "Failed to add vehicle.");
+        setIsSubmitting(false);
+        return;
       }
 
       // Send persistent notification to admin via client
       await notifyAdminsClient(
         "New Vehicle Pending",
-        `A driver has submitted a ${vehicleData.details.make} ${vehicleData.details.model} for review.`,
+        `A driver has submitted a ${detailsToSave.make} ${detailsToSave.model} for review.`,
         "/admin/vehicle-approvals"
       );
 
@@ -513,14 +537,16 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
               {config.details.plateNumber && (
                 <div>
                   <label className="block text-sm font-medium mb-1">Plate Number</label>
-                  <input {...register("plateNumber")} placeholder="ABC-123-XY" className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl" />
+                  <input {...register("plateNumber")} placeholder="ABC-123-XY" className={`w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl ${plateError ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 dark:border-slate-700'}`} />
+                  {plateError && <p className="text-red-500 text-[10px] mt-1">{plateError}</p>}
                 </div>
               )}
 
               {config.details.registrationNumber && (
                 <div>
                   <label className="block text-sm font-medium mb-1">Registration / Tail Number</label>
-                  <input {...register("registrationNumber")} placeholder="e.g. N12345" className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl" />
+                  <input {...register("registrationNumber")} placeholder="e.g. N12345" className={`w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl ${regError ? 'border-red-500 ring-1 ring-red-500' : 'border-gray-300 dark:border-slate-700'}`} />
+                  {regError && <p className="text-red-500 text-[10px] mt-1">{regError}</p>}
                 </div>
               )}
 
@@ -597,8 +623,8 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
           <div className="pt-6">
             <button
               type="submit"
-              disabled={isSubmitting}
-              className="text-sm md:text-base w-full py-3 md:py-3 bg-gradient-to-r from-brand-secondary to-brand-primary text-white rounded-xl font-bold text-lg shadow-xl shadow-brand-secondary/30 hover:-translate-y-1 transition-all flex justify-center items-center gap-2"
+              disabled={isSubmitting || !!plateError || !!regError}
+              className="text-sm md:text-base w-full py-3 md:py-3 bg-gradient-to-r from-brand-secondary to-brand-primary text-white rounded-xl font-bold text-lg shadow-xl shadow-brand-secondary/30 hover:-translate-y-1 transition-all flex justify-center items-center gap-2 disabled:opacity-60 disabled:hover:translate-y-0"
             >
               {isSubmitting && <Loader2 className="w-5 h-5 animate-spin" />}
               {isSubmitting ? "Uploading & Submitting..." : "Submit Registration"}

@@ -47,10 +47,9 @@ service cloud.firestore {
       // Any authenticated user can read vehicles (needed for duplicate plate checks & public profiles)
       allow read: if request.auth != null;
       
-      // Only authenticated users can create a vehicle.
-      // Additionally, the driverId must match the authenticated user's uid.
-      // Non-VIPs can only have 1 vehicle (vehicleId == request.auth.uid). VIPs can have multiple.
-      allow create: if request.auth != null && request.resource.data.driverId == request.auth.uid;
+      // Vehicle creation is handled by the secure server action (Admin SDK).
+      // Client-side create is denied to prevent malicious writes.
+      allow create: if false;
       
       // Only the vehicle owner can update or delete it
       allow update, delete: if request.auth != null && resource.data.driverId == request.auth.uid;
