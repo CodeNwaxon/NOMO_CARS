@@ -54,6 +54,9 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
       const fetched: any[] = [];
       snapshot.forEach(doc => fetched.push({ id: doc.id, ...doc.data() }));
       setServices(fetched);
+      if (fetched.length === 0) {
+        setIsAdding(true);
+      }
     } catch (error) {
       console.error("Error fetching services:", error);
       toast.error("Failed to load services");
@@ -123,7 +126,16 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
         <div className="flex justify-between items-center p-4 md:p-6 bg-blue-950 text-white shadow-md flex-shrink-0">
           <div>
             <h2 className="text-xl md:text-2xl font-bold">Routes & Services</h2>
-            <p className="text-xs md:text-sm text-white/70 mt-1">Managing routes for: <span className="font-bold text-white">{vehicleName}</span></p>
+            <div className="flex items-center gap-2 mt-1">
+              <p className="text-xs md:text-sm text-white/70">Managing routes for: <span className="font-bold text-white">{vehicleName}</span></p>
+              <button 
+                onClick={() => setShowRouteInfoModal(true)}
+                title="Important Route Information"
+                className="w-5 h-5 rounded-full bg-blue-400/20 text-blue-200 font-black text-xs flex items-center justify-center hover:bg-blue-400/40 transition-colors shadow-sm border border-blue-400/20"
+              >
+                !
+              </button>
+            </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-full transition-colors">
             <X className="w-6 h-6" />
