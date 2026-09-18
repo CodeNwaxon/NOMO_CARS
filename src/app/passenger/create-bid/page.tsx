@@ -38,6 +38,7 @@ export default function CreateBidPage() {
   const [editingBidCount, setEditingBidCount] = useState<number>(0);
   const isLocked = !!editingId && editingBidCount > 0;
   const [showRequestConfirm, setShowRequestConfirm] = useState(false);
+  const [deleteConfirmRequest, setDeleteConfirmRequest] = useState<any | null>(null);
   const [assignedDriverInfo, setAssignedDriverInfo] = useState<any>(null);
   const [assignedDriverLoading, setAssignedDriverLoading] = useState(false);
   const [chatOverlayData, setChatOverlayData] = useState<any>(null);
@@ -497,7 +498,7 @@ const NIGERIAN_STATES = [
                                 <Edit2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                               </button>
                             )}
-                            <button onClick={async (e) => { e.stopPropagation(); await deleteDoc(doc(db, "requests", request.id)); await loadRequests(); }} className="p-1 md:p-1.5 text-red-500 bg-white/50 dark:bg-black/30 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors backdrop-blur-sm">
+                            <button onClick={(e) => { e.stopPropagation(); setDeleteConfirmRequest(request); }} className="p-1 md:p-1.5 text-red-500 bg-white/50 dark:bg-black/30 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors backdrop-blur-sm">
                               <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
                             </button>
                           </div>
@@ -511,6 +512,18 @@ const NIGERIAN_STATES = [
           )}
         </div>
       </div>
+
+      {deleteConfirmRequest &&
+        <div className="px-6 fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl p-4 md:p-6 max-w-sm w-full animate-in zoom-in-95 duration-200">
+            <h2 className="text-center font-bold text-base md:text-lg mb-1.5 md:mb-2 text-slate-900 dark:text-white">Delete this request?</h2>
+            <p className="text-center text-xs md:text-sm text-slate-600 dark:text-slate-400 mb-4 md:mb-5">This action cannot be undone. Your bid limit will not be refunded.</p>
+            <div className="flex gap-2 md:gap-3">
+              <button onClick={() => setDeleteConfirmRequest(null)} className="flex-1 py-1.5 px-3 md:py-2 text-sm font-medium rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Cancel</button>
+              <button onClick={async () => { await deleteDoc(doc(db, "requests", deleteConfirmRequest.id)); setDeleteConfirmRequest(null); await loadRequests(); }} className="flex-1 py-1.5 px-3 md:py-2 text-sm rounded-xl bg-red-500 text-white font-bold shadow-lg shadow-red-500/30 hover:bg-red-600 transition-all hover:-translate-y-0.5">Delete</button>
+            </div>
+          </div>
+        </div>}
 
       {showRequestConfirm &&
         <div className="px-6 fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
