@@ -641,64 +641,81 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
               ) : (
                 <div className={`flex items-center gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-card-border/30 rounded-xl ${hasNoUsername ? "pulse-green" : ""}`}>
                   <User className="w-4 h-4 md:w-5 md:h-5 text-brand-primary" />
-                  <span className="font-medium text-sm md:text-base">{getDisplayName()}</span>
+                  <span className="font-medium text-sm md:text-base capitalize">{getDisplayName()}</span>
                 </div>
               )}
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
               <div className="col-span-1 order-1">
-                <label className="block text-xs md:text-sm font-medium text-foreground/70 mb-1.5 md:mb-2">First Name</label>
+                <label className="flex items-center justify-between text-xs md:text-sm font-medium text-foreground/70 mb-1.5 md:mb-2">
+                  <span>First Name</span>
+                  {isEditing && <span className="text-[10px] bg-gray-200 dark:bg-slate-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">Read-only</span>}
+                </label>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    value={formData.firstName}
-                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    className="w-full px-3 py-2.5 md:px-4 md:py-3 rounded-xl bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm text-sm md:text-base"
-                    placeholder="First Name"
-                  />
+                  <div className="flex items-center gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-gray-100 dark:bg-slate-900/50 rounded-xl cursor-not-allowed">
+                    <User className="w-4 h-4 md:w-5 md:h-5 text-gray-500" />
+                    <span className="font-medium text-sm md:text-base text-gray-500 dark:text-gray-400 capitalize">
+                      {profile?.firstName || "Not set"}
+                    </span>
+                  </div>
                 ) : (
                   <div className="flex items-center gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-card-border/30 rounded-xl">
                     <User className="w-4 h-4 md:w-5 md:h-5 text-brand-secondary" />
-                    <span className="font-medium text-sm md:text-base">{profile?.firstName || "Not set"}</span>
+                    <span className="font-medium text-sm md:text-base capitalize">{profile?.firstName || "Not set"}</span>
                   </div>
                 )}
               </div>
               <div className="col-span-2 md:col-span-1 order-3 md:order-2">
-                <label className="block text-xs md:text-sm font-medium text-foreground/70 mb-1.5 md:mb-2">Middle Name</label>
+                <label className="flex items-center justify-between text-xs md:text-sm font-medium text-foreground/70 mb-1.5 md:mb-2">
+                  <span>Middle Name</span>
+                  {isEditing && <span className="text-[10px] bg-gray-200 dark:bg-slate-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">Read-only</span>}
+                </label>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    value={formData.middleName}
-                    onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
-                    className="w-full px-3 py-2.5 md:px-4 md:py-3 rounded-xl bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm text-sm md:text-base"
-                    placeholder="Middle Name (Optional)"
-                  />
+                  <div className="flex items-center gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-gray-100 dark:bg-slate-900/50 rounded-xl cursor-not-allowed">
+                    <User className="w-4 h-4 md:w-5 md:h-5 text-gray-500" />
+                    <span className="font-medium text-sm md:text-base text-gray-500 dark:text-gray-400 capitalize">
+                      {profile?.middleName || "-"}
+                    </span>
+                  </div>
                 ) : (
                   <div className="flex items-center gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-card-border/30 rounded-xl">
                     <User className="w-4 h-4 md:w-5 md:h-5 text-brand-secondary" />
-                    <span className="font-medium text-sm md:text-base">{profile?.middleName || "-"}</span>
+                    <span className="font-medium text-sm md:text-base capitalize">{profile?.middleName || "-"}</span>
                   </div>
                 )}
               </div>
               <div className="col-span-1 order-2 md:order-3">
-                <label className="block text-xs md:text-sm font-medium text-foreground/70 mb-1.5 md:mb-2">Last Name</label>
+                <label className="flex items-center justify-between text-xs md:text-sm font-medium text-foreground/70 mb-1.5 md:mb-2">
+                  <span>Last Name</span>
+                  {isEditing && <span className="text-[10px] bg-gray-200 dark:bg-slate-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">Read-only</span>}
+                </label>
                 {isEditing ? (
-                  <input
-                    type="text"
-                    value={formData.lastName}
-                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    className="w-full px-3 py-2.5 md:px-4 md:py-3 rounded-xl bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm text-sm md:text-base"
-                    placeholder="Last Name"
-                  />
+                  <div className="flex items-center gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-gray-100 dark:bg-slate-900/50 rounded-xl cursor-not-allowed">
+                    <User className="w-4 h-4 md:w-5 md:h-5 text-gray-500" />
+                    <span className="font-medium text-sm md:text-base text-gray-500 dark:text-gray-400 capitalize">
+                      {profile?.lastName || "Not set"}
+                    </span>
+                  </div>
                 ) : (
                   <div className="flex items-center gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-card-border/30 rounded-xl">
                     <User className="w-4 h-4 md:w-5 md:h-5 text-brand-secondary" />
-                    <span className="font-medium text-sm md:text-base">{profile?.lastName || "Not set"}</span>
+                    <span className="font-medium text-sm md:text-base capitalize">{profile?.lastName || "Not set"}</span>
                   </div>
                 )}
               </div>
             </div>
+
+            {isEditing && (
+              <div className="flex justify-center mt-4">
+                <Link
+                  href={`/help?message=${encodeURIComponent("I am requesting for a name change to: ")}`}
+                  className="text-xs md:text-sm text-brand-primary font-bold hover:underline bg-brand-primary/10 px-4 py-2 rounded-xl"
+                >
+                  Contact admin for a name change
+                </Link>
+              </div>
+            )}
 
             <div>
               <label className="block text-xs md:text-sm font-medium text-foreground/70 mb-1.5 md:mb-2">Phone Number</label>
@@ -747,14 +764,23 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mt-4">
               <div>
-                <label className="block text-xs md:text-sm font-medium text-foreground/70 mb-1.5 md:mb-2">Date of Birth</label>
-                <div className="flex items-center gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-gray-100 dark:bg-slate-900/50 rounded-xl cursor-not-allowed">
-                  <User className="w-4 h-4 md:w-5 md:h-5 text-gray-500" />
-                  <span className="font-medium text-sm md:text-base text-gray-500 dark:text-gray-400">
-                    {profile?.dateOfBirth || "Not set"}
-                  </span>
-                  <span className="ml-auto text-[10px] bg-gray-200 dark:bg-slate-800 text-gray-600 dark:text-gray-400 px-2 py-1 rounded">Read-only</span>
-                </div>
+                <label className="flex items-center justify-between text-xs md:text-sm font-medium text-foreground/70 mb-1.5 md:mb-2">
+                  <span>Date of Birth</span>
+                  {isEditing && <span className="text-[10px] bg-gray-200 dark:bg-slate-800 text-gray-600 dark:text-gray-400 px-1.5 py-0.5 rounded">Read-only</span>}
+                </label>
+                {isEditing ? (
+                  <div className="flex items-center gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-gray-100 dark:bg-slate-900/50 rounded-xl cursor-not-allowed">
+                    <User className="w-4 h-4 md:w-5 md:h-5 text-gray-500" />
+                    <span className="font-medium text-sm md:text-base text-gray-500 dark:text-gray-400">
+                      {profile?.dateOfBirth || "Not set"}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-card-border/30 rounded-xl">
+                    <User className="w-4 h-4 md:w-5 md:h-5 text-brand-secondary" />
+                    <span className="font-medium text-sm md:text-base">{profile?.dateOfBirth || "Not set"}</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -766,12 +792,12 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
                     type="text"
                     value={formData.operatingCity}
                     onChange={(e) => setFormData({ ...formData, operatingCity: e.target.value })}
-                    className="w-full px-3 py-2.5 md:px-4 md:py-3 rounded-xl bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm text-sm md:text-base"
+                    className="w-full px-3 py-2.5 md:px-4 md:py-3 rounded-xl bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm text-sm md:text-base capitalize"
                   />
                 ) : (
                   <div className="flex items-center gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-card-border/30 rounded-xl">
                     <MapPin className="w-4 h-4 md:w-5 md:h-5 text-brand-primary" />
-                    <span className="font-medium text-sm md:text-base">{profile?.operatingCity || "Not set"}</span>
+                    <span className="font-medium text-sm md:text-base capitalize">{profile?.operatingCity || "Not set"}</span>
                   </div>
                 )}
               </div>
@@ -782,12 +808,12 @@ export default function ProfileTab({ profile, userId, onSignOut }: { profile: an
                     type="text"
                     value={formData.operatingState}
                     onChange={(e) => setFormData({ ...formData, operatingState: e.target.value })}
-                    className="w-full px-3 py-2.5 md:px-4 md:py-3 rounded-xl bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm text-sm md:text-base"
+                    className="w-full px-3 py-2.5 md:px-4 md:py-3 rounded-xl bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm text-sm md:text-base capitalize"
                   />
                 ) : (
                   <div className="flex items-center gap-2 md:gap-3 px-3 py-2.5 md:px-4 md:py-3 bg-card-border/30 rounded-xl">
                     <MapPin className="w-4 h-4 md:w-5 md:h-5 text-brand-primary" />
-                    <span className="font-medium text-sm md:text-base">{profile?.operatingState || "Not set"}</span>
+                    <span className="font-medium text-sm md:text-base capitalize">{profile?.operatingState || "Not set"}</span>
                   </div>
                 )}
               </div>

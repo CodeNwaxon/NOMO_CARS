@@ -183,7 +183,9 @@ const NIGERIAN_STATES = [
 
   const openBidders = async (request: any) => {
     const snapshot = await getDocs(collection(db, "requests", request.id, "bids"));
-    const biddersData: any[] = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }));
+    const biddersData: any[] = snapshot.docs
+      .map((item) => ({ id: item.id, ...item.data() }))
+      .filter((item: any) => item.status !== "withdrawn");
 
     // Fetch driver profiles and vehicle data to ensure we have the latest images
     for (let bid of biddersData) {

@@ -6,7 +6,7 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/context/AuthContext";
 import { finalizePayment } from "@/actions/payment";
-import { Loader2, Printer, ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react";
+import { Loader2, Printer, X, CheckCircle2, AlertCircle } from "lucide-react";
 
 interface Transaction {
   reference: string;
@@ -100,8 +100,8 @@ export default function ReceiptPage() {
         <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Receipt Unavailable</h1>
         <p className="text-gray-500 text-center mb-6">{error}</p>
-        <button onClick={() => router.back()} className="px-6 py-2.5 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-primary/90 transition-colors">
-          Go Back
+        <button onClick={() => { window.close(); router.back(); }} className="px-6 py-2.5 bg-brand-primary text-white rounded-xl font-bold hover:bg-brand-primary/90 transition-colors">
+          Close
         </button>
       </div>
     );
@@ -114,11 +114,11 @@ export default function ReceiptPage() {
       {/* Non-printable controls */}
       <div className="max-w-2xl mx-auto mb-4 md:mb-6 flex justify-between items-center print:hidden">
         <button
-          onClick={() => router.back()}
+          onClick={() => { window.close(); router.back(); }}
           className="flex items-center gap-1 md:gap-2 text-slate-500 hover:text-brand-primary transition-colors text-sm md:text-base font-medium"
         >
-          <ArrowLeft className="w-3 h-3 md:w-4 md:h-4" />
-          Back
+          <X className="w-4 h-4 md:w-5 md:h-5" />
+          Close
         </button>
         <button
           onClick={handlePrint}

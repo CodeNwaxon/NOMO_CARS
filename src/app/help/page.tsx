@@ -30,6 +30,15 @@ export default function HelpPage() {
       } catch (err) {}
     };
     fetchSiteConfig();
+
+    // Safely read query parameters on client-side
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const initialMessage = params.get("message");
+      if (initialMessage) {
+        setMessage(initialMessage);
+      }
+    }
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import {
-  User, Phone, Star, Camera, Check, X, LogOut, MessageCircle, MapPin, Car, CarFront, Share2, Crown, ArrowLeft, Loader2
+  User, Phone, Star, Camera, Check, X, LogOut, MessageCircle, MapPin, Car, CarFront, Share2, Crown, ArrowLeft, Loader2, Info
 } from "lucide-react";
 import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -50,6 +50,7 @@ export default function PassengerDashboard() {
   });
 
   const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const [showLevelInfo, setShowLevelInfo] = useState(false);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteCode, setDeleteCode] = useState("");
@@ -456,9 +457,16 @@ export default function PassengerDashboard() {
             <p className="text-sm text-foreground/60 mb-4 w-full truncate px-2">{user.email}</p>
 
             <div className="flex flex-col items-center gap-2 mb-6">
-              <div className="flex items-center gap-1 bg-card-border/50 px-4 py-2 rounded-full shadow-inner">
-                {renderStars(profile?.rating || 5.0)}
-                <span className="ml-2 font-bold text-sm">{(profile?.rating || 5.0).toFixed(1)}</span>
+              <div className="flex items-center gap-1 bg-card-border/50 px-4 py-2 rounded-full shadow-inner relative">
+                {renderStars(Math.min(5, profile?.passengerStars || 0))}
+                <span className="ml-2 font-bold text-sm">{Math.min(5, profile?.passengerStars || 0).toFixed(1)}</span>
+                <button
+                  onClick={() => setShowLevelInfo(true)}
+                  className="ml-2 p-1 text-foreground/50 hover:text-brand-primary transition-colors bg-card-bg rounded-full shadow-sm"
+                  title="How to get more stars?"
+                >
+                  <Info className="w-4 h-4" />
+                </button>
               </div>
               
               {(profile?.passengerStars || 0) > 0 && (
@@ -593,7 +601,7 @@ export default function PassengerDashboard() {
                 ) : (
                   <div className={`flex items-center gap-3 px-4 py-3 bg-card-border/30 rounded-xl ${hasNoUsername ? "pulse-green" : ""}`}>
                     <User className="w-5 h-5 text-brand-primary" />
-                    <span className="font-medium">{getDisplayName()}</span>
+                    <span className="font-medium capitalize">{getDisplayName()}</span>
                   </div>
                 )}
               </div>
@@ -605,13 +613,13 @@ export default function PassengerDashboard() {
                     type="text"
                     value={formData.firstName}
                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                    className="w-full px-4 py-3 rounded-xl bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 capitalize"
                     placeholder="Enter your full name"
                   />
                 ) : (
                   <div className="flex items-center gap-3 px-4 py-3 bg-card-border/30 rounded-xl">
                     <User className="w-5 h-5 text-brand-secondary" />
-                    <span className="font-medium">{profile?.firstName || "Not set"}</span>
+                    <span className="font-medium capitalize">{profile?.firstName || "Not set"}</span>
                   </div>
                 )}
               </div>
@@ -750,6 +758,51 @@ export default function PassengerDashboard() {
                 {isDeleting ? "Deleting..." : "Confirm Delete"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Level Info Modal */}
+      {showLevelInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-slate-900 border border-card-border rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl relative">
+            <button
+              onClick={() => setShowLevelInfo(false)}
+              className="absolute top-4 right-4 p-2 text-foreground/50 hover:text-foreground transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            
+            <div className="w-16 h-16 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-amber-500/20">
+              <Star className="w-8 h-8 text-amber-500 fill-amber-500" />
+            </div>
+            
+            <h3 className="text-xl md:text-2xl font-bold text-center mb-2">Passenger Level</h3>
+            <p className="text-sm text-center text-foreground/70 mb-6">
+              Your permanent star rating is determined by your referrals and successful bids.
+            </p>
+            
+            <div className="space-y-3 mb-6 bg-card-border/30 p-4 rounded-xl">
+              <div className="flex items-start gap-3">
+                <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                <p className="text-sm">Refer friends! You earn stars as you accumulate referral points.</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                <p className="text-sm">Complete successful bids to slowly build your trust rating over time.</p>
+              </div>
+              <div className="flex items-start gap-3">
+                <Check className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                <p className="text-sm">More stars show drivers you are a trusted and reliable passenger!</p>
+              </div>
+            </div>
+            
+            <button
+              onClick={() => setShowLevelInfo(false)}
+              className="w-full py-3 bg-brand-primary text-white font-bold rounded-xl hover:bg-brand-primary/90 transition-colors shadow-lg"
+            >
+              Got it!
+            </button>
           </div>
         </div>
       )}

@@ -19,6 +19,7 @@ export default function BidForJobsPage() {
   const [requests, setRequests] = useState<any[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
+  const [withdrawBidRequest, setWithdrawBidRequest] = useState<any | null>(null);
   const [selectedVehicle, setSelectedVehicle] = useState("");
   const [amount, setAmount] = useState("");
   const [bidDescription, setBidDescription] = useState("");
@@ -220,14 +221,17 @@ export default function BidForJobsPage() {
             const matchesDest = dQ === "" || dCity.includes(dQ) || dState.includes(dQ);
             return matchesLoc && matchesDest;
           }).map((request) => {
-            const isApplied = appliedRequests.has(request.id);
+            const isApplied = appliedRequests.has(request.id) && appliedRequests.get(request.id).status !== "withdrawn";
+            const isWithdrawn = appliedRequests.has(request.id) && appliedRequests.get(request.id).status === "withdrawn";
             const driverBid = appliedRequests.get(request.id);
             const isAssigned = request.status === "assigned";
             const isWinner = isAssigned && request.selectedDriverId === user?.uid;
 
-            return <button key={request.id} disabled={!isWinner && (isApplied || isAssigned || request.status !== "open" || bidCount >= limits.dailyBids)} onClick={() => {
+            return <button key={request.id} disabled={!isWinner && (isWithdrawn || isAssigned || request.status !== "open" || (!isApplied && bidCount >= limits.dailyBids))} onClick={() => {
               if (isWinner) {
                 openAssignedBid(request, driverBid);
+              } else if (isApplied) {
+                setWithdrawBidRequest({ request, bid: driverBid });
               } else {
                 setSelectedRequest(request);
                 setAmount(Number(request.budget).toLocaleString());
@@ -235,7 +239,7 @@ export default function BidForJobsPage() {
                 setBidDescription("");
                 setShowDescriptionInput(false);
               }
-            }} className={`text-left rounded-xl md:rounded-2xl p-2.5 md:p-5 transition-all duration-300 relative overflow-hidden group ${isWinner ? "bg-green-50 dark:bg-green-900/20 border border-green-500/50 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/40" : isAssigned ? "bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-slate-700 opacity-60 grayscale-[60%] cursor-not-allowed" : isApplied ? "bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 opacity-70 grayscale-[30%] cursor-not-allowed" : request.status !== "open" || bidCount >= limits.dailyBids ? "bg-card-bg border border-card-border opacity-60 grayscale cursor-not-allowed" : "bg-gradient-to-br from-brand-secondary/10 to-brand-primary/5 border border-brand-secondary/50 shadow-lg shadow-brand-secondary/20 hover:bg-brand-secondary/5 hover:border-brand-secondary hover:shadow-2xl hover:shadow-brand-secondary/40 hover:-translate-y-1.5"}`}>
+            }} className={`text-left rounded-xl md:rounded-2xl p-2.5 md:p-5 transition-all duration-300 relative overflow-hidden group ${isWinner ? "bg-green-50 dark:bg-green-900/20 border border-green-500/50 cursor-pointer hover:bg-green-100 dark:hover:bg-green-900/40" : isAssigned ? "bg-slate-200 dark:bg-slate-800 border-slate-300 dark:border-slate-700 opacity-60 grayscale-[60%] cursor-not-allowed" : isWithdrawn ? "bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 opacity-70 grayscale-[30%] cursor-not-allowed" : isApplied ? "bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 hover:dark:bg-slate-800/80 cursor-pointer" : request.status !== "open" || bidCount >= limits.dailyBids ? "bg-card-bg border border-card-border opacity-60 grayscale cursor-not-allowed" : "bg-gradient-to-br from-brand-secondary/10 to-brand-primary/5 border border-brand-secondary/50 shadow-lg shadow-brand-secondary/20 hover:bg-brand-secondary/5 hover:border-brand-secondary hover:shadow-2xl hover:shadow-brand-secondary/40 hover:-translate-y-1.5"}`}>
               {isWinner ? (
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-2 md:border-4 border-green-500 text-green-500 text-base md:text-3xl font-black px-3 py-1 md:px-6 md:py-2 rounded-lg md:rounded-xl opacity-40 transform -rotate-12 z-20 pointer-events-none select-none tracking-widest uppercase shadow-sm">
                   WON
@@ -243,6 +247,10 @@ export default function BidForJobsPage() {
               ) : isAssigned ? (
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-2 md:border-4 border-red-500 text-red-500 text-sm md:text-2xl font-black px-2 py-0.5 md:px-4 md:py-1 rounded-lg md:rounded-xl opacity-30 transform -rotate-12 z-20 pointer-events-none select-none tracking-widest uppercase flex items-center justify-center whitespace-nowrap">
                   TAKEN
+                </div>
+              ) : isWithdrawn ? (
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-2 md:border-4 border-slate-500 text-slate-500 text-sm md:text-2xl font-black px-2 py-0.5 md:px-4 md:py-1 rounded-lg md:rounded-xl opacity-30 transform -rotate-12 z-20 pointer-events-none select-none tracking-widest uppercase flex items-center justify-center whitespace-nowrap">
+                  Withdrawn
                 </div>
               ) : isApplied ? (
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 border-2 md:border-4 border-brand-primary text-brand-primary text-sm md:text-2xl font-black px-2 py-0.5 md:px-4 md:py-1 rounded-lg md:rounded-xl opacity-20 transform -rotate-12 z-20 pointer-events-none select-none tracking-widest uppercase flex items-center justify-center whitespace-nowrap">
@@ -456,6 +464,46 @@ export default function BidForJobsPage() {
             >
               {submitting ? <Loader2 className="w-6 h-6 animate-spin mx-auto" /> : bidCount >= limits.dailyBids ? "Bid limit reached" : selectedRequest?.passengerId === user?.uid ? "Cannot bid on own request" : "Submit Proposal"}
             </button>
+          </div>
+        </div>
+      )}
+
+      {withdrawBidRequest && (
+        <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-md flex items-center justify-center p-2 animate-in fade-in duration-200">
+          <div className="bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-sm md:rounded-xl p-4 md:p-8 w-full max-w-md shadow-2xl relative zoom-in-95 duration-300">
+            <button onClick={() => setWithdrawBidRequest(null)} className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+              <X className="w-4 h-4" />
+            </button>
+            <h2 className="font-extrabold text-2xl text-slate-900 dark:text-white mb-2">Withdraw Bid?</h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">Are you sure you want to withdraw your proposal of <b className="text-brand-primary">₦{Number(withdrawBidRequest.bid.amount).toLocaleString()}</b> for this {withdrawBidRequest.request.category}? <br/><br/><b>Note: Your bid limit will NOT be refunded.</b></p>
+            
+            <div className="flex gap-3">
+              <button onClick={() => setWithdrawBidRequest(null)} disabled={submitting} className="flex-1 py-3 rounded-xl border border-slate-200 dark:border-slate-700 font-bold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50">Cancel</button>
+              <button onClick={async () => {
+                try {
+                  setSubmitting(true);
+                  const bidRef = doc(db, "requests", withdrawBidRequest.request.id, "bids", withdrawBidRequest.bid.id);
+                  const requestRef = doc(db, "requests", withdrawBidRequest.request.id);
+                  await runTransaction(db, async (transaction) => {
+                    const reqSnap = await transaction.get(requestRef);
+                    if (reqSnap.exists()) {
+                      transaction.update(requestRef, { bidCount: Math.max(0, Number(reqSnap.data().bidCount || 0) - 1) });
+                    }
+                    transaction.update(bidRef, { status: "withdrawn" });
+                  });
+                  toast.success("Bid withdrawn successfully.");
+                  setWithdrawBidRequest(null);
+                  await loadJobs();
+                } catch (error) {
+                  console.error(error);
+                  toast.error("Failed to withdraw bid.");
+                } finally {
+                  setSubmitting(false);
+                }
+              }} disabled={submitting} className="flex-1 py-3 rounded-xl bg-red-500 text-white font-bold hover:bg-red-600 shadow-lg shadow-red-500/30 transition-all flex items-center justify-center disabled:opacity-50">
+                {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : "Withdraw"}
+              </button>
+            </div>
           </div>
         </div>
       )}

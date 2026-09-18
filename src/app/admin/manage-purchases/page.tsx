@@ -168,7 +168,7 @@ export default function ManagePurchasesPage() {
         return;
       }
       if (sortedVip[i].price >= sortedVip[i + 1].price) {
-        toast.error(`Invalid Pricing: ${sortedVip[i + 1].stars} Star VIP (Γéª${sortedVip[i + 1].price.toLocaleString()}) must cost MORE than ${sortedVip[i].stars} Star VIP (Γéª${sortedVip[i].price.toLocaleString()}).`);
+        toast.error(`Invalid Pricing: ${sortedVip[i + 1].stars} Star VIP (₦${sortedVip[i + 1].price.toLocaleString()}) must cost MORE than ${sortedVip[i].stars} Star VIP (₦${sortedVip[i].price.toLocaleString()}).`);
         return;
       }
     }
@@ -196,6 +196,11 @@ export default function ManagePurchasesPage() {
       
       const updateData: any = { ...pricing };
       
+      // Sort tickets by duration (Days) ascending before saving
+      if (updateData.tickets && Array.isArray(updateData.tickets)) {
+        updateData.tickets.sort((a: any, b: any) => (a.durationDays || 0) - (b.durationDays || 0));
+      }
+      
       // If turning ON from OFF, set new timestamp
       if (pricing.startTicketCollection && !oldPricing.startTicketCollection) {
         updateData.ticketCollectionStartedAt = serverTimestamp();
@@ -205,6 +210,13 @@ export default function ManagePurchasesPage() {
       }
 
       await setDoc(pricingRef, updateData);
+      
+      // Keep local state in sync with the sorted tickets
+      setPricing({
+        ...updateData,
+        ticketCollectionStartedAt: updateData.ticketCollectionStartedAt // Prevent issues if it's a serverTimestamp placeholder
+      });
+      
       toast.success("Pricing configuration saved successfully!");
 
     } catch (error) {
@@ -266,8 +278,8 @@ export default function ManagePurchasesPage() {
       vipErrors[sortedVipRefs[i].originalIndex] = `Duplicate Star Level`;
       vipErrors[sortedVipRefs[i + 1].originalIndex] = `Duplicate Star Level`;
     } else if (sortedVipRefs[i].price >= sortedVipRefs[i + 1].price) {
-      vipErrors[sortedVipRefs[i + 1].originalIndex] = `Must cost MORE than ${sortedVipRefs[i].stars} Star VIP (Γéª${sortedVipRefs[i].price.toLocaleString()})`;
-      vipErrors[sortedVipRefs[i].originalIndex] = `Must cost LESS than ${sortedVipRefs[i + 1].stars} Star VIP (Γéª${sortedVipRefs[i + 1].price.toLocaleString()})`;
+      vipErrors[sortedVipRefs[i + 1].originalIndex] = `Must cost MORE than ${sortedVipRefs[i].stars} Star VIP (₦${sortedVipRefs[i].price.toLocaleString()})`;
+      vipErrors[sortedVipRefs[i].originalIndex] = `Must cost LESS than ${sortedVipRefs[i + 1].stars} Star VIP (₦${sortedVipRefs[i + 1].price.toLocaleString()})`;
     }
   }
 
@@ -356,7 +368,7 @@ export default function ManagePurchasesPage() {
                   <input type="text" inputMode="numeric" value={ticket.durationDays || ""} onChange={(e) => updateTicket(index, "durationDays", e.target.value ? parseInt(e.target.value.replace(/\D/g, ""), 10) : 0)} className="w-full bg-white dark:bg-slate-950 border-none text-slate-900 dark:text-slate-100 rounded-xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-brand-primary focus:outline-none transition-all" />
                 </div>
                 <div className="w-full md:w-1/3">
-                  <label className="block text-xs font-bold text-foreground/60 mb-1 uppercase tracking-wider">Price (Γéª)</label>
+                  <label className="block text-xs font-bold text-foreground/60 mb-1 uppercase tracking-wider">Price (₦)</label>
                   <input 
                     type="text" 
                     value={ticket.price ? ticket.price.toLocaleString() : ""} 
@@ -397,7 +409,7 @@ export default function ManagePurchasesPage() {
                     <input type="text" inputMode="numeric" value={vipObj.durationDays || ""} onChange={(e) => updateVip(index, "durationDays", e.target.value ? parseInt(e.target.value.replace(/\D/g, ""), 10) : 0)} className="w-full bg-white dark:bg-slate-950 border-none text-slate-900 dark:text-slate-100 rounded-xl px-4 py-2 shadow-sm focus:ring-2 focus:ring-brand-primary focus:outline-none transition-all" />
                   </div>
                   <div className="w-full md:w-1/4">
-                    <label className={`block text-xs font-bold uppercase tracking-wider mb-1 ${vipErrors[index] ? 'text-red-500' : 'text-foreground/60'}`}>Price (Γéª)</label>
+                    <label className={`block text-xs font-bold uppercase tracking-wider mb-1 ${vipErrors[index] ? 'text-red-500' : 'text-foreground/60'}`}>Price (₦)</label>
                     <input 
                       type="text" 
                       value={vipObj.price ? vipObj.price.toLocaleString() : ""} 
@@ -561,7 +573,7 @@ export default function ManagePurchasesPage() {
                           {txn.type || "Unknown"}
                         </span>
                       </td>
-                      <td className="p-3 font-bold text-slate-900 dark:text-white">Γéª{txn.amount ? txn.amount.toLocaleString() : '0'}</td>
+                      <td className="p-3 font-bold text-slate-900 dark:text-white">₦{txn.amount ? txn.amount.toLocaleString() : '0'}</td>
                       <td className="p-3 text-slate-500 font-mono text-xs">{txn.reference || txn.id}</td>
                       <td className="p-3 text-right">
                         <Link 

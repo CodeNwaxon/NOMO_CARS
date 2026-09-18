@@ -54,8 +54,8 @@ export default function TicketPage() {
         if (data.startTicketCollection !== undefined) setStartTicketCollection(data.startTicketCollection);
         if (data.ticketCollectionStartedAt) {
           setTicketCollectionStartedAt(
-            data.ticketCollectionStartedAt.toDate 
-              ? data.ticketCollectionStartedAt.toDate().toISOString() 
+            data.ticketCollectionStartedAt.toDate
+              ? data.ticketCollectionStartedAt.toDate().toISOString()
               : data.ticketCollectionStartedAt
           );
         }
@@ -159,7 +159,7 @@ export default function TicketPage() {
       {/* Background decorations */}
       <div className="absolute top-[-10%] right-[-10%] w-[30rem] h-[30rem] bg-green-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-      <div className="max-w-5xl mx-auto z-10 relative">
+      <div className="max-w-7xl mx-auto z-10 relative">
         <div className="flex items-center gap-4 mb-8">
           <button
             onClick={() => router.back()}
@@ -188,7 +188,7 @@ export default function TicketPage() {
               driverCreatedAtStr = profile.createdAt.toDate ? profile.createdAt.toDate().toISOString() : profile.createdAt;
             }
             const driverStart = driverCreatedAtStr ? new Date(driverCreatedAtStr) : defaultStart;
-            
+
             const effectiveStartDate = new Date(Math.max(driverStart.getTime(), defaultStart.getTime()));
             const freePeriodEnd = new Date(effectiveStartDate.getTime() + freeTicketPlanDays * 24 * 60 * 60 * 1000);
             const globalFreeMsLeft = freePeriodEnd.getTime() - new Date().getTime();
@@ -275,7 +275,7 @@ export default function TicketPage() {
           );
         })()}
 
-        <div className="px-10 md:px-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <div className="px-10 md:px-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {ticketPlans.map((plan) => (
             <PaystackTicketCard
               key={plan.days}
