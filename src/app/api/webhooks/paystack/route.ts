@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
         const oldStars = userData.vipStars || 0;
 
         await userRef.update({
-          vipStars: metadata.planStars,
+          vipStars: Number(metadata.planStars),
           vipExpiry: expiryDate.toISOString(),
         });
 
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
         let newMaxCars = 1; // Default
         
         if (pricingData && pricingData.vip) {
-          const configForStar = pricingData.vip.find((v: any) => v.stars === metadata.planStars);
+          const configForStar = pricingData.vip.find((v: any) => v.stars === Number(metadata.planStars));
           if (configForStar && configForStar.maxCars) {
             newMaxCars = configForStar.maxCars;
           }
@@ -87,8 +87,8 @@ export async function POST(req: NextRequest) {
 
         await userRef.update({
           ticketExpiry: expiryDate.toISOString(),
-          lastTicketPrice: metadata.planPrice,
-          lastTicketDays: metadata.planDays,
+          lastTicketPrice: Number(metadata.planPrice),
+          lastTicketDays: Number(metadata.planDays),
         });
       }
 

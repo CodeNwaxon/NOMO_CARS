@@ -69,13 +69,13 @@ export async function finalizePayment(reference: string, expectedUserId: string)
       if (metadata.planType === "vip") {
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + 180);
-        await userRef.update({ vipStars: metadata.planStars, vipExpiry: expiryDate.toISOString() });
+        await userRef.update({ vipStars: Number(metadata.planStars), vipExpiry: expiryDate.toISOString() });
       } else if (metadata.planType === "ticket") {
         const expiryDate = new Date();
         expiryDate.setDate(expiryDate.getDate() + Number(metadata.planDays));
         await userRef.update({
           ticketExpiry: expiryDate.toISOString(),
-          lastTicketPrice: metadata.planPrice,
+          lastTicketPrice: Number(metadata.planPrice),
           lastTicketDays: Number(metadata.planDays),
         });
       }
