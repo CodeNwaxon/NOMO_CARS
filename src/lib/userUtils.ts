@@ -113,6 +113,11 @@ export function normalizePhone(phone: string): string {
   // Strip everything except digits
   let digits = phone.replace(/\D/g, "");
 
+  // If user typed something like 234070... fix it to 23470...
+  if (digits.startsWith("2340") && digits.length > 12) {
+    digits = "234" + digits.substring(4);
+  }
+
   // If it starts with 234 and is 13 digits, it's already the full number
   if (digits.startsWith("234") && digits.length === 13) {
     return "+" + digits;

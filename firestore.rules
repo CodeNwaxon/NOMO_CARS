@@ -50,12 +50,7 @@ service cloud.firestore {
       // Only authenticated users can create a vehicle.
       // Additionally, the driverId must match the authenticated user's uid.
       // Non-VIPs can only have 1 vehicle (vehicleId == request.auth.uid). VIPs can have multiple.
-      allow create: if request.auth != null 
-                    && request.resource.data.driverId == request.auth.uid
-                    && (
-                      vehicleId == request.auth.uid ||
-                      get(/databases/$(database)/documents/users/$(request.auth.uid)).data.vipStars >= 1
-                    );
+      allow create: if request.auth != null && request.resource.data.driverId == request.auth.uid;
       
       // Only the vehicle owner can update or delete it
       allow update, delete: if request.auth != null && resource.data.driverId == request.auth.uid;

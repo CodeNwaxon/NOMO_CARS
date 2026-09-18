@@ -58,6 +58,7 @@ export default function DriverRegistration() {
   const [profilePicFile, setProfilePicFile] = useState<File | null>(null);
   const [profilePicPreview, setProfilePicPreview] = useState<string | null>(null);
   const [idImagePreview, setIdImagePreview] = useState<string | null>(null);
+  const [phoneError, setPhoneError] = useState("");
   const nameSetRef = useRef(false);
 
   // Initialize preview with Google image if available
@@ -75,6 +76,7 @@ export default function DriverRegistration() {
     formState: { errors },
   } = useForm<DriverFormData>({
     resolver: zodResolver(driverSchema),
+    mode: "onTouched",
     defaultValues: {
       phone: "+234",
       whatsappEnabled: false,
@@ -136,15 +138,38 @@ export default function DriverRegistration() {
     if (phoneValue && !phoneValue.startsWith("+234")) {
       // If user deletes +234, put it back or format it
       const cleaned = phoneValue.replace(/\D/g, "");
-      if (cleaned.startsWith("234")) {
+      if (cleaned.startsWith("2340") && cleaned.length > 4) {
+        setValue("phone", "+234" + cleaned.substring(4));
+      } else if (cleaned.startsWith("234")) {
         setValue("phone", "+" + cleaned);
       } else if (cleaned.startsWith("0")) {
         setValue("phone", "+234" + cleaned.substring(1));
       } else {
         setValue("phone", "+234" + cleaned);
       }
+    } else if (phoneValue && phoneValue.startsWith("+2340")) {
+      // Fix cases where they type +2340 directly
+      setValue("phone", "+234" + phoneValue.substring(5));
     }
   }, [phoneValue, setValue]);
+
+  // Debounced phone unique check
+  useEffect(() => {
+    if (!phoneValue || phoneValue.length < 11 || !user) {
+      setPhoneError("");
+      return;
+    }
+    const timeout = setTimeout(async () => {
+      try {
+        const unique = await checkPhoneUnique(phoneValue, user.uid);
+        if (!unique) setPhoneError("This phone number is already taken by another driver.");
+        else setPhoneError("");
+      } catch (err) {
+        console.error(err);
+      }
+    }, 800);
+    return () => clearTimeout(timeout);
+  }, [phoneValue, user]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -173,9 +198,14 @@ export default function DriverRegistration() {
       setUploadError("");
 
       // 0. Check phone uniqueness before proceeding
+      if (phoneError) {
+        setIsSubmitting(false);
+        return;
+      }
+      
       const phoneUnique = await checkPhoneUnique(data.phone, user.uid);
       if (!phoneUnique) {
-        setUploadError("This phone number is already linked to another account.");
+        setPhoneError("This phone number is already taken by another driver.");
         setIsSubmitting(false);
         return;
       }
@@ -319,6 +349,7 @@ export default function DriverRegistration() {
                 className="w-full px-3 py-2 md:px-4 bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all shadow-sm placeholder:text-slate-400 dark:placeholder:text-slate-500 text-sm md:text-base rounded-xl"
               />
               {errors.phone && <p className="text-brand-accent text-xs mt-1">{errors.phone.message}</p>}
+              {phoneError && !errors.phone && <p className="text-brand-accent text-xs mt-1">{phoneError}</p>}
 
               <div className="flex items-center gap-2 mt-3 ml-1">
                 <input
