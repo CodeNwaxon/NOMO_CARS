@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { collection, query, where, getDocs, addDoc, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { X, Loader2, Plus, MapPin, Trash2, Edit2, CheckCircle2 } from "lucide-react";
@@ -28,6 +28,15 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
   const [submitting, setSubmitting] = useState(false);
   const [routeToDelete, setRouteToDelete] = useState<string | null>(null);
   const [showRouteInfoModal, setShowRouteInfoModal] = useState(false);
+
+  const outerScrollRef = useRef<HTMLDivElement>(null);
+  const innerScrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Ensure both possible scroll containers are at the top when the modal opens
+    if (outerScrollRef.current) outerScrollRef.current.scrollTop = 0;
+    if (innerScrollRef.current) innerScrollRef.current.scrollTop = 0;
+  }, []);
 
   const [formData, setFormData] = useState({
     startPoint: profile?.operatingState ? `${profile.operatingCity ? profile.operatingCity + ', ' : ''}${profile.operatingState}` : "",
@@ -108,7 +117,7 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-900/50 backdrop-blur-sm md:overflow-y-auto flex flex-col items-center p-0 md:p-4">
+    <div ref={outerScrollRef} className="fixed inset-0 z-[100] bg-slate-900/50 backdrop-blur-sm md:overflow-y-auto flex flex-col items-center p-0 md:p-4">
       <div className="w-full max-w-5xl bg-white dark:bg-slate-950 flex flex-col flex-1 md:flex-none md:h-auto md:my-6 md:rounded-2xl overflow-hidden shadow-2xl border border-transparent md:border-card-border">
         {/* Header */}
         <div className="flex justify-between items-center p-4 md:p-6 bg-blue-950 text-white shadow-md flex-shrink-0">
@@ -122,7 +131,7 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+        <div ref={innerScrollRef} className="flex-1 overflow-y-auto p-4 md:p-8">
           {isAdding ? (
             <form onSubmit={handleSubmit} className="space-y-4 bg-slate-50 dark:bg-slate-900/50 p-4 md:p-6 rounded-2xl mb-6 shadow-sm">
               <h3 className="font-bold mb-4 flex items-center gap-2 text-brand-primary"><Plus className="w-5 h-5"/> Add New Route</h3>
