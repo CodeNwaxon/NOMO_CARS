@@ -401,6 +401,15 @@ export default function BidForJobsPage() {
               })()}
             </div>
 
+            {selectedRequest.description && (
+              <div className="mb-6">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-2">Passenger's Description</label>
+                <div className="p-3 md:p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <p className="text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{selectedRequest.description}</p>
+                </div>
+              </div>
+            )}
+
             <div className="mb-6">
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide mb-2">Your Bid Amount</label>
               <div className="relative">

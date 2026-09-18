@@ -32,7 +32,7 @@ export default function CreateBidPage() {
   const [saving, setSaving] = useState(false);
   const [quotaUsed, setQuotaUsed] = useState(0);
 
-  const [form, setForm] = useState({ category: "car", startDate: "", endDate: "", budget: "", currentCity: "", currentState: "", destinationCity: "", destinationState: "", urgent: false });
+  const [form, setForm] = useState({ category: "car", startDate: "", endDate: "", budget: "", currentCity: "", currentState: "", destinationCity: "", destinationState: "", urgent: false, description: "" });
   const [driverToConfirm, setDriverToConfirm] = useState<any | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingBidCount, setEditingBidCount] = useState<number>(0);
@@ -169,7 +169,7 @@ const NIGERIAN_STATES = [
 
       setEditingId(null);
       setEditingBidCount(0);
-      setForm({ category: "car", startDate: "", endDate: "", budget: "", currentCity: "", currentState: "", destinationCity: "", destinationState: "", urgent: false });
+      setForm({ category: "car", startDate: "", endDate: "", budget: "", currentCity: "", currentState: "", destinationCity: "", destinationState: "", urgent: false, description: "" });
       setEditingId(null);
       await loadRequests();
       setActiveTab("browse");
@@ -388,6 +388,16 @@ const NIGERIAN_STATES = [
                 <span className="font-medium">Urgent request</span>
               </label>
 
+              <div className="mt-3">
+                <label className="block text-sm font-medium mb-1">Description (Optional)</label>
+                <textarea
+                  placeholder="Any additional details..."
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  className={`${inputStyle} resize-none min-h-[80px]`}
+                />
+              </div>
+
               <p className="text-xs text-foreground/60 py-2 border-t border-card-border mt-2">Your request stays open for {durationLabel}.</p>
 
               <button
@@ -477,7 +487,8 @@ const NIGERIAN_STATES = [
                                   currentState: request.currentState,
                                   destinationCity: request.destinationCity || "",
                                   destinationState: request.destinationState || "",
-                                  urgent: request.urgent || false
+                                  urgent: request.urgent || false,
+                                  description: request.description || ""
                                 });
                                 setEditingId(request.id);
                                 setEditingBidCount(request.bidCount || 0);
@@ -613,14 +624,14 @@ const NIGERIAN_STATES = [
 
       {selectedRequest && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-background border border-card-border rounded-2xl p-5 w-full max-w-md max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4 sticky top-0 bg-background pt-1 pb-3 border-b border-card-border z-10">
-              <h2 className="font-bold text-lg">Drivers who bid</h2>
-              <button onClick={() => setSelectedRequest(null)} className="p-1.5 hover:bg-card-bg rounded-full"><X className="w-5 h-5" /></button>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-2xl">
+            <div className="flex justify-between items-center mb-4 sticky top-0 bg-white dark:bg-slate-900 pt-1 pb-3 border-b border-slate-100 dark:border-slate-800 z-10">
+              <h2 className="font-bold text-lg text-slate-900 dark:text-white">Drivers who bid</h2>
+              <button onClick={() => setSelectedRequest(null)} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full"><X className="w-5 h-5 text-slate-500" /></button>
             </div>
 
             {bidders.length === 0 ? (
-              <p className="text-sm text-foreground/60 text-center py-8">No drivers have bid yet.</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-8">No drivers have bid yet.</p>
             ) : (
               <div className="space-y-3">
                 {bidders.map((bid) => (

@@ -34,6 +34,7 @@ service cloud.firestore {
       allow update: if request.auth != null && (
         (request.auth.uid == userId && (!changingSensitiveFields() || isRegisteringAsDriver())) 
         || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['favoriteCount'])
+        || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['jobsWon'])
       );
       
       match /favorites/{favoriteId} {
