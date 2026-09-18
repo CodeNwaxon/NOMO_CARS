@@ -179,6 +179,16 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
         }
       }
 
+      // Also delete all routes associated with this vehicle to prevent orphaned records
+      const servicesQuery = query(collection(db, "vehicleServices"), where("vehicleId", "==", vehicleToDelete));
+      const servicesSnapshot = await getDocs(servicesQuery);
+      
+      const deletePromises = servicesSnapshot.docs.map(serviceDoc => 
+        deleteDoc(doc(db, "vehicleServices", serviceDoc.id))
+      );
+      await Promise.all(deletePromises);
+
+      // Finally delete the vehicle itself
       await deleteDoc(doc(db, "vehicles", vehicleToDelete));
       toast.success("Vehicle deleted successfully");
       fetchVehicles();
