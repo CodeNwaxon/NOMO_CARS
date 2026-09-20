@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 
 const PaystackCoinCard = dynamic(() => import('@/components/PaystackCoinCard'), { ssr: false });
 
-const MAX_WRONG_GUESSES = 6;
+const MAX_WRONG_GUESSES = 10;
 const DAILY_REFILL_MS = 24 * 60 * 60 * 1000;
 
 interface WordGameModalProps {
@@ -32,7 +32,7 @@ export default function WordGameModal({ onClose }: WordGameModalProps) {
   const [skips, setSkips] = useState(3);
   const [gamesPlayed, setGamesPlayed] = useState(0);
   const [nextRefillTime, setNextRefillTime] = useState<number | null>(null);
-  const [lastPick, setLastPick] = useState<string | null>(null);
+
 
   const [gameState, setGameState] = useState<"playing" | "won" | "lost" | "cooldown">("playing");
   const [timeLeft, setTimeLeft] = useState("");
@@ -67,22 +67,24 @@ export default function WordGameModal({ onClose }: WordGameModalProps) {
   }, []);
 
   const saveState = async (m: number, l: number, h: number, s: number, gp: number, nrt: number | null) => {
-    localStorage.setItem("nomo_word_game", JSON.stringify({
+    const statePayload = {
       money: m,
       lives: l,
       hints: h,
       skips: s,
       gamesPlayed: gp,
       nextRefillTime: nrt
-    }));
+    };
+    localStorage.setItem("nomo_word_game", JSON.stringify(statePayload));
 
     if (user?.uid) {
       try {
         await updateDoc(doc(db, "users", user.uid), {
-          gameCoins: m
+          gameCoins: m,
+          gameState: statePayload
         });
       } catch (err) {
-        console.error("Failed to sync game coins", err);
+        console.error("Failed to sync game state", err);
       }
     }
   };
@@ -101,65 +103,103 @@ export default function WordGameModal({ onClose }: WordGameModalProps) {
     }
     setWord(randomWord);
     setGuessedLetters(new Set());
-    setLastPick(null);
     setGameState("playing");
   }, []);
 
   useEffect(() => {
-    const savedData = localStorage.getItem("nomo_word_game");
-    let currentMoney = 0;
-    let currentLives = 3;
-    let currentHints = 8;
-    let currentSkips = 3;
-    let currentGamesPlayed = 0;
-    let currentRefill = null;
+    const initGameState = async () => {
+      let currentMoney = 0;
+      let currentLives = 3;
+      let currentHints = 8;
+      let currentSkips = 3;
+      let currentGamesPlayed = 0;
+      let currentRefill: number | null = null;
+      let loadedFromCloud = false;
 
-    if (savedData) {
-      try {
-        const parsed = JSON.parse(savedData);
-        currentMoney = parsed.money ?? 0;
-        currentLives = parsed.lives ?? 3;
-        currentHints = parsed.hints ?? 8;
-        currentSkips = parsed.skips ?? 3;
-        currentGamesPlayed = parsed.gamesPlayed ?? 0;
-        currentRefill = parsed.nextRefillTime ?? null;
-
-        // Use older cooldown format if it exists instead of wiping it
-        if (!currentRefill && parsed.cooldownUntil) {
-          currentRefill = parsed.cooldownUntil;
+      // For authenticated users, try to load from Firestore first
+      if (user?.uid) {
+        try {
+          const userSnap = await getDoc(doc(db, "users", user.uid));
+          if (userSnap.exists()) {
+            const userData = userSnap.data();
+            const cloudState = userData.gameState;
+            if (cloudState) {
+              currentMoney = cloudState.money ?? 0;
+              currentLives = cloudState.lives ?? 3;
+              currentHints = cloudState.hints ?? 8;
+              currentSkips = cloudState.skips ?? 3;
+              currentGamesPlayed = cloudState.gamesPlayed ?? 0;
+              currentRefill = cloudState.nextRefillTime ?? null;
+              loadedFromCloud = true;
+            } else if (userData.gameCoins !== undefined) {
+              // Legacy: only gameCoins was saved, use it for money
+              currentMoney = userData.gameCoins ?? 0;
+            }
+          }
+        } catch (err) {
+          console.error("Failed to load game state from cloud", err);
         }
-
-        if (currentRefill && Date.now() >= currentRefill) {
-          if (currentLives < 3) currentLives = 3;
-          currentRefill = null;
-        }
-      } catch (e) {
-        console.error("Failed to parse game data", e);
       }
-    }
 
-    setMoney(currentMoney);
-    setLives(currentLives);
-    setHints(currentHints);
-    setSkips(currentSkips);
-    setGamesPlayed(currentGamesPlayed);
-    setNextRefillTime(currentRefill);
+      // Fallback to localStorage if not loaded from cloud
+      if (!loadedFromCloud) {
+        const savedData = localStorage.getItem("nomo_word_game");
+        if (savedData) {
+          try {
+            const parsed = JSON.parse(savedData);
+            currentMoney = parsed.money ?? 0;
+            currentLives = parsed.lives ?? 3;
+            currentHints = parsed.hints ?? 8;
+            currentSkips = parsed.skips ?? 3;
+            currentGamesPlayed = parsed.gamesPlayed ?? 0;
+            currentRefill = parsed.nextRefillTime ?? null;
 
-    if (currentLives <= 0) {
-      setGameState("cooldown");
-    } else {
-      startNewGame(currentGamesPlayed);
-    }
+            // Use older cooldown format if it exists
+            if (!currentRefill && parsed.cooldownUntil) {
+              currentRefill = parsed.cooldownUntil;
+            }
+          } catch (e) {
+            console.error("Failed to parse game data", e);
+          }
+        }
+      }
 
-    setMounted(true);
-  }, [startNewGame]);
+      // Handle expired cooldowns
+      if (currentRefill && Date.now() >= currentRefill) {
+        if (currentLives < 3) currentLives = 3;
+        currentRefill = null;
+      }
 
-  useEffect(() => {
-    if ((profile as any)?.gameCoins && (profile as any).gameCoins > money) {
-      setMoney((profile as any).gameCoins);
-      saveState((profile as any).gameCoins, lives, hints, skips, gamesPlayed, nextRefillTime);
-    }
-  }, [(profile as any)?.gameCoins]);
+      setMoney(currentMoney);
+      setLives(currentLives);
+      setHints(currentHints);
+      setSkips(currentSkips);
+      setGamesPlayed(currentGamesPlayed);
+      setNextRefillTime(currentRefill);
+
+      // Also update localStorage to keep it in sync
+      localStorage.setItem("nomo_word_game", JSON.stringify({
+        money: currentMoney,
+        lives: currentLives,
+        hints: currentHints,
+        skips: currentSkips,
+        gamesPlayed: currentGamesPlayed,
+        nextRefillTime: currentRefill
+      }));
+
+      if (currentLives <= 0) {
+        setGameState("cooldown");
+      } else {
+        startNewGame(currentGamesPlayed);
+      }
+
+      setMounted(true);
+    };
+
+    initGameState();
+  }, [startNewGame, user?.uid]);
+
+  // No longer needed — full game state is synced from Firestore on init
 
   useEffect(() => {
     if (!nextRefillTime) return;
@@ -191,24 +231,11 @@ export default function WordGameModal({ onClose }: WordGameModalProps) {
 
   const handleGuess = useCallback((letter: string) => {
     if (gameState !== "playing") return;
-
-    if (guessedLetters.has(letter)) {
-      if (lastPick === letter) {
-        const newGuessed = new Set(guessedLetters);
-        newGuessed.delete(letter);
-        setGuessedLetters(newGuessed);
-        setLastPick(null);
-        toast.success("Pick undone!");
-      } else {
-        toast.error("You can only undo your very last pick!");
-      }
-      return;
-    }
+    if (guessedLetters.has(letter)) return;
 
     const newGuessed = new Set(guessedLetters);
     newGuessed.add(letter);
     setGuessedLetters(newGuessed);
-    setLastPick(letter);
 
     const wrongGuesses = Array.from(newGuessed).filter(l => !word.includes(l)).length;
     const isWon = word.split("").every(l => newGuessed.has(l));
@@ -248,7 +275,7 @@ export default function WordGameModal({ onClose }: WordGameModalProps) {
         toast.error("You lost this round!");
       }
     }
-  }, [gameState, guessedLetters, word, money, lives, hints, skips, gamesPlayed, nextRefillTime, lastPick]);
+  }, [gameState, guessedLetters, word, money, lives, hints, skips, gamesPlayed, nextRefillTime]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

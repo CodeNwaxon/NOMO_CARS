@@ -261,7 +261,26 @@ export default function CategoryVehicles() {
                           {v.driverVipStars >= 5 && (
                             <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent pointer-events-none z-0" />
                           )}
-                          <div className="h-32 md:h-48 w-full bg-card-border relative overflow-hidden group/img">
+                          <div
+                            className="h-32 md:h-48 w-full bg-card-border relative overflow-hidden group/img cursor-pointer"
+                            onClick={() => {
+                              if (imageViewerLoadingId === v.id) return;
+                              setImageViewerLoadingId(v.id);
+                              setTimeout(() => {
+                                const allImages = [
+                                  ...(v.images ? Object.values(v.images).filter(Boolean) as string[] : []),
+                                  ...(v.documents ? Object.values(v.documents) as string[] : [])
+                                ];
+                                setViewerState({
+                                  isOpen: true,
+                                  images: allImages.length > 0 ? allImages : [""],
+                                  initialIndex: 0,
+                                  singleMode: false
+                                });
+                                setImageViewerLoadingId(null);
+                              }, 800);
+                            }}
+                          >
                             {(() => {
                               const thumbUrl = v.images?.front || v.images?.side || v.images?.exterior || (v.images ? Object.values(v.images).filter(Boolean)[0] : null);
                               return thumbUrl ? (
@@ -277,6 +296,15 @@ export default function CategoryVehicles() {
                               );
                             })()}
 
+                            {/* Loading overlay when image viewer is loading */}
+                            {imageViewerLoadingId === v.id && (
+                              <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px] flex items-center justify-center z-20 animate-in fade-in duration-200">
+                                <div className="flex items-center gap-2 bg-black/70 backdrop-blur-md text-white px-4 py-2 rounded-full text-xs md:text-sm font-bold border border-white/10">
+                                  <Loader2 className="w-4 h-4 md:w-5 md:h-5 animate-spin" /> Loading...
+                                </div>
+                              </div>
+                            )}
+
                             {/* Badges */}
                             <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-black/60 backdrop-blur-md px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold shadow-sm text-white border border-white/10">
                               {v.details.payloadCapacity ? `${v.details.payloadCapacity} Tons` : v.details.seats ? `${v.details.seats} Seats` : v.details.totalCapacity ? `${v.details.totalCapacity} Cap.` : "Standard"}
@@ -290,7 +318,9 @@ export default function CategoryVehicles() {
 
                             {/* View Full Image Button Overlay */}
                             <button
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (imageViewerLoadingId === v.id) return;
                                 setImageViewerLoadingId(v.id);
                                 setTimeout(() => {
                                   const allImages = [
@@ -299,14 +329,14 @@ export default function CategoryVehicles() {
                                   ];
                                   setViewerState({
                                     isOpen: true,
-                                    images: allImages.length > 0 ? allImages : [""], // Provide fallback if no image
+                                    images: allImages.length > 0 ? allImages : [""],
                                     initialIndex: 0,
                                     singleMode: false
                                   });
                                   setImageViewerLoadingId(null);
-                                }, 800); // Simulate network load
+                                }, 800);
                               }}
-                              className="absolute bottom-0 right-0 md:bottom-4 md:right-4 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white px-2 py-1 md:px-3 md:py-1.5 rounded-tl-xl md:rounded-full rounded-br-none md:rounded-br-full text-[9px] md:text-xs font-bold flex items-center gap-1 opacity-100 md:opacity-0 group-hover/img:opacity-100 transition-all border-l border-t md:border border-white/10"
+                              className="absolute bottom-0 right-0 md:bottom-4 md:right-4 bg-black/60 hover:bg-black/80 backdrop-blur-md text-white px-2 py-1 md:px-3 md:py-1.5 rounded-tl-xl md:rounded-full rounded-br-none md:rounded-br-full text-[9px] md:text-xs font-bold flex items-center gap-1 opacity-100 md:opacity-0 group-hover/img:opacity-100 transition-all border-l border-t md:border border-white/10 z-10"
                             >
                               {imageViewerLoadingId === v.id ? (
                                 <><Loader2 className="w-2.5 h-2.5 md:w-4 md:h-4 animate-spin" /> Loading...</>
