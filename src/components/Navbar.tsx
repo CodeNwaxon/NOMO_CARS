@@ -75,7 +75,7 @@ export function Navbar() {
 
   return (
     <>
-      <nav className={`w-full flex items-center justify-between py-3 px-2 md:p-4 z-[100] ${isLandingPage ? 'absolute top-0 left-0 right-0' : 'sticky top-0 bg-background/80 backdrop-blur-md border-b dark:border-white/10 border-black/10'}`}>
+      <nav className={`w-full flex items-center justify-between py-3 px-2 md:p-4 z-[100] bg-white dark:bg-slate-900 ${isLandingPage ? 'absolute top-0 left-0 right-0' : 'sticky top-0 border-b dark:border-white/10 border-black/10'}`}>
         {/* Left: Home */}
         <div className="flex justify-start">
           {!isLandingPage ? (
@@ -106,7 +106,7 @@ export function Navbar() {
           </Link>
 
           {loading ? (
-            <div className="flex items-center gap-2 md:gap-3 p-1.5 pr-3 md:p-2 md:pr-4 dark:bg-slate-900/80 bg-white/80 backdrop-blur-md border dark:border-white/20 border-black/10 rounded-full shadow-lg">
+            <div className="flex items-center gap-2 md:gap-3 p-1.5 pr-3 md:p-2 md:pr-4 dark:bg-slate-900 bg-white border dark:border-white/20 border-black/10 rounded-full shadow-lg">
               <div className="w-7 h-7 md:w-10 md:h-10 rounded-full bg-black/10 dark:bg-white/10 animate-pulse flex-shrink-0" />
               <div className="h-3 md:h-4 w-16 bg-black/10 dark:bg-white/10 animate-pulse rounded" />
             </div>
@@ -123,7 +123,7 @@ export function Navbar() {
               <div className="relative" ref={dropdownRef}>
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2 md:gap-3 p-1.5 pr-3 md:p-2 md:pr-4 dark:bg-slate-900/80 bg-white/80 backdrop-blur-md border dark:border-white/20 border-black/10 rounded-full hover:border-brand-primary/50 transition-all shadow-lg dark:text-white text-gray-900"
+                  className="flex items-center gap-2 md:gap-3 p-1.5 pr-3 md:p-2 md:pr-4 dark:bg-slate-900 bg-white border dark:border-white/20 border-black/10 rounded-full hover:border-brand-primary/50 transition-all shadow-lg dark:text-white text-gray-900"
                 >
                   <div className="w-7 h-7 md:w-10 md:h-10 rounded-full overflow-hidden bg-card-border border-2 border-brand-primary flex-shrink-0">
                     {profile?.displayImage || user.photoURL ? (

@@ -68,11 +68,11 @@ export function Footer() {
   };
 
   return (
-    <footer className="pb-8 w-full mt-auto z-10 relative bg-background/50 backdrop-blur-sm">
-      <div className="w-full px-8 md:px-16 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 items-center border-t dark:border-white/10 border-black/10 pt-8 pb-6">
+    <footer className="pb-8 w-full mt-auto z-10 relative bg-background/50 backdrop-blur-sm" style={{ overscrollBehaviorY: 'contain' }}>
+      <div className="w-full px-4 md:px-16 flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-t dark:border-white/10 border-black/10 pt-8 pb-6">
 
-        {/* Left: Write up */}
-        <div className="text-center md:text-left order-1 md:order-1">
+        {/* Left: Write up + Logo */}
+        <div className="text-center md:text-left flex-shrink-0">
           <h3 className="uppercase md:text-xl font-bold mb-2 dark:text-white text-blue-500 flex items-center justify-center md:justify-start gap-2">
             {siteConfig.siteLogo && (
               <img src={siteConfig.siteLogo} alt="Logo" className="w-8 h-8 rounded-full object-cover" />
@@ -84,21 +84,21 @@ export function Footer() {
           </p>
         </div>
 
-        {/* Center: Buttons */}
-        <div className="flex flex-row flex-nowrap justify-center items-center gap-1 md:gap-4 order-2 md:order-2 overflow-x-auto w-full no-scrollbar pb-1 md:pb-0">
-          <Link href="/about" className="whitespace-nowrap px-2 md:px-6 py-1.5 md:py-2 dark:bg-white/10 bg-black/5 rounded-full font-medium dark:text-white text-gray-800 hover:bg-brand-primary hover:text-white transition-all border dark:border-white/10 border-black/10 shadow-sm text-[10px] md:text-sm">
+        {/* Center: Navigation Links - always fully visible */}
+        <div className="flex flex-row flex-wrap justify-center items-center gap-2 md:gap-3">
+          <Link href="/about" className="whitespace-nowrap px-3 md:px-6 py-1.5 md:py-2 dark:bg-white/10 bg-black/5 rounded-full font-medium dark:text-white text-gray-800 hover:bg-brand-primary hover:text-white transition-all border dark:border-white/10 border-black/10 shadow-sm text-[11px] md:text-sm">
             About Us
           </Link>
-          <Link href="/policy" className="whitespace-nowrap px-2 md:px-6 py-1.5 md:py-2 dark:bg-white/10 bg-black/5 rounded-full font-medium dark:text-white text-gray-800 hover:bg-brand-primary hover:text-white transition-all border dark:border-white/10 border-black/10 shadow-sm text-[10px] md:text-sm">
+          <Link href="/policy" className="whitespace-nowrap px-3 md:px-6 py-1.5 md:py-2 dark:bg-white/10 bg-black/5 rounded-full font-medium dark:text-white text-gray-800 hover:bg-brand-primary hover:text-white transition-all border dark:border-white/10 border-black/10 shadow-sm text-[11px] md:text-sm">
             Privacy Policy
           </Link>
-          <Link href="/faq" className="whitespace-nowrap px-2 md:px-6 py-1.5 md:py-2 dark:bg-white/10 bg-black/5 rounded-full font-medium dark:text-white text-gray-800 hover:bg-brand-primary hover:text-white transition-all border dark:border-white/10 border-black/10 shadow-sm text-[10px] md:text-sm">
+          <Link href="/faq" className="whitespace-nowrap px-3 md:px-6 py-1.5 md:py-2 dark:bg-white/10 bg-black/5 rounded-full font-medium dark:text-white text-gray-800 hover:bg-brand-primary hover:text-white transition-all border dark:border-white/10 border-black/10 shadow-sm text-[11px] md:text-sm">
             FAQ & Support
           </Link>
         </div>
 
         {/* Right: Socials */}
-        <div className="flex justify-center md:justify-end gap-4 order-3 md:order-3">
+        <div className="flex justify-center md:justify-end gap-4 flex-shrink-0">
           {siteConfig.socials.map((social, idx) => (
             <a key={idx} href={social.url} target="_blank" rel="noopener noreferrer" className="p-3 rounded-full dark:bg-white/10 bg-gray-200 dark:hover:bg-brand-primary hover:bg-brand-primary dark:text-white text-gray-700 hover:text-white transition-all shadow-sm">
               {getSocialIcon(social.platform)}

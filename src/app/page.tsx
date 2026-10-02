@@ -42,17 +42,17 @@ function HomeContent() {
 
 
 
-      <div className="w-full max-w-4xl flex flex-col items-center justify-center flex-1 z-10 px-4 pt-24 pb-12">
+      <div className="w-full max-w-4xl flex flex-col items-center justify-center flex-1 z-10 px-6 pt-24 pb-12">
         <div className="text-center mb-8 md:mb-16 relative">
           <div className="flex gap-1 justify-center items-center">
             <div className="my-2 w-12 md:w-25 h-auto rounded-lg overflow-hidden border border-white">
               <img className="w-full" src="/truck.png" alt="Truck logo" />
             </div>
-            <h1 className="text-4xl md:text-8xl font-black tracking-tighter mb-1 md:mb-2 text-transparent bg-clip-text bg-gradient-to-br from-gray-900 dark:from-white via-blue-800 dark:via-blue-100 to-brand-primary drop-shadow-md dark:drop-shadow-[0_0_20px_rgba(59,130,246,0.4)] uppercase">
+            <h1 className="text-4xl md:text-8xl font-black tracking-tighter md:mb-2 text-transparent bg-clip-text bg-gradient-to-br from-gray-900 dark:from-white via-blue-800 dark:via-blue-100 to-brand-primary drop-shadow-md dark:drop-shadow-[0_0_20px_rgba(59,130,246,0.4)] uppercase">
               {siteConfig.heroTitle}
             </h1>
           </div>
-          <p className="text-xs md:text-lg dark:text-gray-200 text-gray-700 max-w-2xl mx-auto drop-shadow-md font-medium whitespace-pre-wrap">
+          <p className="text-xs md:text-base dark:text-gray-200 text-gray-700 max-w-2xl mx-auto drop-shadow-md font-medium whitespace-pre-wrap">
             {siteConfig.heroSubtitle}
           </p>
         </div>
@@ -67,7 +67,7 @@ function HomeContent() {
                   <CarFront size={32} className="drop-shadow-md" />
                 </div>
                 <h2 className="text-2xl font-bold mt-6 md:mt-0 mb-2 dark:text-white text-gray-900 drop-shadow-md">Drivers</h2>
-                <p className="dark:text-gray-200 text-gray-700 md:text-sm text-xs font-medium drop-shadow-md px-4 whitespace-pre-wrap">
+                <p className="dark:text-gray-200 text-gray-700 md:text-xs text-[10px] font-medium drop-shadow-md px-4 whitespace-pre-wrap">
                   {siteConfig.driverCardText}
                 </p>
               </div>
@@ -83,7 +83,7 @@ function HomeContent() {
                   <Users size={32} className="drop-shadow-md" />
                 </div>
                 <h2 className="text-2xl font-bold mt-6 md:mt-0 mb-2 dark:text-white text-gray-900 drop-shadow-md">Book a Ride</h2>
-                <p className="dark:text-gray-200 text-gray-700 md:text-sm text-xs font-medium drop-shadow-md px-4 whitespace-pre-wrap">
+                <p className="dark:text-gray-200 text-gray-700 md:text-xs text-[10px] font-medium drop-shadow-md px-4 whitespace-pre-wrap">
                   {siteConfig.passengerCardText}
                 </p>
               </div>

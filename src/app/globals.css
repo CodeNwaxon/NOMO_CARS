@@ -39,6 +39,7 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
+  overscroll-behavior: none;
   /* Optional subtle gradient background */
   background-image: radial-gradient(circle at top right, rgba(59, 130, 246, 0.1), transparent 40%),
                     radial-gradient(circle at bottom left, rgba(139, 92, 246, 0.1), transparent 40%);
