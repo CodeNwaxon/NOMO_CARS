@@ -68,7 +68,7 @@ export function Footer() {
   };
 
   return (
-    <footer className="pb-8 w-full mt-auto z-10 relative bg-background/50 backdrop-blur-sm" style={{ overscrollBehaviorY: 'contain' }}>
+    <footer className="pb-8 w-full mt-auto z-10 relative bg-background/50 backdrop-blur-sm">
       <div className="w-full px-4 md:px-16 flex flex-col md:flex-row md:items-start md:justify-between gap-8 border-t dark:border-white/10 border-black/10 pt-8 pb-6">
 
         {/* Left: Write up + Logo */}

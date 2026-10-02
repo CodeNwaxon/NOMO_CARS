@@ -32,7 +32,7 @@ function HomeContent() {
   }, [refCode]);
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-start relative overflow-hidden bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1494976388531-d1058494cdd8?q=80&w=2070&auto=format&fit=crop')" }}>
+    <main className="min-h-screen flex flex-col items-center justify-start relative overflow-x-hidden bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1494976388531-d1058494cdd8?q=80&w=2070&auto=format&fit=crop')" }}>
       {/* Dynamic overlay for the background image for dark/light mode */}
       <div className="absolute inset-0 dark:bg-black/80 bg-white/90 z-0 transition-colors duration-300"></div>
 
