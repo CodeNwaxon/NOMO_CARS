@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import {
   Bike,
@@ -367,13 +368,13 @@ export default function PassengerCategories() {
                   <div
                     className={`rounded-xl h-[140px] md:h-[220px] flex flex-col justify-end transition-all duration-300 hover:scale-[1.03] hover:shadow-xl ${cat.hoverShadow} relative overflow-hidden border-2 border-gray-400 dark:border-blue-400/50 shadow-lg`}
                   >
-                    {/* Lazy-loaded background image */}
-                    <img
+                    {/* Optimized background image */}
+                    <Image
                       src={catImage}
                       alt={cat.name}
-                      loading="lazy"
-                      decoding="async"
-                      className="absolute inset-0 w-full h-full object-cover object-bottom z-0"
+                      fill
+                      sizes="(max-width: 768px) 50vw, 33vw"
+                      className="object-cover object-bottom z-0"
                     />
 
                     {/* Dark gradient overlay for readability */}

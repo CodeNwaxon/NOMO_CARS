@@ -69,41 +69,42 @@ export function Footer() {
 
   return (
     <footer className="pb-8 w-full mt-auto z-10 relative bg-background/50 backdrop-blur-sm" style={{ overscrollBehaviorY: 'contain' }}>
-      <div className="w-full px-4 md:px-16 flex flex-col md:flex-row md:items-center md:justify-between gap-6 border-t dark:border-white/10 border-black/10 pt-8 pb-6">
+      <div className="w-full px-4 md:px-16 flex flex-col md:flex-row md:items-start md:justify-between gap-8 border-t dark:border-white/10 border-black/10 pt-8 pb-6">
 
         {/* Left: Write up + Logo */}
-        <div className="text-center md:text-left flex-shrink-0">
+        <div className="text-center md:text-left flex-shrink-0 md:max-w-sm">
           <h3 className="uppercase md:text-xl font-bold mb-2 dark:text-white text-blue-500 flex items-center justify-center md:justify-start gap-2">
             {siteConfig.siteLogo && (
               <img src={siteConfig.siteLogo} alt="Logo" className="w-8 h-8 rounded-full object-cover" />
             )}
             {siteConfig.siteName} Cars
           </h3>
-          <p className="dark:text-gray-400 text-gray-600 text-sm leading-relaxed max-w-xs mx-auto md:ml-0 md:mr-auto">
+          <p className="dark:text-gray-400 text-gray-600 text-sm leading-relaxed mx-auto md:ml-0 md:mr-auto">
             {siteConfig.footerText}
           </p>
         </div>
 
-        {/* Center: Navigation Links - always fully visible */}
-        <div className="flex flex-row flex-wrap justify-center items-center gap-2 md:gap-3">
-          <Link href="/about" className="whitespace-nowrap px-3 md:px-6 py-1.5 md:py-2 dark:bg-white/10 bg-black/5 rounded-full font-medium dark:text-white text-gray-800 hover:bg-brand-primary hover:text-white transition-all border dark:border-white/10 border-black/10 shadow-sm text-[11px] md:text-sm">
-            About Us
-          </Link>
-          <Link href="/policy" className="whitespace-nowrap px-3 md:px-6 py-1.5 md:py-2 dark:bg-white/10 bg-black/5 rounded-full font-medium dark:text-white text-gray-800 hover:bg-brand-primary hover:text-white transition-all border dark:border-white/10 border-black/10 shadow-sm text-[11px] md:text-sm">
-            Privacy Policy
-          </Link>
-          <Link href="/faq" className="whitespace-nowrap px-3 md:px-6 py-1.5 md:py-2 dark:bg-white/10 bg-black/5 rounded-full font-medium dark:text-white text-gray-800 hover:bg-brand-primary hover:text-white transition-all border dark:border-white/10 border-black/10 shadow-sm text-[11px] md:text-sm">
-            FAQ & Support
-          </Link>
-        </div>
-
-        {/* Right: Socials */}
-        <div className="flex justify-center md:justify-end gap-4 flex-shrink-0">
-          {siteConfig.socials.map((social, idx) => (
-            <a key={idx} href={social.url} target="_blank" rel="noopener noreferrer" className="p-3 rounded-full dark:bg-white/10 bg-gray-200 dark:hover:bg-brand-primary hover:bg-brand-primary dark:text-white text-gray-700 hover:text-white transition-all shadow-sm">
-              {getSocialIcon(social.platform)}
-            </a>
-          ))}
+        {/* Right: Navigation Links & Socials */}
+        <div className="flex flex-col items-center md:items-end gap-6 flex-shrink-0">
+          <div className="flex flex-row flex-wrap justify-center md:justify-end items-center gap-2 md:gap-3">
+            <Link href="/about" className="whitespace-nowrap px-3 md:px-6 py-1.5 md:py-2 dark:bg-white/10 bg-black/5 rounded-full font-medium dark:text-white text-gray-800 hover:bg-brand-primary hover:text-white transition-all border dark:border-white/10 border-black/10 shadow-sm text-[11px] md:text-sm">
+              About Us
+            </Link>
+            <Link href="/policy" className="whitespace-nowrap px-3 md:px-6 py-1.5 md:py-2 dark:bg-white/10 bg-black/5 rounded-full font-medium dark:text-white text-gray-800 hover:bg-brand-primary hover:text-white transition-all border dark:border-white/10 border-black/10 shadow-sm text-[11px] md:text-sm">
+              Privacy Policy
+            </Link>
+            <Link href="/faq" className="whitespace-nowrap px-3 md:px-6 py-1.5 md:py-2 dark:bg-white/10 bg-black/5 rounded-full font-medium dark:text-white text-gray-800 hover:bg-brand-primary hover:text-white transition-all border dark:border-white/10 border-black/10 shadow-sm text-[11px] md:text-sm">
+              FAQ & Support
+            </Link>
+          </div>
+          
+          <div className="flex justify-center md:justify-end gap-4">
+            {siteConfig.socials.map((social, idx) => (
+              <a key={idx} href={social.url} target="_blank" rel="noopener noreferrer" className="p-3 rounded-full dark:bg-white/10 bg-gray-200 dark:hover:bg-brand-primary hover:bg-brand-primary dark:text-white text-gray-700 hover:text-white transition-all shadow-sm">
+                {getSocialIcon(social.platform)}
+              </a>
+            ))}
+          </div>
         </div>
 
       </div>
