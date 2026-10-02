@@ -305,10 +305,7 @@ export default function CategoryVehicles() {
                               </div>
                             )}
 
-                            {/* Badges */}
-                            <div className="absolute top-2 right-2 md:top-4 md:right-4 bg-black/60 backdrop-blur-md px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold shadow-sm text-white border border-white/10">
-                              {v.details.payloadCapacity ? `${v.details.payloadCapacity} Tons` : v.details.seats ? `${v.details.seats} Seats` : v.details.totalCapacity ? `${v.details.totalCapacity} Cap.` : "Standard"}
-                            </div>
+                            {/* Removed capacity badges based on user request */}
 
                             {getVIPBadge(v.driverVipStars) && (
                               <div className={`absolute top-2 left-2 md:top-4 md:left-4 z-10 px-2 py-0.5 rounded-full text-[9px] md:text-[10px] font-bold uppercase tracking-wider shadow-md ${getVIPBadge(v.driverVipStars)?.colorClass}`}>
