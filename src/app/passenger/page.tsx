@@ -31,7 +31,7 @@ import WordGameModal from "@/components/WordGameModal";
 
 // ── Category images list (swap images here easily) ──
 const categoryImages = [
-  { name: "Dispatch Rider", image: "/categories/dispatch-rider.png" },
+  { name: "Dispatch", image: "/categories/dispatch-rider.png" },
   { name: "Keke", image: "/categories/keke.png" },
   { name: "Car", image: "/categories/car.png" },
   { name: "Bus", image: "/categories/bus.png" },
@@ -43,7 +43,7 @@ const categoryImages = [
 ];
 
 const categories = [
-  { name: "Dispatch Rider", id: "motorbike", icon: Bike, color: "text-orange-500", hoverShadow: "hover:shadow-orange-500/30" },
+  { name: "Dispatch", id: "motorbike", icon: Bike, color: "text-orange-500", hoverShadow: "hover:shadow-orange-500/30" },
   { name: "Keke", id: "keke", icon: Navigation, color: "text-green-500", hoverShadow: "hover:shadow-green-500/30" },
   { name: "Car", id: "car", icon: Car, color: "text-blue-500", hoverShadow: "hover:shadow-blue-500/30" },
   { name: "Bus", id: "bus", icon: Bus, color: "text-indigo-500", hoverShadow: "hover:shadow-indigo-500/30" },
