@@ -32,13 +32,15 @@ function HomeContent() {
   }, [refCode]);
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-start relative overflow-x-hidden bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1494976388531-d1058494cdd8?q=80&w=2070&auto=format&fit=crop')" }}>
+    <main className="min-h-screen flex flex-col items-center justify-start relative overflow-x-hidden">
+      {/* Fixed background image to prevent mobile scroll-resize bouncing */}
+      <div className="fixed inset-0 bg-cover bg-center bg-no-repeat z-[-2]" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1494976388531-d1058494cdd8?q=80&w=2070&auto=format&fit=crop')" }}></div>
       {/* Dynamic overlay for the background image for dark/light mode */}
-      <div className="absolute inset-0 dark:bg-black/80 bg-white/90 z-0 transition-colors duration-300"></div>
+      <div className="fixed inset-0 dark:bg-black/80 bg-white/90 z-[-1] transition-colors duration-300"></div>
 
       {/* Decorative background elements */}
-      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-brand-primary/20 rounded-full blur-[100px] animate-pulse-slow z-0 pointer-events-none"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-[30rem] h-[30rem] bg-brand-secondary/20 rounded-full blur-[100px] animate-pulse-slow z-0 pointer-events-none" style={{ animationDelay: '2s' }}></div>
+      <div className="fixed top-[-10%] left-[-10%] w-96 h-96 bg-brand-primary/20 rounded-full blur-[100px] animate-pulse-slow z-[-1] pointer-events-none"></div>
+      <div className="fixed bottom-[-10%] right-[-10%] w-[30rem] h-[30rem] bg-brand-secondary/20 rounded-full blur-[100px] animate-pulse-slow z-[-1] pointer-events-none" style={{ animationDelay: '2s' }}></div>
 
 
 
