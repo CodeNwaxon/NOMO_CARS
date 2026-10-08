@@ -6,7 +6,8 @@ import { doc, getDoc, setDoc, updateDoc, collection, query, orderBy, startAt, en
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { uploadImageToCloudinary } from "@/lib/cloudinary";
-import { Loader2, Search, User, Shield, Phone, Mail, Image as ImageIcon, Save, Lock, UploadCloud, X, CheckCircle2, ArrowLeft, Edit2, Trash2 } from "lucide-react";
+import { downloadInventoryExcel, downloadInventoryCSV } from "@/lib/exportInventory";
+import { Loader2, Search, User, Shield, Phone, Mail, Image as ImageIcon, Save, Lock, UploadCloud, X, CheckCircle2, ArrowLeft, Edit2, Trash2, FileSpreadsheet } from "lucide-react";
 import Link from "next/link";
 import { toast } from "react-hot-toast";
 
@@ -71,6 +72,55 @@ export default function ManageAdminsPage() {
   const [maintenanceTargetState, setMaintenanceTargetState] = useState(false);
   const [maintenanceTargetMode, setMaintenanceTargetMode] = useState("all");
   const [savingMaintenance, setSavingMaintenance] = useState(false);
+
+  // Excel Export State
+  const [exporting, setExporting] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportPassword, setExportPassword] = useState("");
+  const [exportFormat, setExportFormat] = useState<"excel" | "csv">("excel");
+
+  const initiateDownload = (format: "excel" | "csv") => {
+    setExportFormat(format);
+    setExportPassword("");
+    setShowExportModal(true);
+  };
+
+  const confirmDownload = async () => {
+    if (!exportPassword) {
+      toast.error("Please enter the master password");
+      return;
+    }
+    setExporting(true);
+    try {
+      const ceoRef = doc(db, "adminSettings", "ceo");
+      const ceoSnap = await getDoc(ceoRef);
+      const currentPassword = (ceoSnap.exists() && ceoSnap.data().password)
+        ? ceoSnap.data().password
+        : process.env.NEXT_PUBLIC_DEFAULT_CEO_PASSWORD;
+
+      if (exportPassword !== currentPassword) {
+        toast.error("Incorrect password!");
+        return;
+      }
+
+      setShowExportModal(false);
+      setExportPassword("");
+
+      let res;
+      if (exportFormat === "excel") {
+        res = await downloadInventoryExcel();
+      } else {
+        res = await downloadInventoryCSV();
+      }
+
+      toast.success(`Exported ${res.drivers} drivers, ${res.vehicles} vehicles and ${res.routes} routes.`);
+    } catch (error) {
+      console.error(`${exportFormat.toUpperCase()} export failed:`, error);
+      toast.error(`Failed to generate ${exportFormat.toUpperCase()} file`);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -147,7 +197,7 @@ export default function ManageAdminsPage() {
     setSelectedUser(null);
     try {
       const usersRef = collection(db, "users");
-      
+
       const q = query(usersRef, orderBy("username"), startAt(searchQuery), endAt(searchQuery + '\uf8ff'));
       const querySnapshot = await getDocs(q);
       const results: any[] = [];
@@ -175,7 +225,7 @@ export default function ManageAdminsPage() {
           if (!results.find(r => r.id === doc.id)) results.push({ id: doc.id, ...doc.data() });
         });
       }
-      
+
       // Search by capitalized username/firstName
       const capitalizedQuery = searchQuery.charAt(0).toUpperCase() + searchQuery.slice(1);
       if (capitalizedQuery !== searchQuery) {
@@ -184,7 +234,7 @@ export default function ManageAdminsPage() {
         querySnapshot5.forEach((doc) => {
           if (!results.find(r => r.id === doc.id)) results.push({ id: doc.id, ...doc.data() });
         });
-        
+
         const q6 = query(usersRef, orderBy("firstName"), startAt(capitalizedQuery), endAt(capitalizedQuery + '\uf8ff'));
         const querySnapshot6 = await getDocs(q6);
         querySnapshot6.forEach((doc) => {
@@ -219,9 +269,9 @@ export default function ManageAdminsPage() {
   };
 
   const toggleRoute = (routeId: string) => {
-    setAssignedRoutes(prev => 
-      prev.includes(routeId) 
-        ? prev.filter(id => id !== routeId) 
+    setAssignedRoutes(prev =>
+      prev.includes(routeId)
+        ? prev.filter(id => id !== routeId)
         : [...prev, routeId]
     );
   };
@@ -230,10 +280,10 @@ export default function ManageAdminsPage() {
     if (!selectedUser) return;
     setSavingRoutes(true);
     try {
-      const finalRoutes = assignedRoutes.length > 0 
+      const finalRoutes = assignedRoutes.length > 0
         ? Array.from(new Set(["/admin", ...assignedRoutes]))
         : [];
-      
+
       await setDoc(doc(db, "adminRoles", selectedUser.id), {
         routes: finalRoutes,
         email: selectedUser.email || "No Email Provided",
@@ -243,7 +293,7 @@ export default function ManageAdminsPage() {
       await updateDoc(doc(db, "users", selectedUser.id), {
         role: assignedRoutes.length > 0 ? "admin" : "driver"
       });
-      
+
       // Update local admin list
       if (assignedRoutes.length > 0) {
         setAdminList(prev => {
@@ -285,8 +335,8 @@ export default function ManageAdminsPage() {
     try {
       const ceoRef = doc(db, "adminSettings", "ceo");
       const ceoSnap = await getDoc(ceoRef);
-      const currentPassword = (ceoSnap.exists() && ceoSnap.data().password) 
-        ? ceoSnap.data().password 
+      const currentPassword = (ceoSnap.exists() && ceoSnap.data().password)
+        ? ceoSnap.data().password
         : process.env.NEXT_PUBLIC_DEFAULT_CEO_PASSWORD;
 
       if (removePassword !== currentPassword) {
@@ -300,7 +350,7 @@ export default function ManageAdminsPage() {
       setAdminList(prev => prev.filter(a => a.id !== adminToRemove));
       toast.success("Admin removed successfully");
       setAdminToRemove(null);
-    } catch(err) {
+    } catch (err) {
       console.error("Error removing admin:", err);
       toast.error("Error removing admin");
     } finally {
@@ -338,8 +388,8 @@ export default function ManageAdminsPage() {
     try {
       const ceoRef = doc(db, "adminSettings", "ceo");
       const ceoSnap = await getDoc(ceoRef);
-      const currentPassword = (ceoSnap.exists() && ceoSnap.data().password) 
-        ? ceoSnap.data().password 
+      const currentPassword = (ceoSnap.exists() && ceoSnap.data().password)
+        ? ceoSnap.data().password
         : process.env.NEXT_PUBLIC_DEFAULT_CEO_PASSWORD;
 
       if (maintenancePassword !== currentPassword) {
@@ -373,8 +423,8 @@ export default function ManageAdminsPage() {
     try {
       const ceoRef = doc(db, "adminSettings", "ceo");
       const ceoSnap = await getDoc(ceoRef);
-      const currentPassword = (ceoSnap.exists() && ceoSnap.data().password) 
-        ? ceoSnap.data().password 
+      const currentPassword = (ceoSnap.exists() && ceoSnap.data().password)
+        ? ceoSnap.data().password
         : process.env.NEXT_PUBLIC_DEFAULT_CEO_PASSWORD;
 
       if (contactPassword !== currentPassword) {
@@ -384,7 +434,7 @@ export default function ManageAdminsPage() {
       }
 
       let finalImageUrl = contactInfo.image;
-      
+
       if (imageFile) {
         finalImageUrl = await uploadImageToCloudinary(imageFile);
       }
@@ -395,7 +445,7 @@ export default function ManageAdminsPage() {
       };
 
       await setDoc(doc(db, "adminSettings", "about"), dataToSave, { merge: true });
-      
+
       // Update local state to reflect the new saved URL
       setContactInfo(dataToSave);
       setImagePreview(finalImageUrl);
@@ -420,7 +470,7 @@ export default function ManageAdminsPage() {
     try {
       const ceoRef = doc(db, "adminSettings", "ceo");
       const ceoSnap = await getDoc(ceoRef);
-      
+
       const currentPassword = (ceoSnap.exists() && ceoSnap.data().password) ? ceoSnap.data().password : process.env.NEXT_PUBLIC_DEFAULT_CEO_PASSWORD;
 
       if (oldPassword !== currentPassword) {
@@ -448,7 +498,7 @@ export default function ManageAdminsPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 p-4 md:p-8">
       <div className="max-w-6xl mx-auto space-y-8">
-        
+
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-3">
           <div>
             <Link href="/admin" className="text-gray-500 hover:text-brand-primary transition-colors flex items-center gap-2 mb-6 text-sm font-medium">
@@ -465,11 +515,11 @@ export default function ManageAdminsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* LEFT COLUMN */}
           <div className="space-y-8">
-            
+
             {/* Create Admin Section */}
             <div className="glass-panel p-4 md:p-6 rounded-lg md:rounded-xl border border-card-border/50 shadow-sm">
-              <h2 className="text-xl font-bold mb-6 flex items-center gap-2"><User className="w-5 h-5"/> Assign Admin Roles</h2>
-              
+              <h2 className="text-xl font-bold mb-6 flex items-center gap-2"><User className="w-5 h-5" /> Assign Admin Roles</h2>
+
               <div className="relative mb-6">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   {searching ? (
@@ -478,34 +528,34 @@ export default function ManageAdminsPage() {
                     <Search className="w-5 h-5 text-gray-400" />
                   )}
                 </div>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search user by email or name..."
                   className="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl pl-10 pr-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary focus:outline-none transition-all"
                 />
-                  
-                  {searchResults.length > 0 && !selectedUser && (
-                    <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 rounded-xl shadow-xl shadow-black/5 dark:shadow-brand-primary/5 border border-slate-100 dark:border-slate-800 overflow-hidden max-h-60 overflow-y-auto z-50">
-                      {searchResults.map(user => (
-                        <button 
-                          key={user.id}
-                          onClick={() => selectUser(user)}
-                          className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex justify-between items-center group"
-                        >
-                          <div>
-                            <p className="text-sm font-medium text-slate-900 dark:text-white">{user.email || "No Email Provided"}</p>
-                            {(user.username || user.firstName) && (
-                              <p className="text-xs text-slate-500 mt-0.5">{user.username || user.firstName} {user.lastName}</p>
-                            )}
-                          </div>
-                          <CheckCircle2 className="w-4 h-4 text-transparent group-hover:text-brand-primary transition-colors" />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
+
+                {searchResults.length > 0 && !selectedUser && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-900 rounded-xl shadow-xl shadow-black/5 dark:shadow-brand-primary/5 border border-slate-100 dark:border-slate-800 overflow-hidden max-h-60 overflow-y-auto z-50">
+                    {searchResults.map(user => (
+                      <button
+                        key={user.id}
+                        onClick={() => selectUser(user)}
+                        className="w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex justify-between items-center group"
+                      >
+                        <div>
+                          <p className="text-sm font-medium text-slate-900 dark:text-white">{user.email || "No Email Provided"}</p>
+                          {(user.username || user.firstName) && (
+                            <p className="text-xs text-slate-500 mt-0.5">{user.username || user.firstName} {user.lastName}</p>
+                          )}
+                        </div>
+                        <CheckCircle2 className="w-4 h-4 text-transparent group-hover:text-brand-primary transition-colors" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {selectedUser && (
                 <div className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-xl shadow-brand-primary/5 ring-1 ring-black/5 dark:ring-white/5">
@@ -514,15 +564,15 @@ export default function ManageAdminsPage() {
                       <p className="font-bold text-lg">{selectedUser.name || selectedUser.username || selectedUser.firstName}</p>
                       <p className="text-sm text-foreground/60">{selectedUser.email || "No Email Provided"}</p>
                     </div>
-                    <button onClick={() => setSelectedUser(null)} className="p-1 bg-card-border rounded-full hover:bg-red-500 hover:text-white transition"><X className="w-4 h-4"/></button>
+                    <button onClick={() => setSelectedUser(null)} className="p-1 bg-card-border rounded-full hover:bg-red-500 hover:text-white transition"><X className="w-4 h-4" /></button>
                   </div>
 
                   <h3 className="font-bold mb-3 text-[11px] sm:text-xs text-brand-primary uppercase tracking-wider opacity-70">Access Privileges</h3>
                   <div className="flex flex-col gap-1 mb-6">
                     {ADMIN_ROUTES.map(route => (
                       <label key={route.id} className="group flex items-center gap-3 py-2 px-1 cursor-pointer">
-                        <input 
-                          type="checkbox" 
+                        <input
+                          type="checkbox"
                           checked={assignedRoutes.includes(route.id)}
                           onChange={() => toggleRoute(route.id)}
                           className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-brand-primary focus:ring-brand-primary focus:ring-offset-0 bg-transparent cursor-pointer transition-colors"
@@ -532,7 +582,7 @@ export default function ManageAdminsPage() {
                     ))}
                   </div>
 
-                  <button 
+                  <button
                     onClick={saveAdminRoles}
                     disabled={savingRoutes}
                     className="w-full bg-green-500 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-md hover:bg-green-600 transition"
@@ -546,8 +596,8 @@ export default function ManageAdminsPage() {
 
             {/* Admin List Section */}
             <div className="glass-panel p-4 md:p-6 rounded-lg md:rounded-xl border border-card-border/50 shadow-sm">
-              <h2 className="text-xl font-bold mb-6 flex items-center gap-2"><Shield className="w-5 h-5"/> Current Admins</h2>
-              
+              <h2 className="text-xl font-bold mb-6 flex items-center gap-2"><Shield className="w-5 h-5" /> Current Admins</h2>
+
               {loadingAdmins ? (
                 <div className="flex justify-center p-4"><Loader2 className="w-6 h-6 animate-spin text-brand-primary" /></div>
               ) : adminList.filter(a => a.routes?.length > 0).length === 0 ? (
@@ -571,7 +621,7 @@ export default function ManageAdminsPage() {
                         </div>
                       </div>
                       <div className="flex flex-row gap-2 shrink-0 w-full sm:w-auto mt-2 sm:mt-0">
-                        <button 
+                        <button
                           onClick={() => {
                             setSearchQuery("");
                             selectUser(admin);
@@ -581,7 +631,7 @@ export default function ManageAdminsPage() {
                         >
                           <Edit2 className="w-3.5 h-3.5" /> Edit
                         </button>
-                        <button 
+                        <button
                           onClick={() => promptRemoveAdmin(admin.id)}
                           className="flex-1 sm:flex-none text-xs font-medium text-red-500 bg-red-50 dark:bg-red-500/10 px-3 py-2 sm:py-1.5 rounded-lg hover:bg-red-100 dark:hover:bg-red-500/20 transition flex items-center justify-center gap-1.5"
                           title="Remove Access"
@@ -600,19 +650,19 @@ export default function ManageAdminsPage() {
 
           {/* RIGHT COLUMN */}
           <div className="space-y-8">
-            
+
             {/* CEO Contact Info */}
             <div className="glass-panel p-4 md:p-6 rounded-lg md:rounded-xl border border-card-border/50 shadow-sm">
-              <h2 className="text-xl font-bold mb-6 flex items-center gap-2"><Phone className="w-5 h-5"/> About Page Info</h2>
-              
+              <h2 className="text-xl font-bold mb-6 flex items-center gap-2"><Phone className="w-5 h-5" /> About Page Info</h2>
+
               <div className="space-y-5">
-                
+
                 <div>
                   <label className="block text-sm font-bold mb-1">CEO Name</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={contactInfo.name}
-                    onChange={(e) => setContactInfo({...contactInfo, name: e.target.value})}
+                    onChange={(e) => setContactInfo({ ...contactInfo, name: e.target.value })}
                     placeholder="e.g. Prince O. Nwachukwu"
                     className="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary focus:outline-none transition-all"
                   />
@@ -621,7 +671,7 @@ export default function ManageAdminsPage() {
                 {/* Image Upload/URL */}
                 <div>
                   <label className="block text-sm font-bold mb-3">CEO Image</label>
-                  
+
                   <div className="flex gap-4 items-start">
                     <div className="w-24 h-24 rounded-2xl border-2 border-dashed border-card-border flex items-center justify-center overflow-hidden bg-background relative shrink-0">
                       {imagePreview ? (
@@ -630,35 +680,35 @@ export default function ManageAdminsPage() {
                         <ImageIcon className="w-8 h-8 text-foreground/20" />
                       )}
                     </div>
-                    
+
                     <div className="flex-1 space-y-3">
                       <div className="relative">
-                        <input 
-                          type="file" 
+                        <input
+                          type="file"
                           accept="image/*"
                           onChange={handleImageChange}
                           className="hidden"
                           id="ceo-image-upload"
                         />
-                        <label 
+                        <label
                           htmlFor="ceo-image-upload"
                           className="flex items-center justify-center gap-2 w-full bg-brand-primary/10 text-brand-primary hover:bg-brand-primary hover:text-white transition py-2 px-4 rounded-xl cursor-pointer font-bold text-sm"
                         >
                           <UploadCloud className="w-4 h-4" /> Upload Image File
                         </label>
                       </div>
-                      
+
                       <div className="flex items-center gap-2">
                         <div className="h-px bg-card-border flex-1"></div>
                         <span className="text-xs font-bold text-foreground/40 uppercase">OR</span>
                         <div className="h-px bg-card-border flex-1"></div>
                       </div>
 
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         value={contactInfo.image}
                         onChange={(e) => {
-                          setContactInfo({...contactInfo, image: e.target.value});
+                          setContactInfo({ ...contactInfo, image: e.target.value });
                           setImagePreview(e.target.value);
                           setImageFile(null); // Clear file if URL is provided
                         }}
@@ -671,36 +721,36 @@ export default function ManageAdminsPage() {
 
                 <div>
                   <label className="block text-sm font-bold mb-1">Phone Number</label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={contactInfo.phone}
-                    onChange={(e) => setContactInfo({...contactInfo, phone: e.target.value})}
+                    onChange={(e) => setContactInfo({ ...contactInfo, phone: e.target.value })}
                     className="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary focus:outline-none transition-all"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-bold mb-1">Email Address</label>
-                  <input 
-                    type="email" 
+                  <input
+                    type="email"
                     value={contactInfo.email}
-                    onChange={(e) => setContactInfo({...contactInfo, email: e.target.value})}
+                    onChange={(e) => setContactInfo({ ...contactInfo, email: e.target.value })}
                     className="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary focus:outline-none transition-all"
                   />
                 </div>
 
                 <div>
                   <label className="block text-sm font-bold mb-1">CEO Message</label>
-                  <textarea 
+                  <textarea
                     value={contactInfo.message}
-                    onChange={(e) => setContactInfo({...contactInfo, message: e.target.value})}
+                    onChange={(e) => setContactInfo({ ...contactInfo, message: e.target.value })}
                     rows={8}
                     placeholder="Welcome to Nomo Cars! Our mission is to revolutionize the transportation landscape by providing a secure, reliable, and highly efficient platform for all our users. We understand that trust is the foundation of our business, which is why we continuously invest in top-tier security measures, rigorous driver vetting, and a seamless user experience. We are deeply committed to ensuring that every journey you take with us exceeds your expectations. Thank you for placing your trust in Nomo Cars. Together, we are driving towards a brighter, more connected future."
                     className="w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-3 shadow-sm focus:ring-1 focus:ring-brand-primary focus:outline-none transition-all resize-none"
                   />
                 </div>
 
-                <button 
+                <button
                   onClick={initiateSaveContactInfo}
                   disabled={savingContact}
                   className="w-full bg-brand-primary text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-md hover:bg-brand-primary/90 transition"
@@ -722,19 +772,18 @@ export default function ManageAdminsPage() {
                     Lock down the site and show a maintenance page to visitors.
                   </p>
                 </div>
-                
-                <button 
+
+                <button
                   onClick={initiateMaintenanceToggle}
-                  className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 shadow-sm ${
-                    maintenanceSettings.isActive 
-                      ? "bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800" 
+                  className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 shadow-sm ${maintenanceSettings.isActive
+                      ? "bg-red-100 text-red-600 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-800"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700"
-                  }`}
+                    }`}
                 >
                   {maintenanceSettings.isActive ? "Maintenance is ON" : "Maintenance is OFF"}
                 </button>
               </div>
-              
+
               {maintenanceSettings.isActive && (
                 <div className="bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30 rounded-xl p-4 flex items-center gap-3">
                   <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
@@ -747,14 +796,14 @@ export default function ManageAdminsPage() {
 
             {/* Password Section */}
             <div className="glass-panel p-4 md:p-6 rounded-lg md:rounded-xl border border-card-border/50 shadow-sm">
-              <h2 className="text-xl font-bold mb-6 flex items-center gap-2"><Lock className="w-5 h-5"/> Master Password</h2>
+              <h2 className="text-xl font-bold mb-6 flex items-center gap-2"><Lock className="w-5 h-5" /> Master Password</h2>
               <p className="text-xs text-foreground/60 mb-6">This password is required by admins to save sensitive changes (like ticket prices).</p>
-              
+
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Old Password</label>
-                  <input 
-                    type="password" 
+                  <input
+                    type="password"
                     value={oldPassword}
                     onChange={(e) => setOldPassword(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && savePassword()}
@@ -764,8 +813,8 @@ export default function ManageAdminsPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">New Password</label>
-                  <input 
-                    type="password" 
+                  <input
+                    type="password"
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && savePassword()}
@@ -773,7 +822,7 @@ export default function ManageAdminsPage() {
                     placeholder="Enter new password"
                   />
                 </div>
-                <button 
+                <button
                   onClick={savePassword}
                   disabled={savingPassword}
                   className="w-full bg-brand-accent text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 shadow-md hover:bg-brand-accent/90 transition mt-2"
@@ -783,7 +832,34 @@ export default function ManageAdminsPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
 
+        {/* Inventory Export Section */}
+        <div className="glass-panel p-4 md:p-6 rounded-lg md:rounded-xl border border-card-border/50 shadow-sm">
+          <div>
+            <h2 className="text-xl font-bold mb-2 flex items-center gap-2"><FileSpreadsheet className="w-5 h-5 text-emerald-600" /> Data Export</h2>
+            <p className="text-sm text-foreground/60 mb-6">Download the complete platform inventory, including all drivers, vehicles, routes, and image links. For security, this action requires the CEO Master Password.</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
+              <button
+                onClick={() => initiateDownload("excel")}
+                disabled={exporting}
+                className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-70 disabled:cursor-wait text-white font-bold text-sm px-5 py-3 rounded-xl shadow-md shadow-emerald-600/20 transition-all"
+                title="Download as an Excel file"
+              >
+                {exporting && exportFormat === "excel" ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
+                {exporting && exportFormat === "excel" ? "Generating..." : "Download Excel"}
+              </button>
+              <button
+                onClick={() => initiateDownload("csv")}
+                disabled={exporting}
+                className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-70 disabled:cursor-wait text-white font-bold text-sm px-5 py-3 rounded-xl shadow-md shadow-blue-600/20 transition-all"
+                title="Download as a CSV file"
+              >
+                {exporting && exportFormat === "csv" ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
+                {exporting && exportFormat === "csv" ? "Generating..." : "Download CSV"}
+              </button>
+            </div>
           </div>
         </div>
 
@@ -797,21 +873,21 @@ export default function ManageAdminsPage() {
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Lock className="w-5 h-5 text-brand-primary" /> Verify Master Password
               </h3>
-              <button 
+              <button
                 onClick={() => setShowContactPasswordModal(false)}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <div className="p-6 space-y-4">
               <p className="text-sm text-slate-600 dark:text-slate-400">
                 You are about to save changes to the CEO About Page Info. Please enter the master password to confirm.
               </p>
-              
+
               <div>
-                <input 
+                <input
                   type="password"
                   value={contactPassword}
                   onChange={(e) => setContactPassword(e.target.value)}
@@ -823,13 +899,13 @@ export default function ManageAdminsPage() {
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
-                <button 
+                <button
                   onClick={() => setShowContactPasswordModal(false)}
                   className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={confirmSaveContactInfo}
                   disabled={savingContact}
                   className="px-4 py-2 rounded-xl text-sm font-bold bg-brand-primary hover:bg-brand-primary/90 text-white shadow-md transition flex items-center gap-2"
@@ -849,31 +925,31 @@ export default function ManageAdminsPage() {
           <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Shield className="w-5 h-5 text-brand-primary" /> 
+                <Shield className="w-5 h-5 text-brand-primary" />
                 Turn {maintenanceTargetState ? "ON" : "OFF"} Maintenance
               </h3>
-              <button 
+              <button
                 onClick={() => setShowMaintenanceModal(false)}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <div className="p-6 space-y-5">
               <p className="text-sm text-slate-600 dark:text-slate-400">
                 You are about to turn {maintenanceTargetState ? "ON" : "OFF"} site maintenance mode. Please enter the master password to confirm.
               </p>
-              
+
               {maintenanceTargetState && (
                 <div className="space-y-3 bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-200 dark:border-gray-700">
                   <h4 className="font-bold text-sm mb-2">Select Lock Level:</h4>
-                  
+
                   <label className="flex items-center gap-3 cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="maintenanceMode" 
-                      value="all" 
+                    <input
+                      type="radio"
+                      name="maintenanceMode"
+                      value="all"
                       checked={maintenanceTargetMode === "all"}
                       onChange={() => setMaintenanceTargetMode("all")}
                       className="w-4 h-4 text-brand-primary border-gray-300 focus:ring-brand-primary"
@@ -883,12 +959,12 @@ export default function ManageAdminsPage() {
                       <span className="text-xs text-gray-500">Only the CEO can access the site.</span>
                     </div>
                   </label>
-                  
+
                   <label className="flex items-center gap-3 cursor-pointer">
-                    <input 
-                      type="radio" 
-                      name="maintenanceMode" 
-                      value="users" 
+                    <input
+                      type="radio"
+                      name="maintenanceMode"
+                      value="users"
                       checked={maintenanceTargetMode === "users"}
                       onChange={() => setMaintenanceTargetMode("users")}
                       className="w-4 h-4 text-brand-primary border-gray-300 focus:ring-brand-primary"
@@ -902,7 +978,7 @@ export default function ManageAdminsPage() {
               )}
 
               <div>
-                <input 
+                <input
                   type="password"
                   value={maintenancePassword}
                   onChange={(e) => setMaintenancePassword(e.target.value)}
@@ -914,18 +990,17 @@ export default function ManageAdminsPage() {
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
-                <button 
+                <button
                   onClick={() => setShowMaintenanceModal(false)}
                   className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={confirmMaintenanceToggle}
                   disabled={savingMaintenance}
-                  className={`px-4 py-2 rounded-xl text-sm font-bold shadow-md transition flex items-center gap-2 text-white ${
-                    maintenanceTargetState ? "bg-red-500 hover:bg-red-600" : "bg-brand-primary hover:bg-brand-primary/90"
-                  }`}
+                  className={`px-4 py-2 rounded-xl text-sm font-bold shadow-md transition flex items-center gap-2 text-white ${maintenanceTargetState ? "bg-red-500 hover:bg-red-600" : "bg-brand-primary hover:bg-brand-primary/90"
+                    }`}
                 >
                   {savingMaintenance ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                   Confirm
@@ -944,21 +1019,21 @@ export default function ManageAdminsPage() {
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Lock className="w-5 h-5 text-red-500" /> Verify Master Password
               </h3>
-              <button 
+              <button
                 onClick={() => setAdminToRemove(null)}
                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <div className="p-6 space-y-4">
               <p className="text-sm text-slate-600 dark:text-slate-400">
                 You are about to remove this user's admin access. Please enter the master password to confirm this action.
               </p>
-              
+
               <div>
-                <input 
+                <input
                   type="password"
                   value={removePassword}
                   onChange={(e) => setRemovePassword(e.target.value)}
@@ -970,19 +1045,75 @@ export default function ManageAdminsPage() {
               </div>
 
               <div className="flex justify-end gap-3 pt-2">
-                <button 
+                <button
                   onClick={() => setAdminToRemove(null)}
                   className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
                 >
                   Cancel
                 </button>
-                <button 
+                <button
                   onClick={confirmRemoveAdmin}
                   disabled={verifyingRemove}
                   className="px-4 py-2 rounded-xl text-sm font-bold bg-red-500 hover:bg-red-600 text-white shadow-md shadow-red-500/20 transition flex items-center gap-2"
                 >
                   {verifyingRemove ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                   Remove Admin
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Excel Export Password Modal */}
+      {showExportModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <FileSpreadsheet className={`w-5 h-5 ${exportFormat === "excel" ? "text-emerald-600" : "text-blue-600"}`} /> Download Inventory
+              </h3>
+              <button
+                onClick={() => setShowExportModal(false)}
+                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                This file contains personal data for all drivers (names, emails, phone numbers). Please enter the master password to download it as {exportFormat === "excel" ? "Excel" : "CSV"}.
+              </p>
+
+              <div>
+                <input
+                  id="export-password-input"
+                  type="password"
+                  value={exportPassword}
+                  onChange={(e) => setExportPassword(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && !exporting && confirmDownload()}
+                  placeholder="Master Password"
+                  className={`w-full bg-white dark:bg-slate-950 border border-gray-300 dark:border-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-4 py-3 shadow-sm focus:ring-1 ${exportFormat === "excel" ? "focus:ring-emerald-500" : "focus:ring-blue-500"} focus:outline-none transition-all`}
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  onClick={() => setShowExportModal(false)}
+                  className="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  id="confirm-export-btn"
+                  onClick={confirmDownload}
+                  disabled={exporting}
+                  className={`px-4 py-2 rounded-xl text-sm font-bold text-white shadow-md transition flex items-center gap-2 disabled:opacity-70 ${exportFormat === "excel" ? "bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20" : "bg-blue-600 hover:bg-blue-700 shadow-blue-600/20"}`}
+                >
+                  {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
+                  Download
                 </button>
               </div>
             </div>
