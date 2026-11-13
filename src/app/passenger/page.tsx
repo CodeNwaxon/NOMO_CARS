@@ -31,15 +31,15 @@ import WordGameModal from "@/components/WordGameModal";
 
 // ── Category images list (swap images here easily) ──
 const categoryImages = [
-  { name: "Dispatch", image: "/categories/dispatch-rider.png" },
-  { name: "Keke", image: "/categories/keke.png" },
-  { name: "Car", image: "/categories/car.png" },
-  { name: "Mini Van", image: "/categories/minivan.png" },
-  { name: "Van", image: "/categories/van.png" },
-  { name: "Bus", image: "/categories/bus.png" },
-  { name: "Truck", image: "/categories/truck.png" },
-  { name: "Air/Cargo", image: "/categories/airplane.png" },
-  { name: "Ship", image: "/categories/ship.png" },
+  { name: "Dispatch", image: "/categories/dispatch-rider.jpg" },
+  { name: "Keke", image: "/categories/keke.jpg" },
+  { name: "Car", image: "/categories/car.jpg" },
+  { name: "Mini Van", image: "/categories/minivan.jpg" },
+  { name: "Van", image: "/categories/van.jpg" },
+  { name: "Bus", image: "/categories/bus.jpg" },
+  { name: "Truck", image: "/categories/truck.jpg" },
+  { name: "Air/Cargo", image: "/categories/airplane.jpg" },
+  { name: "Ship", image: "/categories/ship.jpg" },
 ];
 
 const categories = [
