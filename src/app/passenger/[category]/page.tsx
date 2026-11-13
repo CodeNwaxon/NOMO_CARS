@@ -389,6 +389,11 @@ export default function CategoryVehicles() {
                                 <span className="truncate">{v.driverName}</span>
                                 <span className="flex-shrink-0 whitespace-nowrap">&nbsp;Profile</span>
                               </Link>
+                              {(v.driverState || v.driverCity) && (
+                                <p className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 font-medium">
+                                  {[v.driverState, v.driverCity].filter(Boolean).join("/")}
+                                </p>
+                              )}
                             </div>
 
                             <div className="mt-auto flex gap-2 w-full border-t border-card-border pt-2 md:pt-3">

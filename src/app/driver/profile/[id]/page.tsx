@@ -227,6 +227,14 @@ export default function DriverProfilePage() {
                 </span>
               )}
             </h2>
+            {(driver.firstName || driver.middleName || driver.lastName) && (
+              <p className="-mt-2 mb-2 text-xs md:text-sm font-semibold text-gray-500 dark:text-gray-400">
+                {[driver.firstName, driver.middleName, driver.lastName]
+                  .filter(Boolean)
+                  .map((namePart: string) => namePart.charAt(0).toUpperCase() + namePart.slice(1).toLowerCase())
+                  .join(" ")}
+              </p>
+            )}
 
             <div className="flex flex-col items-center md:items-start bg-card-border/50 px-4 py-2 rounded-xl mb-4 w-max mx-auto md:mx-0 shadow-inner">
               <div className="flex items-center gap-1">
@@ -250,12 +258,12 @@ export default function DriverProfilePage() {
                   className="inline-flex items-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-3 bg-gray-100 dark:bg-gray-800/50 text-foreground/60 font-medium rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors cursor-pointer shadow-sm"
                 >
                   <Phone className="w-3.5 h-3.5 md:w-4 md:h-4 opacity-70" />
-                  <span className="text-xs md:text-sm">Login to View Phone</span>
+                  <span className="text-xs md:text-sm">Login to View Phone Number</span>
                 </button>
               ) : !driver.hasContactAccess ? (
                 <div className="inline-flex items-center gap-1.5 md:gap-2 px-3 py-2 md:px-5 md:py-3 bg-gray-100 dark:bg-gray-800/50 text-foreground/50 font-medium rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm cursor-not-allowed">
                   <ShieldOff className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                  <span className="text-xs md:text-sm">Phone Hidden</span>
+                  <span className="text-xs md:text-sm">Phone Number Hidden</span>
                 </div>
               ) : driver.phone ? (
                 <>
