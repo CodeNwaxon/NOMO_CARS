@@ -287,7 +287,7 @@ export default function CategoryVehicles() {
                                 <img
                                   src={thumbUrl as string}
                                   alt={`${v.details.make} ${v.details.model}`}
-                                  className="w-full h-full object-cover md:object-contain group-hover:scale-105 transition-transform duration-500"
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                 />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-foreground/30">
