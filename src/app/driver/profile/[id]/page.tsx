@@ -384,18 +384,20 @@ export default function DriverProfilePage() {
                   </div>
 
                   <div className="mt-auto flex gap-2">
-                    <button 
-                      onClick={() => {
-                        if (v.isApproved === false) {
-                          toast.error("This driver's vehicle is currently under security review and cannot be booked right now.");
-                          return;
-                        }
-                        setShowContactOverlayFor({ id: v.id, name: `${v.details.make} ${v.details.model}` });
-                      }}
-                      className="flex-1 py-3 text-[10px] md:text-sm bg-brand-secondary/10 hover:bg-brand-secondary text-brand-secondary hover:text-white font-medium rounded-xl transition-colors"
-                    >
-                      Request Ride
-                    </button>
+                    {!isOwnProfile && (
+                      <button 
+                        onClick={() => {
+                          if (v.isApproved === false) {
+                            toast.error("This driver's vehicle is currently under security review and cannot be booked right now.");
+                            return;
+                          }
+                          setShowContactOverlayFor({ id: v.id, name: `${v.details.make} ${v.details.model}` });
+                        }}
+                        className="flex-1 py-3 text-[10px] md:text-sm bg-brand-secondary/10 hover:bg-brand-secondary text-brand-secondary hover:text-white font-medium rounded-xl transition-colors"
+                      >
+                        Request Ride
+                      </button>
+                    )}
                     <button
                       onClick={() => {
                         if (v.isApproved === false) {
@@ -404,7 +406,7 @@ export default function DriverProfilePage() {
                         }
                         setViewingServicesFor({ id: v.id, name: `${v.details.make} ${v.details.model}` });
                       }}
-                      className="flex-1 py-3 text-[10px] md:text-sm bg-brand-primary/10 hover:bg-brand-primary text-brand-primary hover:text-white font-medium rounded-xl transition-colors"
+                      className={`${isOwnProfile ? "w-full" : "flex-1"} py-3 text-[10px] md:text-sm bg-brand-primary/10 hover:bg-brand-primary text-brand-primary hover:text-white font-medium rounded-xl transition-colors`}
                     >
                       Services
                     </button>
@@ -434,6 +436,12 @@ export default function DriverProfilePage() {
           vehicleId={viewingServicesFor.id}
           vehicleName={viewingServicesFor.name}
           driverId={driverId}
+          isOwner={isOwnProfile}
+          onEditServices={() => {
+            const vehicleId = viewingServicesFor.id;
+            setViewingServicesFor(null);
+            router.push(`/driver/dashboard?tab=vehicles&editServices=${encodeURIComponent(vehicleId)}`);
+          }}
           onClose={() => setViewingServicesFor(null)}
         />
       )}

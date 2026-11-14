@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { collection, query, where, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-import { X, Loader2, MapPin, ChevronDown, ChevronUp } from "lucide-react";
+import { X, Loader2, MapPin, ChevronDown, ChevronUp, Edit3 } from "lucide-react";
 
 import HireContactOverlay from "./HireContactOverlay";
 
@@ -11,12 +11,14 @@ interface PassengerServicesModalProps {
   vehicleId: string;
   vehicleName: string;
   driverId: string;
+  isOwner?: boolean;
+  onEditServices?: () => void;
   onClose: () => void;
 }
 
 const servicesCache: Record<string, any[]> = {};
 
-export default function PassengerServicesModal({ vehicleId, vehicleName, driverId, onClose }: PassengerServicesModalProps) {
+export default function PassengerServicesModal({ vehicleId, vehicleName, driverId, isOwner = false, onEditServices, onClose }: PassengerServicesModalProps) {
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedDesc, setExpandedDesc] = useState<string | null>(null);
@@ -63,10 +65,11 @@ export default function PassengerServicesModal({ vehicleId, vehicleName, driverI
           </div>
           <div className="flex items-center gap-2 md:gap-3">
             <button
-              onClick={() => setShowContactOverlay(true)}
+              onClick={() => isOwner ? onEditServices?.() : setShowContactOverlay(true)}
               className="px-3 py-1.5 md:px-4 md:py-2 text-[10px] md:text-xs bg-brand-primary hover:bg-brand-primary/90 text-white font-bold rounded-lg transition-colors border border-brand-primary/50 whitespace-nowrap"
             >
-              Contact Driver
+              {isOwner && <Edit3 className="inline w-3 h-3 mr-1" />}
+              {isOwner ? "Edit" : "Contact Driver"}
             </button>
             <button onClick={onClose} className="p-1.5 md:p-2 hover:bg-white/10 rounded-full transition-colors border border-white/10">
               <X className="w-4 h-4 md:w-5 md:h-5 text-white/80" />

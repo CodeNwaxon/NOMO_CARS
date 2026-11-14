@@ -25,6 +25,7 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
   const [loading, setLoading] = useState(true);
   
   const [isAdding, setIsAdding] = useState(false);
+  const [editingRouteId, setEditingRouteId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [routeToDelete, setRouteToDelete] = useState<string | null>(null);
   const [showRouteInfoModal, setShowRouteInfoModal] = useState(false);
@@ -78,6 +79,22 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
 
     setSubmitting(true);
     try {
+      if (editingRouteId) {
+        await updateDoc(doc(db, "vehicleServices", editingRouteId), {
+          startPoint: formData.startPoint,
+          destination: formData.destination,
+          price: formData.price,
+          description: formData.description,
+          isNegotiable: formData.isNegotiable,
+        });
+
+        toast.success("Route updated successfully");
+        setEditingRouteId(null);
+        setIsAdding(false);
+        await fetchServices();
+        return;
+      }
+
       const result = await createRouteSecure({
         driverId,
         vehicleId,
@@ -104,6 +121,23 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const startEditingRoute = (service: any) => {
+    setFormData({
+      startPoint: service.startPoint || "",
+      destination: service.destination || "",
+      price: service.price || "",
+      description: service.description || "",
+      isNegotiable: Boolean(service.isNegotiable),
+    });
+    setEditingRouteId(service.id);
+    setIsAdding(true);
+  };
+
+  const cancelForm = () => {
+    setEditingRouteId(null);
+    setIsAdding(false);
   };
 
   const confirmDelete = async () => {
@@ -146,7 +180,10 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
         <div ref={innerScrollRef} className="flex-1 overflow-y-auto p-4 md:p-8">
           {isAdding ? (
             <form onSubmit={handleSubmit} className="space-y-4 bg-slate-50 dark:bg-slate-900/50 p-4 md:p-6 rounded-2xl mb-6 shadow-sm">
-              <h3 className="font-bold mb-4 flex items-center gap-2 text-brand-primary"><Plus className="w-5 h-5"/> Add New Route</h3>
+              <h3 className="font-bold mb-4 flex items-center gap-2 text-brand-primary">
+                {editingRouteId ? <Edit2 className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
+                {editingRouteId ? "Edit Route" : "Add New Route"}
+              </h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -217,10 +254,10 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-card-border mt-4">
-                <button type="button" onClick={() => setIsAdding(false)} className="px-5 py-2.5 text-sm font-bold text-foreground/60 hover:text-foreground hover:bg-card-bg rounded-xl transition-colors">Cancel</button>
+                <button type="button" onClick={cancelForm} className="px-5 py-2.5 text-sm font-bold text-foreground/60 hover:text-foreground hover:bg-card-bg rounded-xl transition-colors">Cancel</button>
                 <button type="submit" disabled={submitting} className="flex items-center gap-2 px-6 py-2.5 bg-brand-primary text-white rounded-xl font-bold text-sm shadow-md shadow-brand-primary/20 hover:scale-105 transition-all">
                   {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                  Save Route
+                  {editingRouteId ? "Update Route" : "Save Route"}
                 </button>
               </div>
             </form>
@@ -269,16 +306,26 @@ export default function ManageServicesModal({ vehicleId, driverId, vehicleName, 
               {services.map(service => (
                 <div key={service.id} className="relative flex flex-col p-3 md:p-4 bg-slate-50 dark:bg-slate-900/50 border border-amber-500 dark:border-green-500 rounded-xl hover:-translate-y-1 transition-all shadow-[0_0_15px_rgba(245,158,11,0.25)] dark:shadow-[0_0_15px_rgba(34,197,94,0.25)] hover:shadow-[0_0_20px_rgba(245,158,11,0.5)] dark:hover:shadow-[0_0_20px_rgba(34,197,94,0.5)] group">
                   
-                  {/* Delete Button top right */}
-                  <button 
-                    onClick={() => setRouteToDelete(service.id)} 
-                    className="absolute top-3 right-3 p-2 text-red-500 bg-red-50 dark:bg-red-900/20 hover:bg-red-500 hover:text-white rounded-lg transition-colors border border-red-500/20 shadow-sm" 
-                    title="Delete Route"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="absolute top-3 right-3 flex gap-1.5">
+                    <button
+                      onClick={() => startEditingRoute(service)}
+                      className="p-2 text-brand-primary bg-brand-primary/10 hover:bg-brand-primary hover:text-white rounded-lg transition-colors border border-brand-primary/20 shadow-sm"
+                      title="Edit Route"
+                      aria-label={`Edit route from ${service.startPoint} to ${service.destination}`}
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setRouteToDelete(service.id)}
+                      className="p-2 text-red-500 bg-red-50 dark:bg-red-900/20 hover:bg-red-500 hover:text-white rounded-lg transition-colors border border-red-500/20 shadow-sm"
+                      title="Delete Route"
+                      aria-label={`Delete route from ${service.startPoint} to ${service.destination}`}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
 
-                  <div className="pr-10">
+                  <div className="pr-24">
                     <div className="flex flex-row items-center gap-1.5 font-bold text-sm md:text-base">
                       <span className="text-brand-primary truncate max-w-[45%]">{service.startPoint}</span>
                       <span className="text-foreground/30 text-[10px]">➔</span>

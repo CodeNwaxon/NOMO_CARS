@@ -16,6 +16,7 @@ import { createVehicleSecure } from "@/actions/createVehicle";
 import ImageViewerOverlay from "@/components/ImageViewerOverlay";
 import { useVIPLimits } from "@/hooks/useVIPLimits";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const vehicleCategories = [
   { id: "motorbike", name: "Motorbike (Dispatch Rider)", icon: Bike, desc: "Two-wheeled vehicles" },
@@ -79,6 +80,9 @@ const getFieldConfig = (category: string) => {
 };
 
 export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTicketDays }: { userId: string, vipStars?: number, ticketExpiry?: string, lastTicketDays?: number }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const requestedServicesVehicleId = searchParams.get("editServices");
   const { limits, loadingLimits } = useVIPLimits(vipStars);
   const maxCars = limits.maxCars;
 
@@ -285,6 +289,21 @@ export default function VehiclesTab({ userId, vipStars = 0, ticketExpiry, lastTi
 
     return () => unsubscribe();
   }, [userId]);
+
+  useEffect(() => {
+    if (!requestedServicesVehicleId || loading) return;
+
+    const vehicle = vehicles.find((item) => item.id === requestedServicesVehicleId);
+    if (!vehicle) {
+      toast.error("That vehicle was not found in your account.");
+      router.replace("/driver/dashboard?tab=vehicles", { scroll: false });
+      return;
+    }
+
+    const vehicleName = `${vehicle.details?.make || "Vehicle"} ${vehicle.details?.model || ""}`.trim();
+    setManagingServicesFor({ id: vehicle.id, name: vehicleName });
+    router.replace("/driver/dashboard?tab=vehicles", { scroll: false });
+  }, [requestedServicesVehicleId, loading, vehicles, router]);
 
   useEffect(() => {
     const q = query(collection(db, "vehicleServices"), where("driverId", "==", userId));

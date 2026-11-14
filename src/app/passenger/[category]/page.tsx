@@ -287,7 +287,7 @@ export default function CategoryVehicles() {
                                 <img
                                   src={thumbUrl as string}
                                   alt={`${v.details.make} ${v.details.model}`}
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                  className="w-full h-full object-cover md:object-contain group-hover:scale-105 transition-transform duration-500"
                                 />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-foreground/30">
@@ -385,12 +385,18 @@ export default function CategoryVehicles() {
                             </div>
 
                             <div className="mb-1 md:mb-4 mt-1 w-full">
-                              <Link href={`/driver/profile/${v.driverId}`} className="capitalize text-[12px] md:text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 hover:underline flex items-center mb-0.5 transition-colors w-full max-w-full">
-                                <span className="truncate">{v.driverName}</span>
-                                <span className="flex-shrink-0 whitespace-nowrap">&nbsp;Profile</span>
+                              <Link href={`/driver/profile/${v.driverId}`} className="capitalize text-[12px] md:text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 hover:underline flex items-center mb-0 transition-colors w-full max-w-full">
+                                {user?.uid === v.driverId ? (
+                                  <span className="truncate">Customer&apos;s View</span>
+                                ) : (
+                                  <>
+                                    <span className="truncate">{v.driverName}</span>
+                                    <span className="flex-shrink-0 whitespace-nowrap">&nbsp;Profile</span>
+                                  </>
+                                )}
                               </Link>
                               {(v.driverState || v.driverCity) && (
-                                <p className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 font-medium">
+                                <p className="-mt-0.5 text-[10px] md:text-xs text-gray-500 dark:text-gray-400 font-medium">
                                   {[v.driverState, v.driverCity].filter(Boolean).join("/")}
                                 </p>
                               )}
