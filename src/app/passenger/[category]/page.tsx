@@ -250,7 +250,7 @@ export default function CategoryVehicles() {
                 filteredVehicles.length > 0 && (
                   <div>
                     {(locationQuery || destinationQuery) && <h2 className="text-xl md:text-2xl font-bold mb-6 flex items-center gap-2"><Car className="text-brand-secondary" /> Vehicles Found</h2>}
-                    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-8">
+                    <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-2 md:gap-8">
                       {displayedVehicles.map((v) => (
                         <div key={v.id} className={`rounded-xl md:rounded-3xl overflow-hidden group transition-all duration-300 relative ${v.driverVipStars >= 5
                           ? "bg-gradient-to-br from-amber-500/10 to-card-bg border-2 border-amber-500/50 shadow-lg shadow-amber-500/10 hover:shadow-2xl hover:shadow-amber-500/30 hover:-translate-y-1"

@@ -31,22 +31,22 @@ import WordGameModal from "@/components/WordGameModal";
 
 // ── Category images list (swap images here easily) ──
 const categoryImages = [
-  { name: "Dispatch", image: "/categories/dispatch-rider.jpg" },
-  { name: "Keke", image: "/categories/keke.jpg" },
-  { name: "Car", image: "/categories/car.jpg" },
-  { name: "Mini Van", image: "/categories/minivan.jpg" },
-  { name: "Van", image: "/categories/van.jpg" },
-  { name: "Bus", image: "/categories/bus.jpg" },
-  { name: "Truck", image: "/categories/truck.jpg" },
-  { name: "Air/Cargo", image: "/categories/airplane.jpg" },
-  { name: "Ship", image: "/categories/ship.jpg" },
+  { name: "Dispatch", image: "/cartoonImages/dispatch-rider.webp" },
+  { name: "Keke", image: "/cartoonImages/keke.webp" },
+  { name: "Car", image: "/cartoonImages/car.webp" },
+  { name: "Mini bus", image: "/cartoonImages/minibus.webp" },
+  { name: "Van", image: "/cartoonImages/van.webp" },
+  { name: "Bus", image: "/cartoonImages/bus.jpg" },
+  { name: "Truck", image: "/cartoonImages/truck.jpg" },
+  { name: "Air/Cargo", image: "/cartoonImages/airplane.webp" },
+  { name: "Ship", image: "/cartoonImages/ship.jpg" },
 ];
 
 const categories = [
   { name: "Dispatch", id: "motorbike", icon: Bike, color: "text-orange-500", hoverShadow: "hover:shadow-orange-500/30" },
   { name: "Keke", id: "keke", icon: Navigation, color: "text-green-500", hoverShadow: "hover:shadow-green-500/30" },
   { name: "Car", id: "car", icon: Car, color: "text-blue-500", hoverShadow: "hover:shadow-blue-500/30" },
-  { name: "Mini Van", id: "mini van", icon: Bus, color: "text-violet-500", hoverShadow: "hover:shadow-violet-500/30" },
+  { name: "Mini bus", id: "minibus", icon: Bus, color: "text-violet-500", hoverShadow: "hover:shadow-violet-500/30" },
   { name: "Van", id: "van", icon: Truck, color: "text-cyan-500", hoverShadow: "hover:shadow-cyan-500/30" },
   { name: "Bus", id: "bus", icon: Bus, color: "text-indigo-500", hoverShadow: "hover:shadow-indigo-500/30" },
   { name: "Truck", id: "truck", icon: Truck, color: "text-rose-500", hoverShadow: "hover:shadow-rose-500/30" },
@@ -359,29 +359,27 @@ export default function PassengerCategories() {
           </div>
         ) : (
           // Categories View (Default)
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-6">
             {categories.map((cat) => {
               const Icon = cat.icon;
               const catImage = categoryImages.find((ci) => ci.name === cat.name)?.image || "/categories/car.png";
               return (
                 <Link key={cat.id} href={`/passenger/${cat.id}`} className="group block">
                   <div
-                    className={`rounded-xl h-[140px] md:h-[220px] flex flex-col justify-end transition-all duration-300 hover:scale-[1.03] hover:shadow-xl ${cat.hoverShadow} relative overflow-hidden border-2 border-gray-400 dark:border-blue-400/50 shadow-lg`}
+                    className={`rounded-xl flex flex-col transition-all duration-300 hover:scale-[1.03] hover:shadow-xl ${cat.hoverShadow} relative overflow-hidden border-2 border-gray-400 dark:border-blue-400/50 shadow-lg`}
                   >
-                    {/* Optimized background image */}
-                    <Image
-                      src={catImage}
-                      alt={cat.name}
-                      fill
-                      sizes="(max-width: 768px) 50vw, 33vw"
-                      className="object-cover object-bottom z-0"
-                    />
+                    <div className="relative aspect-square w-full shrink-0 overflow-hidden">
+                      <Image
+                        src={catImage}
+                        alt={cat.name}
+                        fill
+                        sizes="(max-width: 768px) 50vw, 33vw"
+                        className="object-cover object-center"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/25 to-transparent" />
+                    </div>
 
-                    {/* Dark gradient overlay for readability */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent z-[1]" />
-
-                    {/* Bottom overlay bar */}
-                    <div className="relative z-[2] w-full dark:bg-black/70 bg-white/85 backdrop-blur-md px-3 py-2 md:px-4 md:py-2.5 flex items-center justify-between">
+                    <div className="w-full shrink-0 dark:bg-black/70 bg-white/85 px-3 py-2 md:px-4 md:py-2.5 flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
                         <Icon className={`w-3.5 h-3.5 md:w-4 md:h-4 ${cat.color}`} />
                         <h3 className="font-bold text-sm md:text-base dark:text-white text-gray-900">{cat.name}</h3>
@@ -397,7 +395,7 @@ export default function PassengerCategories() {
 
             {/* Games Card */}
             <div onClick={() => setShowGameModal(true)} className="group block cursor-pointer">
-              <div className={`glass-panel rounded-lg md:rounded-2xl p-4 md:p-8 flex flex-col items-center justify-center text-center transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-fuchsia-500/20 border-2 border-transparent hover:border-fuchsia-500/50 h-[140px] md:h-[220px]`}>
+              <div className={`glass-panel rounded-lg md:rounded-2xl p-4 md:p-8 flex h-full min-h-[140px] md:min-h-[220px] flex-col items-center justify-center text-center transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:shadow-fuchsia-500/20 border-2 border-transparent hover:border-fuchsia-500/50`}>
                 <div className={`w-12 h-12 md:w-16 md:h-16 rounded-full bg-fuchsia-500/10 flex items-center justify-center mb-2 group-hover:scale-110 group-hover:bg-fuchsia-500/20 transition-all duration-300`}>
                   <Gamepad2 className={`w-6 h-6 md:w-8 md:h-8 text-fuchsia-500`} />
                 </div>
