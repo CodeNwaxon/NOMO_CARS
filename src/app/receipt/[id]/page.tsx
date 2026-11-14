@@ -30,6 +30,10 @@ export default function ReceiptPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     if (authLoading) return;
 
     if (!user) {
