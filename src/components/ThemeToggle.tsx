@@ -3,35 +3,40 @@
 import * as React from "react"
 import { Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
-import { usePathname } from "next/navigation"
 
-export function ThemeToggle() {
+interface ThemeToggleProps {
+  onToggle?: () => void
+}
+
+const subscribe = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
+
+export function ThemeToggle({ onToggle }: ThemeToggleProps) {
   const { theme, setTheme, systemTheme } = useTheme()
-  const [mounted, setMounted] = React.useState(false)
+  const mounted = React.useSyncExternalStore(subscribe, getClientSnapshot, getServerSnapshot)
 
-  const pathname = usePathname()
-
-  React.useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  if (!mounted || pathname?.includes('/driver/profile')) {
-    return <div className="fixed bottom-6 right-6 w-12 h-12 hidden" />
-  }
+  if (!mounted) return null
 
   const currentTheme = theme === "system" ? systemTheme : theme
+  const nextTheme = currentTheme === "dark" ? "light" : "dark"
 
   return (
     <button
-      onClick={() => setTheme(currentTheme === "dark" ? "light" : "dark")}
-      className="fixed bottom-6 right-6 p-2 rounded-full bg-card-bg border border-card-border shadow-xl backdrop-blur-md z-50 transition-all hover:scale-110 flex items-center justify-center dark:bg-slate-800 bg-white"
-      aria-label="Toggle theme"
+      type="button"
+      onClick={() => {
+        setTheme(nextTheme)
+        onToggle?.()
+      }}
+      className="flex items-center gap-3 w-full px-2 py-1.5 md:px-4 md:py-2 text-xs md:text-sm text-left dark:text-gray-200 text-gray-700 hover:bg-brand-primary/10 rounded-lg transition-colors group"
+      aria-label={`Switch to ${nextTheme} mode`}
     >
-      {currentTheme === "dark" ? (
-        <Sun className="h-4 w-4 text-yellow-500" />
+      {nextTheme === "light" ? (
+        <Sun className="w-5 h-5 dark:text-gray-400 text-gray-500 group-hover:text-brand-primary" />
       ) : (
-        <Moon className="h-4 w-4 text-slate-800" fill="currentColor" />
+        <Moon className="w-5 h-5 dark:text-gray-400 text-gray-500 group-hover:text-brand-primary" />
       )}
+      <span className="text-xs md:text-sm font-medium">Switch to {nextTheme} mode</span>
     </button>
   )
 }

@@ -5,7 +5,6 @@ import { AuthProvider } from "@/context/AuthContext";
 import { NotificationProvider } from "@/context/NotificationContext";
 import { ChatProvider } from "@/context/ChatContext";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { Navbar } from "@/components/Navbar";
 import { Toaster } from "react-hot-toast";
 import ReferralHandler from "@/components/ReferralHandler";
@@ -72,7 +71,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </ChatProvider>
             </NotificationProvider>
           </AuthProvider>
-          <ThemeToggle />
         </ThemeProvider>
 
         <script

@@ -5,6 +5,7 @@ import { LogIn, ChevronDown, LayoutDashboard, LogOut, Headphones, Home, ShieldCh
 import { useAuth } from "@/context/AuthContext";
 import { useNotifications } from "@/context/NotificationContext";
 import { NotificationPanel } from "./NotificationPanel";
+import { ThemeToggle } from "./ThemeToggle";
 import { useState, useRef, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { doc, getDoc } from "firebase/firestore";
@@ -179,6 +180,8 @@ export function Navbar() {
                         <LayoutDashboard className="w-5 h-5 dark:text-gray-400 text-gray-500 group-hover:text-brand-primary" />
                         <span className="text-xs md:text-sm font-medium group-hover:text-brand-primary dark:group-hover:text-white">My Dashboard</span>
                       </button>
+                      <div className="h-[1px] dark:bg-white/10 bg-black/5 mx-2 my-1"></div>
+                      <ThemeToggle onToggle={() => setDropdownOpen(false)} />
                       <div className="h-[1px] dark:bg-white/10 bg-black/5 mx-2 my-1"></div>
                       <button
                         onClick={() => {

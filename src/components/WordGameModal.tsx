@@ -497,8 +497,8 @@ export default function WordGameModal({ onClose }: WordGameModalProps) {
                 <div className="flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-3 md:py-1.5 bg-amber-100 text-amber-700 rounded-lg md:rounded-xl font-bold text-xs md:text-sm shadow-sm border border-amber-200">
                   <Coins className="w-3 h-3 md:w-4 md:h-4 fill-amber-500 text-amber-500" /> {money}
                 </div>
-                <div className="flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-3 md:py-1.5 bg-sky-100 text-sky-700 rounded-lg md:rounded-xl font-bold text-xs md:text-sm cursor-pointer hover:bg-sky-200 transition-colors shadow-sm border border-sky-200" onClick={useHint} title="Click to use hint">
-                  <Lightbulb className="w-3 h-3 md:w-4 md:h-4 fill-sky-500 text-sky-500" /> {hints}
+                <div className={`flex items-center gap-1 md:gap-1.5 px-2 py-1 md:px-3 md:py-1.5 rounded-lg md:rounded-xl font-bold text-xs md:text-sm shadow-sm border ${difficultyColor}`}>
+                  {difficultyTag}
                 </div>
               </div>
             </div>
@@ -526,9 +526,15 @@ export default function WordGameModal({ onClose }: WordGameModalProps) {
               <div className="flex flex-col items-center flex-1">
                 <div className="flex justify-between items-center w-full mb-2">
                   <div className="flex gap-2 items-center">
-                    <div className={`px-2 py-1 md:px-3 md:py-1 rounded-lg md:rounded-full text-[10px] md:text-xs font-bold border ${difficultyColor}`}>
-                      {difficultyTag}
-                    </div>
+                    <button
+                      type="button"
+                      onClick={useHint}
+                      className="flex items-center gap-1 px-2 py-1 md:px-3 md:py-1 bg-sky-100 text-sky-700 hover:bg-sky-200 transition-colors rounded-lg md:rounded-full text-[10px] md:text-xs font-bold border border-sky-200 shadow-sm"
+                      title="Click to use hint"
+                      aria-label={`Use hint, ${hints} remaining`}
+                    >
+                      <Lightbulb className="w-3 h-3 md:w-4 md:h-4 fill-sky-500 text-sky-500" /> Hint ({hints})
+                    </button>
                     <button
                       onClick={useSkip}
                       className="flex items-center gap-1 px-2 py-1 md:px-3 md:py-1 bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors rounded-lg md:rounded-full text-[10px] md:text-xs font-bold border border-purple-200 shadow-sm"
