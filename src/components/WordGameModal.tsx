@@ -14,6 +14,15 @@ const PaystackCoinCard = dynamic(() => import('@/components/PaystackCoinCard'), 
 
 const MAX_WRONG_GUESSES = 10;
 const DAILY_REFILL_MS = 24 * 60 * 60 * 1000;
+const MAX_SKIPS = 2;
+const LIFE_COST = 30;
+const HINT_COST = 20;
+
+const getWordReward = (word: string) => {
+  if (word.length >= 10) return 8;
+  if (word.length >= 5) return 5;
+  return 3;
+};
 
 interface WordGameModalProps {
   onClose: () => void;
@@ -29,7 +38,7 @@ export default function WordGameModal({ onClose }: WordGameModalProps) {
   const [money, setMoney] = useState(0);
   const [lives, setLives] = useState(3);
   const [hints, setHints] = useState(8);
-  const [skips, setSkips] = useState(3);
+  const [skips, setSkips] = useState(MAX_SKIPS);
   const [gamesPlayed, setGamesPlayed] = useState(0);
   const [nextRefillTime, setNextRefillTime] = useState<number | null>(null);
 
@@ -71,7 +80,7 @@ export default function WordGameModal({ onClose }: WordGameModalProps) {
       money: m,
       lives: l,
       hints: h,
-      skips: s,
+      skips: Math.min(s, MAX_SKIPS),
       gamesPlayed: gp,
       nextRefillTime: nrt
     };
@@ -111,7 +120,7 @@ export default function WordGameModal({ onClose }: WordGameModalProps) {
       let currentMoney = 0;
       let currentLives = 3;
       let currentHints = 8;
-      let currentSkips = 3;
+      let currentSkips = MAX_SKIPS;
       let currentGamesPlayed = 0;
       let currentRefill: number | null = null;
       let loadedFromCloud = false;
@@ -127,7 +136,7 @@ export default function WordGameModal({ onClose }: WordGameModalProps) {
               currentMoney = cloudState.money ?? 0;
               currentLives = cloudState.lives ?? 3;
               currentHints = cloudState.hints ?? 8;
-              currentSkips = cloudState.skips ?? 3;
+              currentSkips = Math.min(cloudState.skips ?? MAX_SKIPS, MAX_SKIPS);
               currentGamesPlayed = cloudState.gamesPlayed ?? 0;
               currentRefill = cloudState.nextRefillTime ?? null;
               loadedFromCloud = true;
@@ -150,7 +159,7 @@ export default function WordGameModal({ onClose }: WordGameModalProps) {
             currentMoney = parsed.money ?? 0;
             currentLives = parsed.lives ?? 3;
             currentHints = parsed.hints ?? 8;
-            currentSkips = parsed.skips ?? 3;
+            currentSkips = Math.min(parsed.skips ?? MAX_SKIPS, MAX_SKIPS);
             currentGamesPlayed = parsed.gamesPlayed ?? 0;
             currentRefill = parsed.nextRefillTime ?? null;
 
@@ -242,17 +251,15 @@ export default function WordGameModal({ onClose }: WordGameModalProps) {
 
     if (isWon) {
       setGameState("won");
-      let reward = 3;
-      if (word.length >= 10) reward = 8;
-      else if (word.length >= 5) reward = 5;
+      const reward = getWordReward(word);
 
       const newMoney = money + reward;
       const newGp = gamesPlayed + 1;
       setMoney(newMoney);
-      setSkips(3);
+      setSkips(MAX_SKIPS);
       setGamesPlayed(newGp);
-      saveState(newMoney, lives, hints, 3, newGp, nextRefillTime);
-      toast.success(`You won ${reward} game money! Skips reset to 3!`);
+      saveState(newMoney, lives, hints, MAX_SKIPS, newGp, nextRefillTime);
+      toast.success(`You won ${reward} game money! Skips reset to ${MAX_SKIPS}!`);
     } else if (wrongGuesses >= MAX_WRONG_GUESSES) {
       setGameState("lost");
       const newLives = lives - 1;
@@ -288,8 +295,8 @@ export default function WordGameModal({ onClose }: WordGameModalProps) {
   }, [handleGuess]);
 
   const buyLife = () => {
-    if (money >= 20) {
-      const newMoney = money - 20;
+    if (money >= LIFE_COST) {
+      const newMoney = money - LIFE_COST;
       const newLives = lives + 1;
       setMoney(newMoney);
       setLives(newLives);
@@ -306,20 +313,20 @@ export default function WordGameModal({ onClose }: WordGameModalProps) {
         startNewGame(gamesPlayed);
       }
     } else {
-      showAlert("Not Enough Coins", "You need 20 game coins to buy a life.", "error");
+      showAlert("Not Enough Coins", `You need ${LIFE_COST} game coins to buy a life.`, "error");
     }
   };
 
   const buyHint = () => {
-    if (money >= 30) {
-      const newMoney = money - 30;
+    if (money >= HINT_COST) {
+      const newMoney = money - HINT_COST;
       const newHints = hints + 1;
       setMoney(newMoney);
       setHints(newHints);
       saveState(newMoney, lives, newHints, skips, gamesPlayed, nextRefillTime);
       toast.success("Bought 1 Hint!");
     } else {
-      showAlert("Not Enough Coins", "You need 30 game coins to buy a hint.", "error");
+      showAlert("Not Enough Coins", `You need ${HINT_COST} game coins to buy a hint.`, "error");
     }
   };
 
@@ -380,6 +387,12 @@ export default function WordGameModal({ onClose }: WordGameModalProps) {
     difficultyTag = "Mid (5)";
     difficultyColor = "bg-yellow-100 text-yellow-700 border-yellow-200";
   }
+  const wordCellTextClass = word.length > 12
+    ? "text-[10px] md:text-xl"
+    : word.length > 8
+      ? "text-sm md:text-2xl"
+      : "text-xl md:text-3xl";
+  const wordCellHeightClass = word.length > 12 ? "h-8 md:h-12" : "h-10 md:h-16";
 
   return (
     <>
@@ -519,7 +532,7 @@ export default function WordGameModal({ onClose }: WordGameModalProps) {
                   onClick={buyLife}
                   className="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl shadow-lg shadow-amber-500/30 transition-all flex items-center gap-2"
                 >
-                  <Coins className="w-5 h-5" /> Buy 1 Life for 20 Coins
+                  <Coins className="w-5 h-5" /> Buy 1 Life for {LIFE_COST} Coins
                 </button>
               </div>
             ) : (
@@ -549,9 +562,9 @@ export default function WordGameModal({ onClose }: WordGameModalProps) {
                 </div>
 
                 {/* Word Display */}
-                <div className="flex flex-wrap justify-center gap-1.5 md:gap-2 my-4 md:my-8">
+                <div className="flex w-full max-w-lg flex-nowrap justify-center gap-1 my-4 md:my-8">
                   {word.split("").map((letter, i) => (
-                    <div key={i} className={`w-8 h-10 md:w-14 md:h-16 flex items-center justify-center text-xl md:text-3xl font-black rounded-lg md:rounded-xl shadow-sm border-2 ${guessedLetters.has(letter) || gameState === "lost"
+                    <div key={i} className={`flex-1 min-w-0 max-w-14 ${wordCellHeightClass} flex items-center justify-center ${wordCellTextClass} font-black rounded-lg md:rounded-xl shadow-sm border-2 ${guessedLetters.has(letter) || gameState === "lost"
                       ? "bg-slate-50 dark:bg-slate-800 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white"
                       : "bg-slate-200 dark:bg-slate-800/50 border-slate-200 dark:border-slate-800/50 text-transparent"
                       }`}>
@@ -563,6 +576,9 @@ export default function WordGameModal({ onClose }: WordGameModalProps) {
                 {/* Game Over States */}
                 {gameState === "won" && (
                   <div className="mb-8 text-center animate-in zoom-in duration-300">
+                    <p className="mb-2 flex items-center justify-center gap-1 font-bold text-amber-500">
+                      <Coins className="h-5 w-5" /> You earned {getWordReward(word)} coins!
+                    </p>
                     <h3 className="text-2xl font-black text-green-500 mb-2">Awesome! Correct!</h3>
                     <button onClick={() => startNewGame(gamesPlayed)} className="mt-4 px-8 py-3 bg-brand-primary text-white font-bold rounded-xl shadow-lg hover:bg-brand-primary/90 hover:-translate-y-1 transition-all flex items-center gap-2 mx-auto">
                       <Play className="w-5 h-5 fill-white" /> Next Word
@@ -611,13 +627,13 @@ export default function WordGameModal({ onClose }: WordGameModalProps) {
                     onClick={buyLife}
                     className="px-3 py-1.5 md:px-4 md:py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold rounded-lg md:rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5 md:gap-2 text-xs md:text-sm border border-slate-200 dark:border-slate-700"
                   >
-                    Buy Life (20 <Coins className="w-3 h-3 md:w-3 md:h-3 text-amber-500" />)
+                    Buy Life ({LIFE_COST} <Coins className="w-3 h-3 md:w-3 md:h-3 text-amber-500" />)
                   </button>
                   <button
                     onClick={buyHint}
                     className="px-3 py-1.5 md:px-4 md:py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold rounded-lg md:rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5 md:gap-2 text-xs md:text-sm border border-slate-200 dark:border-slate-700"
                   >
-                    Buy Hint (30 <Coins className="w-3 h-3 md:w-3 md:h-3 text-amber-500" />)
+                    Buy Hint ({HINT_COST} <Coins className="w-3 h-3 md:w-3 md:h-3 text-amber-500" />)
                   </button>
                 </div>
               </div>
